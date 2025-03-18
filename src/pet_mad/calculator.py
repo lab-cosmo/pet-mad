@@ -76,6 +76,7 @@ class PETMADCalculator(ase.calculators.calculator.Calculator):
             logging.info(f"Downloading PET-MAD model version: {version}")
             path = BASE_URL.format(version if version != "latest" else "main")
         model = load_model(path).export(METADATA)
+        self.model = model
         self._calculator = MetatensorCalculator(model, *args, **kwargs)
 
     def calculate(
