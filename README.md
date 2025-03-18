@@ -36,7 +36,7 @@ Alternatively, you can install PET-MAD from Anaconda, particularly useful for us
 Once Miniforge is installed, create a new conda environment and install PET-MAD with:
 
 ```bash
-conda create -n pet-mad python=3.10
+conda create -n pet-mad
 conda activate pet-mad
 conda install -c metatensor pet-mad
 ```
