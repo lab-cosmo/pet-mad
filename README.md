@@ -99,6 +99,9 @@ Example for GPU-accelerated OpenMPI version:
 conda install -c metatensor -c conda-forge lammps-metatensor=*=cuda*openmpi*
 ```
 
+Please note, that this version is not KOKKOS-enabled, so it provides limited performance on GPUs.
+The KOKKOS-enabled version of LAMMPS-METATENSOR will be available soon.
+
 To use system-installed MPI for HPC, install dummy MPI packages first:
 
 ```bash
