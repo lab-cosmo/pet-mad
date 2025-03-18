@@ -31,7 +31,12 @@ Or directly from PyPI (available soon):
 pip install pet-mad
 ```
 
-Alternatively, you can install PET-MAD from Anaconda, particularly useful for users integrating it with **LAMMPS**. We recommend installing [`Miniforge`](https://github.com/conda-forge/miniforge), a minimal conda installer.
+Alternatively, you can install PET-MAD from Anaconda, particularly useful for users integrating it with **LAMMPS**. We recommend installing [`Miniforge`](https://github.com/conda-forge/miniforge), a minimal conda installer. To install Miniforge, on unix-like systems, run:
+
+```bash
+wget "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh"
+bash Miniforge3-$(uname)-$(uname -m).sh
+```
 
 Once Miniforge is installed, create a new conda environment and install PET-MAD with:
 
