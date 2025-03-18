@@ -1,0 +1,97 @@
+[project]
+name = "pet-mad"
+dynamic = ["version"]
+requires-python = ">=3.9"
+
+readme = "README.md"
+license = {text = "BSD-3-Clause"}
+description = "A universal interatomic potential for advanced materials modeling"
+authors = [
+  {name = "Arslan Mazitov", email = "arslan.mazitov@epfl.ch"},
+  {name = "Filippo Bigi"},
+  {name = "Matthias Kellner"},
+  {name = "Paolo Pegolo"},
+  {name = "Davide Tisi"},
+  {name = "Guillaume Fraux"},
+  {name = "Sergey Pozdnyakov"},
+  {name = "Philip Loche"},
+  {name = "Michele Ceriotti", email = "michele.ceriotti@epfl.ch"},
+]
+maintainers = [
+  {name = "Arslan Mazitov", email = "arslan.mazitov@epfl.ch"},
+]
+
+dependencies = [
+    "metatrain",
+    "pet-neighbors-convert",
+    "torch-geometric",
+    "matscipy",
+    "scikit-learn",
+    "pathos",
+    "scipy",
+    "huggingface_hub",
+]
+
+keywords = ["machine learning", "molecular modeling"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: BSD License",
+    "Operating System :: POSIX",
+    "Operating System :: MacOS :: MacOS X",
+    "Operating System :: Microsoft :: Windows",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+    "Topic :: Scientific/Engineering :: Chemistry",
+    "Topic :: Scientific/Engineering :: Physics",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+
+[project.urls]
+repository = "https://github.com/lab-cosmo/pet-mad"
+
+
+### ======================================================================== ###
+
+[build-system]
+requires = [
+    "setuptools >= 68",
+    "wheel",
+]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.dynamic]
+version = {attr = "pet_mad.__version__"}
+
+[tool.black]
+exclude = 'docs/src/examples'
+
+[tool.isort]
+skip = "__init__.py"
+profile = "black"
+line_length = 88
+indent = 4
+include_trailing_comma = true
+lines_after_imports = 2
+known_first_party = "pet-mad"
+
+[tool.mypy]
+exclude = [
+    "docs/src/examples"
+]
+follow_imports = 'skip'
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+# ignore" a bunch of internal warnings with Python 3.12 and PyTorch
+filterwarnings = [
+    "ignore:ast.Str is deprecated and will be removed in Python 3.14:DeprecationWarning",
+    "ignore:Attribute s is deprecated and will be removed in Python 3.14:DeprecationWarning",
+    "ignore:ast.NameConstant is deprecated and will be removed in Python 3.14:DeprecationWarning",
+]

@@ -1,0 +1,47 @@
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    # Check all PR
+
+jobs:
+  tests:
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-22.04
+            python-version: "3.9"
+          - os: ubuntu-22.04
+            python-version: "3.13"
+          - os: macos-14
+            python-version: "3.13"
+          # To be restored once we figure out the issue with the windows build
+          # - os: windows-2019
+          #   python-version: "3.13"
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install Zsh
+      if: startsWith(matrix.os, 'ubuntu')
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y zsh libfftw3-dev
+        touch ~/.zshrc
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+    - run: pip install tox
+
+    - name: run Python tests
+      run: |
+        tox -e tests
+      env:
+        # Use the CPU only version of torch when building/running the code
+        PIP_EXTRA_INDEX_URL: https://download.pytorch.org/whl/cpu
