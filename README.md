@@ -173,6 +173,7 @@ Run LAMMPS:
 
 ```bash
 lmp_serial -in lammps.in  # Serial version
+lmp -in lammps.in  # Serial run, if you have installed the parallel version
 mpirun -np 1 lmp_mpi -in lammps.in  # Parallel version
 ```
 
