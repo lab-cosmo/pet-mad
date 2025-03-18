@@ -38,7 +38,7 @@ Once Miniforge is installed, create a new conda environment and install PET-MAD 
 ```bash
 conda create -n pet-mad
 conda activate pet-mad
-conda install -c metatensor pet-mad
+conda install -c metatensor -c conda-forge pet-mad
 ```
 
 ## Usage
@@ -78,13 +78,13 @@ PET-MAD integrates with the following atomistic simulation engines:
 To use PET-MAD with LAMMPS, install PET-MAD from Anaconda (see above). Then, install **LAMMPS-METATENSOR**, which enables PET-MAD support:
 
 ```bash
-conda install -c metatensor lammps-metatensor
+conda install -c metatensor -c conda-forge lammps-metatensor
 ```
 
 For GPU-accelerated LAMMPS:
 
 ```bash
-conda install -c metatensor lammps-metatensor=*=cuda*
+conda install -c metatensor -c conda-forge lammps-metatensor=*=cuda*
 ```
 
 Different MPI implementations are available:
@@ -96,7 +96,7 @@ Different MPI implementations are available:
 Example for GPU-accelerated OpenMPI version:
 
 ```bash
-conda install -c metatensor lammps-metatensor=*=cuda*openmpi*
+conda install -c metatensor -c conda-forge lammps-metatensor=*=cuda*openmpi*
 ```
 
 To use system-installed MPI for HPC, install dummy MPI packages first:
