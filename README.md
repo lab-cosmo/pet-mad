@@ -169,11 +169,13 @@ Atoms # atomic
 8   1   4.0725   4.0725   1.3575
 ```
 
-Run LAMMPS:
+Run LAMMPS. By default, LAMMPS installs the `lmp_serial` executable for 
+the serial version and `lmp_mpi` for the MPI version. Because of that,
+the running command will be different depending on the version:
 
 ```bash
 lmp_serial -in lammps.in  # Serial version
-mpirun -np 1 lmp_mpi -in lammps.in  # Parallel version
+mpirun -np 1 lmp_mpi -in lammps.in  # MPI version
 ```
 
 ### 3. Important Notes
