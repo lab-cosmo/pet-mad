@@ -33,9 +33,11 @@ pip install pet-mad
 
 Alternatively, you can install PET-MAD from Anaconda, particularly useful for users integrating it with **LAMMPS**. We recommend installing [`Miniforge`](https://github.com/conda-forge/miniforge), a minimal conda installer.
 
-Once Miniforge is installed, install PET-MAD with:
+Once Miniforge is installed, create a new conda environment and install PET-MAD with:
 
 ```bash
+conda create -n pet-mad python=3.10
+conda activate pet-mad
 conda install -c metatensor pet-mad
 ```
 
