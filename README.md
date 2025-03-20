@@ -31,7 +31,7 @@ Or directly from PyPI (available soon):
 pip install pet-mad
 ```
 
-Alternatively, you can install PET-MAD from Anaconda, particularly useful for users integrating it with **LAMMPS**. We recommend installing [`Miniforge`](https://github.com/conda-forge/miniforge), a minimal conda installer. To install Miniforge, on unix-like systems, run:
+Alternatively, you can install PET-MAD from Anaconda, particularly useful for users integrating it with **LAMMPS**. We recommend installing [`Miniforge`](https://github.com/conda-forge/miniforge), a minimal conda installer. To install Miniforge on unix-like systems, run:
 
 ```bash
 wget "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh"
@@ -217,5 +217,5 @@ If you use PET-MAD in your research, please cite:
       eprint={2503.14118},
       archivePrefix={arXiv},
       primaryClass={cond-mat.mtrl-sci},
-      url={https://arxiv.org/abs/2503.14118}, 
+      url={https://arxiv.org/abs/2503.14118}
 }
