@@ -210,9 +210,12 @@ Additional documentation can be found in the [Metatensor](https://docs.metatenso
 If you use PET-MAD in your research, please cite:
 
 ```bibtex
-@article{pet-mad-2025,
-    title={PET-MAD, a universal interatomic potential for advanced materials modeling},
-    author={Mazitov, Arslan et al.},
-    journal={arXiv preprint arXiv:2503.14118},
-    year={2025}
+@misc{PET-MAD-2025,
+      title={PET-MAD, a universal interatomic potential for advanced materials modeling}, 
+      author={Arslan Mazitov and Filippo Bigi and Matthias Kellner and Paolo Pegolo and Davide Tisi and Guillaume Fraux and Sergey Pozdnyakov and Philip Loche and Michele Ceriotti},
+      year={2025},
+      eprint={2503.14118},
+      archivePrefix={arXiv},
+      primaryClass={cond-mat.mtrl-sci},
+      url={https://arxiv.org/abs/2503.14118}
 }
