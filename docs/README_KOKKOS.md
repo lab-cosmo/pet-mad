@@ -30,9 +30,11 @@ wget "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforg
 bash Miniforge3-$(uname)-$(uname -m).sh
 ```
 
-Next, we need to install the `conda-build` tool:
+Next, we need to create a new environment and install the `conda-build` tool:
 
 ```bash
+conda create -n lammps-kokkos
+conda activate lammps-kokkos
 conda install conda-build
 ```
 
@@ -59,7 +61,7 @@ The `meta.yaml` file for the LAMMPS-KOKKOS package is as follows:
 
 ```yaml
 {% set version = "27Jun2024" %}
-{% set build = 1 %}
+{% set build = 0 %}
 {% set cuda_major = environ.get("cuda_compiler_version", "0.0").split(".")[0]|int %}
 
 # Use a higher build number for the CUDA variant, to ensure that it's
@@ -135,6 +137,7 @@ requirements:
     - libtorch  =*=cuda{{ cuda_compiler_version | replace('.', '') }}*  # [cuda_compiler_version != "None"]
     - fftw
     - fftw * {{ mpi_prefix }}_*
+    - mkl # [target_platform == linux-64]
     - gsl
     - voro
     # https://github.com/lammps/lammps/blob/8389e2eb8074712b6850b3bf25fd3c3852e36f10/src/PLUMED/fix_plumed.cpp#L80-L82
@@ -235,6 +238,12 @@ else
   cp lmp ${PREFIX}/bin/lmp_mpi
 fi
 ```
+
+In this file, it is possible to add or remove the LAMMPS packages, which are
+compiled with the LAMMPS. Please be careful while doing this: removing the
+packages will most likely not break the build process, but adding the packages
+might require either additional dependencies or additional build flags to be
+specified.
 
 The `conda_build_config.yaml` file is as follows:
 
