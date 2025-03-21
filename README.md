@@ -105,7 +105,7 @@ conda install -c metatensor -c conda-forge lammps-metatensor=*=cuda*openmpi*
 ```
 
 Please note, that this version is not KOKKOS-enabled, so it provides limited performance on GPUs.
-The KOKKOS-enabled version of LAMMPS-METATENSOR will be available soon.
+A recipe to install the KOKKOS-enabled version of LAMMPS-METATENSOR is available [here](docs/README_KOKKOS.md)
 
 To use system-installed MPI for HPC, install dummy MPI packages first:
 
