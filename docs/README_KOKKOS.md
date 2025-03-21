@@ -304,8 +304,8 @@ The package can be built using the following command:
 conda build lammps-kokkos
 ```
 
-After this, the build process is started, and the package is built. In the end,
-the built `.conda` bundle will be stored in the CONDA_PREFIX/conda-bld directory.
+After this, the build process is started, and the package is built. This might take some time.
+In the end, the built `.conda` bundle will be stored in the CONDA_PREFIX/conda-bld directory.
 The exact location and the package name can be found in the output of the `conda build` 
 This name will depend on the version of the LAMMPS, CUDA, Python, and MPI, so
 mind that the exact name can be different in your case. 
