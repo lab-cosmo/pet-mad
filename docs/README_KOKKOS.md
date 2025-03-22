@@ -301,20 +301,18 @@ variables are set correctly:
 The package can be built using the following command:
 
 ```bash
-conda build lammps-kokkos
+conda build lammps-kokkos --croot lammps-kokkos-build-artifacts --output-folder lammps-kokkos-build 
 ```
 
-After this, the build process is started, and the package is built. In the end,
-the built `.conda` bundle will be stored in the CONDA_PREFIX/conda-bld directory.
-The exact location and the package name can be found in the output of the `conda build` 
-This name will depend on the version of the LAMMPS, CUDA, Python, and MPI, so
-mind that the exact name can be different in your case. 
-
-To verify that your package was properly built and now available for the installation,
-run:
+After this, the build process is started, and the package is built. The `--croot` flag
+specifies the directory where the build artifacts are stored, and the `--output-folder`
+specifies the path for the built `.conda` bundle. Package name will depend on the
+version of the LAMMPS, CUDA, Python, and MPI, so mind that the exact name can be different
+in your case. To verify that your package was properly built and now available for the
+installation, run:
 
 ```bash
-conda search lammps-metatensor --use-local
+conda search -c file://$PWD/lammps-kokkos-build lammps-metatensor
 ```
 
 This will use the local conda repository to search for the package. If the package
@@ -325,7 +323,7 @@ is found, you can proceed to the next step.
 To install the built package, run:
 
 ```bash
-conda install lammps-metatensor --use-local
+conda install -c file://$PWD/lammps-kokkos-build lammps-metatensor
 ```
 
 This will install the package into the current conda environment. You might need to
