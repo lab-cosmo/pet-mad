@@ -137,7 +137,6 @@ requirements:
     - libtorch  =*=cuda{{ cuda_compiler_version | replace('.', '') }}*  # [cuda_compiler_version != "None"]
     - fftw
     - fftw * {{ mpi_prefix }}_*
-    - mkl # [target_platform == linux-64]
     - gsl
     - voro
     # https://github.com/lammps/lammps/blob/8389e2eb8074712b6850b3bf25fd3c3852e36f10/src/PLUMED/fix_plumed.cpp#L80-L82
@@ -146,6 +145,7 @@ requirements:
   run:
     - {{ mpi }}  # [mpi != 'nompi']
     - __cuda  # [cuda_compiler_version != "None"]
+    - mkl # [target_platform == linux-64]
     - libtorch  =*=cpu*  # [cuda_compiler_version == "None"]
     - libtorch  =*=cuda{{ cuda_compiler_version | replace('.', '') }}*  # [cuda_compiler_version != "None"]
 
