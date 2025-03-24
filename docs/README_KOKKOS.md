@@ -20,10 +20,11 @@ build the code from source. This document describes how to do it.
 
 ## Prerequisites
 
-To build LAMMPS with KOKKOS support we will use the `conda-build` tool, to
-replicated as close as possible the Anaconda build environment. To start,
-we need first install [`Miniforge`](https://github.com/conda-forge/miniforge), 
-a minimal conda installer. To install Miniforge on unix-like systems, run:
+To build LAMMPS with KOKKOS support we will use the `conda-build` tool. This will
+allow us replicat as close as possible the Anaconda build environment, that is used
+to build the main LAMMPS-METATENSOR package.. To start, we need first install
+[`Miniforge`](https://github.com/conda-forge/miniforge), a minimal conda installer.
+To install Miniforge on unix-like systems, run:
 
 ```bash
 wget "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh"
@@ -137,6 +138,7 @@ requirements:
     - libtorch  =*=cuda{{ cuda_compiler_version | replace('.', '') }}*  # [cuda_compiler_version != "None"]
     - fftw
     - fftw * {{ mpi_prefix }}_*
+    - mkl
     - gsl
     - voro
     # https://github.com/lammps/lammps/blob/8389e2eb8074712b6850b3bf25fd3c3852e36f10/src/PLUMED/fix_plumed.cpp#L80-L82
@@ -145,7 +147,7 @@ requirements:
   run:
     - {{ mpi }}  # [mpi != 'nompi']
     - __cuda  # [cuda_compiler_version != "None"]
-    - mkl # [target_platform == linux-64]
+    - mkl
     - libtorch  =*=cpu*  # [cuda_compiler_version == "None"]
     - libtorch  =*=cuda{{ cuda_compiler_version | replace('.', '') }}*  # [cuda_compiler_version != "None"]
 
