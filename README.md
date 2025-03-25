@@ -71,7 +71,7 @@ Currently, we provide the following pre-trained models:
 PET-MAD integrates with the following atomistic simulation engines:
 
 - **Atomic Simulation Environment (ASE)**
-- **LAMMPS**
+- **LAMMPS** (including kokkos support)
 - **i-PI**
 - **OpenMM** (coming soon)
 - **GROMACS** (coming soon)
