@@ -300,18 +300,19 @@ variables are set correctly:
 - `mpi` - check that the correct MPI implementation is set in `conda_build_config.yaml`.
     The avaiable options are: `nompi`, `mpich`, `openmpi`.
 
-The package can be built using the following command:
+The package can be built using the following command (to be run from the "root" directory of this
+guide, i.e., the one which contains `lammps-kokkos\`):
 
 ```bash
 conda build lammps-kokkos --croot lammps-kokkos-build-artifacts --output-folder lammps-kokkos-build 
 ```
 
-After this, the build process is started, and the package is built. The `--croot` flag
-specifies the directory where the build artifacts are stored, and the `--output-folder`
-specifies the path for the built `.conda` bundle. Package name will depend on the
-version of the LAMMPS, CUDA, Python, and MPI, so mind that the exact name can be different
-in your case. To verify that your package was properly built and now available for the
-installation, run:
+After this, the build process is started, and the package is built. This might take some time.
+The `--croot` flag specifies the directory where the build artifacts are stored, and 
+`--output-folder` specifies the path for the built `.conda` bundle. Package name will depend
+on the version of the LAMMPS, CUDA, Python, and MPI, so mind that the exact name can be
+different in your case. To verify that your package was properly built and now available for
+the installation, run:
 
 ```bash
 conda search -c file://$PWD/lammps-kokkos-build lammps-metatensor
@@ -338,7 +339,7 @@ command.
 After the installation of the KOKKOS-enabled LAMMPS-METATENSOR, you can run the
 simulation with PET-MAD. The procedure is the same as for the plain GPU-accelerated
 LAMMPS, but involves a few changes in the input files to activate the KOKKOS-enabled
-subroutines. 
+subroutines.
 
 The example of the input file **`lammps.in`** is as follows:
 
@@ -348,7 +349,7 @@ units metal
 atom_style atomic/kk
 read_data silicon.data
 run_style verlet/kk
-pair_style metatensor/kk pet-mad-latest.pt device cpu extensions extensions/
+pair_style metatensor/kk pet-mad-latest.pt device cuda extensions extensions/
 pair_coeff * * 14
 neighbor 2.0 bin
 timestep 0.001

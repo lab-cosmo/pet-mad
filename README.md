@@ -71,7 +71,7 @@ Currently, we provide the following pre-trained models:
 PET-MAD integrates with the following atomistic simulation engines:
 
 - **Atomic Simulation Environment (ASE)**
-- **LAMMPS**
+- **LAMMPS** (including kokkos support)
 - **i-PI**
 - **OpenMM** (coming soon)
 - **GROMACS** (coming soon)
@@ -105,7 +105,8 @@ conda install -c metatensor -c conda-forge lammps-metatensor=*=cuda*openmpi*
 ```
 
 Please note, that this version is not KOKKOS-enabled, so it provides limited performance on GPUs.
-The KOKKOS-enabled version of LAMMPS-METATENSOR will be available soon.
+A recipe to install the KOKKOS-enabled version of LAMMPS-METATENSOR is available [here](docs/README_KOKKOS.md),
+and a direct conda installation will also be available soon.
 
 To use system-installed MPI for HPC, install dummy MPI packages first:
 
