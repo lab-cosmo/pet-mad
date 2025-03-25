@@ -20,10 +20,11 @@ build the code from source. This document describes how to do it.
 
 ## Prerequisites
 
-To build LAMMPS with KOKKOS support we will use the `conda-build` tool, to
-replicated as close as possible the Anaconda build environment. To start,
-we need first install [`Miniforge`](https://github.com/conda-forge/miniforge), 
-a minimal conda installer. To install Miniforge on unix-like systems, run:
+To build LAMMPS with KOKKOS support we will use the `conda-build` tool. This will
+allow us replicat as close as possible the Anaconda build environment, that is used
+to build the main LAMMPS-METATENSOR package.. To start, we need first install
+[`Miniforge`](https://github.com/conda-forge/miniforge), a minimal conda installer.
+To install Miniforge on unix-like systems, run:
 
 ```bash
 wget "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh"
@@ -137,7 +138,7 @@ requirements:
     - libtorch  =*=cuda{{ cuda_compiler_version | replace('.', '') }}*  # [cuda_compiler_version != "None"]
     - fftw
     - fftw * {{ mpi_prefix }}_*
-    - mkl # [target_platform == linux-64]
+    - mkl
     - gsl
     - voro
     # https://github.com/lammps/lammps/blob/8389e2eb8074712b6850b3bf25fd3c3852e36f10/src/PLUMED/fix_plumed.cpp#L80-L82
@@ -146,6 +147,7 @@ requirements:
   run:
     - {{ mpi }}  # [mpi != 'nompi']
     - __cuda  # [cuda_compiler_version != "None"]
+    - mkl
     - libtorch  =*=cpu*  # [cuda_compiler_version == "None"]
     - libtorch  =*=cuda{{ cuda_compiler_version | replace('.', '') }}*  # [cuda_compiler_version != "None"]
 
@@ -301,20 +303,18 @@ variables are set correctly:
 The package can be built using the following command:
 
 ```bash
-conda build lammps-kokkos
+conda build lammps-kokkos --croot lammps-kokkos-build-artifacts --output-folder lammps-kokkos-build 
 ```
 
 After this, the build process is started, and the package is built. This might take some time.
-In the end, the built `.conda` bundle will be stored in the CONDA_PREFIX/conda-bld directory.
-The exact location and the package name can be found in the output of the `conda build` 
-This name will depend on the version of the LAMMPS, CUDA, Python, and MPI, so
-mind that the exact name can be different in your case. 
-
-To verify that your package was properly built and now available for the installation,
-run:
+The `--croot` flag specifies the directory where the build artifacts are stored, and 
+`--output-folder` specifies the path for the built `.conda` bundle. Package name will depend
+on the version of the LAMMPS, CUDA, Python, and MPI, so mind that the exact name can be
+different in your case. To verify that your package was properly built and now available for
+the installation, run:
 
 ```bash
-conda search lammps-metatensor --use-local
+conda search -c file://$PWD/lammps-kokkos-build lammps-metatensor
 ```
 
 This will use the local conda repository to search for the package. If the package
@@ -325,7 +325,7 @@ is found, you can proceed to the next step.
 To install the built package, run:
 
 ```bash
-conda install lammps-metatensor --use-local
+conda install -c file://$PWD/lammps-kokkos-build lammps-metatensor
 ```
 
 This will install the package into the current conda environment. You might need to
