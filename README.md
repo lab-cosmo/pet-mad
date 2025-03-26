@@ -189,6 +189,36 @@ mpirun -np 1 lmp_mpi -in lammps.in  # MPI version
 
 - For **GPU calculations**, use **one MPI task per GPU**.
 
+### 4. Running PET-MAD with empirical dispersion corrections
+
+#### In **ASE**:
+You can combine the PET-MAD calculator with the torch based implementation of the D3 dispersion correction of `pfnet-research` - `torch-dftd`:
+
+Within the PET-MAD environment you can install `torch-dftd` via:
+
+```bash
+pip install torch-dftd
+```
+
+Then you can use the `D3Calculator` class to combine the two calculators:
+
+```python
+from torch_dftd.torch_dftd3_calculator import TorchDFTD3Calculator
+from pet_mad.calculator import PETMADCalculator
+from  ase.calculators.mixing import SumCalculator
+
+device = "cuda:0" if torch.cuda.is_available() else "cpu"
+
+calc_MAD = PETMADCalculator(version="latest", device=device)
+dft_d3 = TorchDFTD3Calculator(device=device, xc="pbesol", damping="bj")
+
+combined_calc = SumCalculator([calc_MAD, dft_d3])
+
+# assign the calculator to the atoms object
+# atoms.calc = combined_calc
+
+```
+
 ## Examples
 
 More examples for **ASE, i-PI, and LAMMPS** are available in the [Atomistic Cookbook](https://atomistic-cookbook.org/examples/pet-mad/pet-mad.html).
