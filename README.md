@@ -31,7 +31,16 @@ Or directly from PyPI (available soon):
 pip install pet-mad
 ```
 
-Alternatively, you can install PET-MAD from Anaconda, particularly useful for users integrating it with **LAMMPS**. We recommend installing [`Miniforge`](https://github.com/conda-forge/miniforge), a minimal conda installer. To install Miniforge on unix-like systems, run:
+Alternatively, you can install PET-MAD using `conda` package manager, which is especially important
+for running PET-MAD with **LAMMPS**.
+
+> [!WARNING]
+> We strongly recommend installing PET-MAD using [`Miniforge`](https://github.com/conda-forge/miniforge)
+> as a base `conda` provider, because other `conda` providers (such as `Anaconda`) may yield undesired
+> behavior when resolving dependencies and are usually slower than `Miniforge`. Smooth installation
+> and use of PET-MAD is not guaranteed with other `conda` providers.
+
+To install Miniforge on unix-like systems, run:
 
 ```bash
 wget "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh"
@@ -71,7 +80,7 @@ Currently, we provide the following pre-trained models:
 PET-MAD integrates with the following atomistic simulation engines:
 
 - **Atomic Simulation Environment (ASE)**
-- **LAMMPS** (including kokkos support)
+- **LAMMPS** (including the KOKKOS support)
 - **i-PI**
 - **OpenMM** (coming soon)
 - **GROMACS** (coming soon)
@@ -80,7 +89,9 @@ PET-MAD integrates with the following atomistic simulation engines:
 
 ### 1. Install LAMMPS with PET-MAD Support
 
-To use PET-MAD with LAMMPS, install PET-MAD from Anaconda (see above). Then, install **LAMMPS-METATENSOR**, which enables PET-MAD support:
+To use PET-MAD with LAMMPS, you need to first install PET-MAD from `conda`
+(see the installation instructions above). Then, install **LAMMPS-METATENSOR**,
+which enables PET-MAD support:
 
 ```bash
 conda install -c metatensor -c conda-forge lammps-metatensor
@@ -115,6 +126,14 @@ conda install "mpich=x.y.z=external_*"
 conda install "openmpi=x.y.z=external_*"
 ```
 
+where `x.y.z` is the version of your system-installed MPI. For example, for OpenMPI 4.1.4, use:
+
+```bash
+conda install "openmpi=4.1.4=external_*"
+```
+
+Then, install LAMMPS-METATENSOR with the `openmpi` variant:
+
 ### 2. Run LAMMPS with PET-MAD
 
 Fetch the PET-MAD checkpoint from the HuggingFace repository:
@@ -122,6 +141,9 @@ Fetch the PET-MAD checkpoint from the HuggingFace repository:
 ```bash
 mtt export https://huggingface.co/lab-cosmo/pet-mad/resolve/main/models/pet-mad-latest.ckpt
 ```
+
+This will download the model and convert it to TorchScript format compatible with LAMMPS,
+using the `metatensor` and `metatrain` libraries, which PET-MAD is based on. 
 
 Prepare a **`lammps.in`** file:
 
