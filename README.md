@@ -75,6 +75,38 @@ Currently, we provide the following pre-trained models:
 
 - **`latest`**: PET-MAD model trained on the MAD dataset, which contains 95,595 structures, including 3D and 2D inorganic crystals, surfaces, molecular crystals, nanoclusters, and molecules.
 
+## Evaluation of PET-MAD
+
+Evaluation of PET-MAD on a desired dataset is available via 
+[`metatrain`](https://github.com/metatensor/metatrain), which is installed as a depencecy of PET-MAD.
+To evaluate the model, you first need to fetch the PET-MAD model from the HuggingFace repository:
+
+```bash
+mtt export https://huggingface.co/lab-cosmo/pet-mad/resolve/main/models/pet-mad-latest.ckpt
+```
+
+This command will download the model and convert it to TorchScript format, also collecting the
+libraries required to run the model in the `extensions` folder. Then you need to create the 
+`options.yaml` file and specify the dataset you want to evaluate the model on 
+(where the dataset is stored in `extxyz` format):
+
+```yaml
+systems: your-test-dataset.xyz
+targets:
+  energy:
+    key: "energy"
+    unit: "eV"
+```
+
+Then, you can use the `mtt eval` command to evaluate the model on a dataset:
+
+```bash
+mtt eval pet-mad-latest.pt options.yaml --batch-size=16 --extensions-dir=extensions --output=predictions.xyz
+```
+
+This will create a file called `predictions.xyz` with the predicted energies and forces for each 
+structure in the dataset. 
+
 ## Interfaces for Atomistic Simulations
 
 PET-MAD integrates with the following atomistic simulation engines:
