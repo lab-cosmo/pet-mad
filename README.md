@@ -55,6 +55,12 @@ conda activate pet-mad
 conda install -c metatensor -c conda-forge pet-mad
 ```
 
+## Pre-trained Models
+
+Currently, we provide the following pre-trained models:
+
+- **`latest`**: PET-MAD model trained on the MAD dataset, which contains 95,595 structures, including 3D and 2D inorganic crystals, surfaces, molecular crystals, nanoclusters, and molecules.
+
 ## Usage
 
 You can use the PET-MAD calculator, which is compatible with the Atomic Simulation Environment (ASE):
@@ -68,14 +74,6 @@ atoms.calc = PETMADCalculator(version="latest", device="cpu")
 energy = atoms.get_potential_energy()
 forces = atoms.get_forces()
 ```
-
-## Pre-trained Models
-
-Currently, we provide the following pre-trained models:
-
-- **`latest`**: PET-MAD model trained on the MAD dataset, which contains 95,595 structures, including 3D and 2D inorganic crystals, surfaces, molecular crystals, nanoclusters, and molecules.
-
-## Evaluation of PET-MAD
 
 Evaluation of PET-MAD on a desired dataset is available via 
 [`metatrain`](https://github.com/metatensor/metatrain), which is installed as a depencecy of PET-MAD.
@@ -105,7 +103,8 @@ mtt eval pet-mad-latest.pt options.yaml --batch-size=16 --extensions-dir=extensi
 ```
 
 This will create a file called `predictions.xyz` with the predicted energies and forces for each 
-structure in the dataset. 
+structure in the dataset. More details on how to use `metatrain` can be found in the
+[Metatrain documentation](https://metatensor.github.io/metatrain/latest/getting-started/usage.html#evaluation).
 
 ## Interfaces for Atomistic Simulations
 
