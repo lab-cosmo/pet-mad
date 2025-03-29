@@ -87,3 +87,12 @@ class PETMADCalculator(ase.calculators.calculator.Calculator):
     ) -> None:
         self._calculator.calculate(atoms, properties, system_changes)
         self.results = self._calculator.results
+
+    def compute_energy(
+        self,
+        atoms: ase.Atoms,
+        compute_forces_and_stresses: bool = False,
+    ) -> dict:
+        return self._calculator.compute_energy(
+            atoms, compute_forces_and_stresses=compute_forces_and_stresses
+        )
