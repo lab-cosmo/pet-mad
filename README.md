@@ -70,7 +70,8 @@ from pet_mad.calculator import PETMADCalculator
 from ase.build import bulk
 
 atoms = bulk("Si", cubic=True, a=5.43, crystalstructure="diamond")
-atoms.calc = PETMADCalculator(version="latest", device="cpu")
+pet_mad_calculator = PETMADCalculator(version="latest", device="cpu")
+atoms.calc = pet_mad_calculator
 energy = atoms.get_potential_energy()
 forces = atoms.get_forces()
 ```
