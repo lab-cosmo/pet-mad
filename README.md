@@ -70,12 +70,17 @@ from pet_mad.calculator import PETMADCalculator
 from ase.build import bulk
 
 atoms = bulk("Si", cubic=True, a=5.43, crystalstructure="diamond")
-atoms.calc = PETMADCalculator(version="latest", device="cpu")
+pet_mad_calculator = PETMADCalculator(version="latest", device="cpu")
+atoms.calc = pet_mad_calculator
 energy = atoms.get_potential_energy()
 forces = atoms.get_forces()
 ```
 
-Evaluation of PET-MAD on a desired dataset is available via 
+These ASE methods are ideal for single-structure evaluations, but they are inefficient
+for the evaluation on a large number of pre-defined structures. To perform efficient
+evaluation in that case, read [here](docs/README_BATCHED.md).
+
+Efficient evaluation of PET-MAD on a desired dataset is also available from the command line via 
 [`metatrain`](https://github.com/metatensor/metatrain), which is installed as a depencecy of PET-MAD.
 To evaluate the model, you first need to fetch the PET-MAD model from the HuggingFace repository:
 
@@ -146,7 +151,7 @@ Example for GPU-accelerated OpenMPI version:
 conda install -c metatensor -c conda-forge lammps-metatensor=*=cuda*openmpi*
 ```
 
-Please note, that this version is not KOKKOS-enabled, so it provides limited performance on GPUs.
+Please note that this version is not KOKKOS-enabled, so it provides limited performance on GPUs.
 A recipe to install the KOKKOS-enabled version of LAMMPS-METATENSOR is available [here](docs/README_KOKKOS.md),
 and a direct conda installation will also be available soon.
 
