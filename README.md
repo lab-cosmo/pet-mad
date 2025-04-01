@@ -181,29 +181,40 @@ mtt export https://huggingface.co/lab-cosmo/pet-mad/resolve/main/models/pet-mad-
 This will download the model and convert it to TorchScript format compatible with LAMMPS,
 using the `metatensor` and `metatrain` libraries, which PET-MAD is based on. 
 
-Prepare a **`lammps.in`** file:
+Prepare a **`lammps.in`** file using the metatensor `pair_style` and defining the
+mapping from LAMMPS types in the data file to elements PET-MAD can handle using the
+`pair_coeff * *` syntax. Here we use 14 for Si.
 
-```bash
-# LAMMPS input file
+```
 units metal
 atom_style atomic
+
 read_data silicon.data
-pair_style metatensor pet-mad-latest.pt device cpu extensions extensions/
-pair_coeff * * 14
+
+pair_style metatensor pet-mad-latest.pt &
+  device cpu &
+  extensions extensions
+pair_coeff * * 14  
+
 neighbor 2.0 bin
 timestep 0.001
+
 dump myDump all xyz 10 trajectory.xyz
 dump_modify myDump element Si
+
 thermo_style multi
 thermo 1
+
 velocity all create 300 87287 mom yes rot yes
+
 fix 1 all nvt temp 300 300 0.10
+
 run 100
 ```
 
-Create a **`silicon.data`** file:
+Create the **`silicon.data`** data file for a silicon system. 
 
-```bash
+```
 # LAMMPS data file for Silicon unit cell
 8 atoms
 1 atom types
