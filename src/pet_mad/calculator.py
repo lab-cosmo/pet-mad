@@ -23,14 +23,15 @@ METADATA = ModelMetadata(
         "Philip Loche",
         "Michele Ceriotti (michele.ceriotti@epfl.ch)",
     ],
-    references={},
+    references={
+        "architecture": ["https://arxiv.org/abs/2305.19302v3"],
+        "model": ["http://arxiv.org/abs/2503.14118"],
+    },
 )
 VERSIONS = ("latest", "1.0", "0.4.1", "0.3.2")
 BASE_URL = (
     "https://huggingface.co/lab-cosmo/pet-mad/resolve/{}/models/pet-mad-latest.ckpt"
 )
-
-logger = logging.getLogger(__name__)
 
 
 class PETMADCalculator(ase.calculators.calculator.Calculator):
