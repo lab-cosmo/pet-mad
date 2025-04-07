@@ -349,7 +349,7 @@ units metal
 atom_style atomic/kk
 read_data silicon.data
 run_style verlet/kk
-pair_style metatensor/kk pet-mad-latest.pt device cuda extensions extensions/
+pair_style metatensor/kk pet-mad-latest.pt device cuda extensions extensions/ check_consistency off
 pair_coeff * * 14
 neighbor 2.0 bin
 timestep 0.001
