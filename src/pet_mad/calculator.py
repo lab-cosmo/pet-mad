@@ -79,7 +79,7 @@ class PETMADCalculator(ase.calculators.calculator.Calculator):
             if not importlib.util.find_spec("pet_neighbors_convert"):
                 raise ImportError(
                     f"PET-MAD v{version} is now deprecated. Please consider using the "
-                    "`latest` version. If you still want to use it, please install the " 
+                    "`latest` version. If you still want to use it, please install the "
                     "pet-mad package with optional dependencies: "
                     "pip install pet-mad[deprecated]"
                 )
@@ -93,7 +93,9 @@ class PETMADCalculator(ase.calculators.calculator.Calculator):
             print(f"Downloading PET-MAD model version: {path}")
         model = load_model(path).export(METADATA)
         self.model = model
-        self._calculator = MetatensorCalculator(model, *args, **kwargs)
+        self._calculator = MetatensorCalculator(
+            model, *args, non_conservative=False, **kwargs
+        )
 
     def calculate(
         self,
