@@ -19,16 +19,16 @@ This repository contains **PET-MAD** - a universal interatomic potential for adv
 
 ## Installation
 
-You can install PET-MAD with pip:
-
-```bash
-pip install git+https://github.com/lab-cosmo/pet-mad.git
-```
-
-Or directly from PyPI (available soon):
+You can install PET-MAD using pip:
 
 ```bash
 pip install pet-mad
+```
+
+Or directly from this GitHub repository:
+
+```bash
+pip install git+https://github.com/lab-cosmo/pet-mad.git
 ```
 
 Alternatively, you can install PET-MAD using `conda` package manager, which is especially important
