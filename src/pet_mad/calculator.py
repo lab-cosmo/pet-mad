@@ -78,7 +78,7 @@ class PETMADCalculator(ase.calculators.calculator.Calculator):
         if version in ("1.0.0", "0.4.1", "0.3.2"):
             if not importlib.util.find_spec("pet_neighbors_convert"):
                 raise ImportError(
-                    f"PET-MAD v.{version} is now deprecated. Please consider using the "
+                    f"PET-MAD v{version} is now deprecated. Please consider using the "
                     "`latest` version. If you still want to use it, please install the " 
                     "pet-mad package with optional dependencies: "
                     "pip install pet-mad[deprecated]"
