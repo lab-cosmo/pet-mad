@@ -135,6 +135,10 @@ which enables PET-MAD support:
 conda install -c metatensor -c conda-forge lammps-metatensor
 ```
 
+> [!WARNING]
+> Running LAMMPS with GPU acceleration is currently disabled.
+> Please use the CPU version for now. We are working on enabling GPU support.
+
 For GPU-accelerated LAMMPS:
 
 ```bash
