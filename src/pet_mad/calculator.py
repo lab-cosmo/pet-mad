@@ -29,7 +29,7 @@ METADATA = ModelMetadata(
         "model": ["http://arxiv.org/abs/2503.14118"],
     },
 )
-VERSIONS = ("latest", "1.0.1", "1.0.0", "0.4.1", "0.3.2")
+VERSIONS = ("latest", "1.0.1", "1.0.0")
 BASE_URL = (
     "https://huggingface.co/lab-cosmo/pet-mad/resolve/{}/models/pet-mad-latest.ckpt"
 )
@@ -40,7 +40,7 @@ class PETMADCalculator(ase.calculators.calculator.Calculator):
     PET-MAD ASE Calculator
 
     :param version: PET-MAD version to use. Supported versions are "latest",
-    "v1.0.1", "1.0.0", "0.4.1", "0.3.2". Defaults to "latest".
+    "v1.0.1", "1.0.0". Defaults to "latest".
     :param checkpoint_path: path to a checkpoint file to load the model from. If
         provided, the `version` parameter is ignored.
     :param additional_outputs: Dictionary of additional outputs to be computed by
@@ -75,7 +75,7 @@ class PETMADCalculator(ase.calculators.calculator.Calculator):
             raise ValueError(
                 f"Version {version} is not supported. Supported versions are {VERSIONS}"
             )
-        if version in ("1.0.0", "0.4.1", "0.3.2"):
+        if version in ("1.0.0"):
             if not importlib.util.find_spec("pet_neighbors_convert"):
                 raise ImportError(
                     f"PET-MAD v{version} is now deprecated. Please consider using the "

@@ -15,8 +15,6 @@ def test_basic_usage():
         "latest",
         "1.0.1",
         "1.0.0",
-        "0.4.1",
-        "0.3.2",
     ],
 )
 def test_version(version):
