@@ -22,13 +22,7 @@ maintainers = [
 ]
 
 dependencies = [
-    "metatrain",
-    "pet-neighbors-convert",
-    "torch-geometric",
-    "matscipy",
-    "scikit-learn",
-    "pathos",
-    "scipy",
+    "metatrain==2025.6",
     "huggingface_hub",
 ]
 
@@ -62,6 +56,16 @@ requires = [
     "wheel",
 ]
 build-backend = "setuptools.build_meta"
+
+[project.optional-dependencies]
+deprecated = [
+    "pet-neighbors-convert",
+    "torch-geometric",
+    "matscipy",
+    "scikit-learn",
+    "pathos",
+    "scipy",
+]
 
 [tool.setuptools.packages.find]
 where = ["src"]
