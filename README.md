@@ -25,7 +25,7 @@ You can install PET-MAD using pip:
 pip install pet-mad
 ```
 
-Or directly from this GitHub repository:
+Or directly from the GitHub repository:
 
 ```bash
 pip install git+https://github.com/lab-cosmo/pet-mad.git
