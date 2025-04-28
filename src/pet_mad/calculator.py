@@ -55,10 +55,6 @@ class PETMADCalculator(ase.calculators.calculator.Calculator):
         running, defaults to False.
     :param device: torch device to use for the calculation. If `None`, we will try
         the options in the model's `supported_device` in order.
-    :param non_conservative: if ``True``, the model will be asked to
-        compute non-conservative forces and stresses. This can afford a speed-up,
-        potentially at the expense of physical correctness (especially in molecular
-        dynamics simulations).
     """
 
     implemented_properties = ase.calculators.calculator.all_properties
