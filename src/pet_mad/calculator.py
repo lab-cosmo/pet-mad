@@ -7,7 +7,7 @@ import ase.calculators.calculator
 from metatensor.torch.atomistic import ModelMetadata
 from metatensor.torch.atomistic.ase_calculator import MetatensorCalculator
 from metatrain.utils.io import load_model
-import importlib
+from importlib.util import find_spec
 
 
 METADATA = ModelMetadata(
@@ -76,7 +76,7 @@ class PETMADCalculator(ase.calculators.calculator.Calculator):
                 f"Version {version} is not supported. Supported versions are {VERSIONS}"
             )
         if version in ("1.0.0"):
-            if not importlib.util.find_spec("pet_neighbors_convert"):
+            if not find_spec("pet_neighbors_convert"):
                 raise ImportError(
                     f"PET-MAD v{version} is now deprecated. Please consider using the "
                     "`latest` version. If you still want to use it, please install the "
