@@ -246,8 +246,8 @@ the serial version and `lmp_mpi` for the MPI version. Because of that,
 the running command will be different depending on the version:
 
 ```bash
-lmp_serial -in lammps.in  # Serial version
-mpirun -np 1 lmp_mpi -in lammps.in  # MPI version
+lmp -in lammps.in  # For serial version
+mpirun -np 1 lmp -in lammps.in  # For MPI version
 ```
 
 ### 3. Important Notes
