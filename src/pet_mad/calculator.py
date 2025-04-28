@@ -7,6 +7,7 @@ import ase.calculators.calculator
 from metatensor.torch.atomistic import ModelMetadata
 from metatensor.torch.atomistic.ase_calculator import MetatensorCalculator
 from metatrain.utils.io import load_model
+from importlib.util import find_spec
 
 
 METADATA = ModelMetadata(
@@ -28,7 +29,7 @@ METADATA = ModelMetadata(
         "model": ["http://arxiv.org/abs/2503.14118"],
     },
 )
-VERSIONS = ("latest", "1.0", "0.4.1", "0.3.2")
+VERSIONS = ("latest", "1.0.1", "1.0.0")
 BASE_URL = (
     "https://huggingface.co/lab-cosmo/pet-mad/resolve/{}/models/pet-mad-latest.ckpt"
 )
@@ -38,8 +39,8 @@ class PETMADCalculator(ase.calculators.calculator.Calculator):
     """
     PET-MAD ASE Calculator
 
-    :param version: PET-MAD version to use. Supported versions are "latest", "1.0",
-        "0.4.1", "0.3.2". Defaults to "latest".
+    :param version: PET-MAD version to use. Supported versions are "latest",
+    "v1.0.1", "1.0.0". Defaults to "latest".
     :param checkpoint_path: path to a checkpoint file to load the model from. If
         provided, the `version` parameter is ignored.
     :param additional_outputs: Dictionary of additional outputs to be computed by
@@ -70,15 +71,27 @@ class PETMADCalculator(ase.calculators.calculator.Calculator):
             raise ValueError(
                 f"Version {version} is not supported. Supported versions are {VERSIONS}"
             )
+        if version in ("1.0.0"):
+            if not find_spec("pet_neighbors_convert"):
+                raise ImportError(
+                    f"PET-MAD v{version} is now deprecated. Please consider using the "
+                    "`latest` version. If you still want to use it, please install the "
+                    "pet-mad package with optional dependencies: "
+                    "pip install pet-mad[deprecated]"
+                )
+
         if checkpoint_path is not None:
             logging.info(f"Loading PET-MAD model from checkpoint: {checkpoint_path}")
             path = checkpoint_path
         else:
             logging.info(f"Downloading PET-MAD model version: {version}")
-            path = BASE_URL.format(version if version != "latest" else "main")
+            path = BASE_URL.format(f"v{version}" if version != "latest" else "main")
+            print(f"Downloading PET-MAD model version: {path}")
         model = load_model(path).export(METADATA)
         self.model = model
-        self._calculator = MetatensorCalculator(model, *args, **kwargs)
+        self._calculator = MetatensorCalculator(
+            model, *args, non_conservative=False, **kwargs
+        )
 
     def calculate(
         self,

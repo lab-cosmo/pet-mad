@@ -59,7 +59,9 @@ conda install -c metatensor -c conda-forge pet-mad
 
 Currently, we provide the following pre-trained models:
 
-- **`latest`**: PET-MAD model trained on the MAD dataset, which contains 95,595 structures, including 3D and 2D inorganic crystals, surfaces, molecular crystals, nanoclusters, and molecules.
+- **`v1.1`** or **`latest`**: The updated PET-MAD model with an ability to run simulations using the non-conservative forces and stresses (temporarily disabled).
+- **`v1.0.1`**: The updated PET-MAD model with a new, pure PyTorch backend and slightly improved performance.
+- **`v1.0.0`**: PET-MAD model trained on the MAD dataset, which contains 95,595 structures, including 3D and 2D inorganic crystals, surfaces, molecular crystals, nanoclusters, and molecules.
 
 ## Usage
 
@@ -132,6 +134,10 @@ which enables PET-MAD support:
 ```bash
 conda install -c metatensor -c conda-forge lammps-metatensor
 ```
+
+> [!WARNING]
+> Running LAMMPS with GPU acceleration is currently disabled.
+> Please use the CPU version for now. We are working on enabling GPU support.
 
 For GPU-accelerated LAMMPS:
 
@@ -244,8 +250,8 @@ the serial version and `lmp_mpi` for the MPI version. Because of that,
 the running command will be different depending on the version:
 
 ```bash
-lmp_serial -in lammps.in  # Serial version
-mpirun -np 1 lmp_mpi -in lammps.in  # MPI version
+lmp -in lammps.in  # For serial version
+mpirun -np 1 lmp -in lammps.in  # For MPI version
 ```
 
 ### 3. Important Notes

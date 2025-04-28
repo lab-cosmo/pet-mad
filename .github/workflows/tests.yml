@@ -42,6 +42,7 @@ jobs:
     - name: run Python tests
       run: |
         tox -e tests
+        tox -e deprecated-pet-tests
       env:
         # Use the CPU only version of torch when building/running the code
         PIP_EXTRA_INDEX_URL: https://download.pytorch.org/whl/cpu
