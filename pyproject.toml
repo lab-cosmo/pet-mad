@@ -4,7 +4,7 @@ dynamic = ["version"]
 requires-python = ">=3.9"
 
 readme = "README.md"
-license = {text = "BSD-3-Clause"}
+license = "BSD-3-Clause"
 description = "A universal interatomic potential for advanced materials modeling"
 authors = [
   {name = "Arslan Mazitov", email = "arslan.mazitov@epfl.ch"},
