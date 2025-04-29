@@ -8,7 +8,14 @@ from metatensor.torch.atomistic import ModelMetadata
 from metatensor.torch.atomistic.ase_calculator import MetatensorCalculator
 from metatrain.utils.io import load_model
 from importlib.util import find_spec
+import warnings
 
+warnings.filterwarnings(
+    "ignore",
+    message=(
+        "PET assumes that Cartesian tensors"
+    ),
+)
 
 METADATA = ModelMetadata(
     name="PET-MAD",
