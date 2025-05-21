@@ -24,13 +24,13 @@ maintainers = [
 dependencies = [
     "metatrain==2025.6",
     "huggingface_hub",
+    "platformdirs",
 ]
 
 keywords = ["machine learning", "molecular modeling"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: BSD License",
     "Operating System :: POSIX",
     "Operating System :: MacOS :: MacOS X",
     "Operating System :: Microsoft :: Windows",
