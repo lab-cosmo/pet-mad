@@ -1,20 +1,19 @@
 import logging
 from typing import List, Optional
+from platformdirs import user_cache_dir
 
 import ase
 import ase.calculators
 import ase.calculators.calculator
 from metatensor.torch.atomistic import ModelMetadata
 from metatensor.torch.atomistic.ase_calculator import MetatensorCalculator
-from metatrain.utils.io import load_model
+from metatrain.utils.io import load_model as load_metatrain_model
 from importlib.util import find_spec
 import warnings
 
 warnings.filterwarnings(
     "ignore",
-    message=(
-        "PET assumes that Cartesian tensors"
-    ),
+    message=("PET assumes that Cartesian tensors"),
 )
 
 METADATA = ModelMetadata(
@@ -78,7 +77,7 @@ class PETMADCalculator(ase.calculators.calculator.Calculator):
             raise ValueError(
                 f"Version {version} is not supported. Supported versions are {VERSIONS}"
             )
-        if version in ("1.0.0"):
+        if version in ["1.0.0"]:
             if not find_spec("pet_neighbors_convert"):
                 raise ImportError(
                     f"PET-MAD v{version} is now deprecated. Please consider using the "
@@ -93,8 +92,13 @@ class PETMADCalculator(ase.calculators.calculator.Calculator):
         else:
             logging.info(f"Downloading PET-MAD model version: {version}")
             path = BASE_URL.format(f"v{version}" if version != "latest" else "main")
-        model = load_model(path).export(METADATA)
-        self.model = model
+        model = load_metatrain_model(path).export(METADATA)
+
+        cache_dir = user_cache_dir("pet-mad", "metatensor")
+        pt_path = cache_dir + f"pet-mad-{version}.pt"
+        logging.info(f"Exporting checkpoint to TorchScript at {pt_path}")
+        model.save(pt_path)
+
         self._calculator = MetatensorCalculator(
             model, *args, non_conservative=False, **kwargs
         )
