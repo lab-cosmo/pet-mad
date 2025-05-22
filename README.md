@@ -20,14 +20,16 @@ This repository contains **PET-MAD** - a universal interatomic potential for adv
 ## Table of Contents
 1. [Installation](#installation)
 2. [Pre-trained Models](#pre-trained-models)
-3. [Usage](#usage)
-   - [Interfaces for Atomistic Simulations](#interfaces-for-atomistic-simulations)
-   - [Running PET-MAD with LAMMPS](#running-pet-mad-with-lammps)
-   - [Running PET-MAD with empirical dispersion corrections](#running-pet-mad-with-empirical-dispersion-corrections)
-4. [Examples](#examples)
-5. [Fine-tuning](#fine-tuning)
-6. [Documentation](#documentation)
-7. [Citing PET-MAD](#citing-pet-mad)
+3. [Interfaces for Atomistic Simulations](#interfaces-for-atomistic-simulations)
+4. [Usage](#usage)
+  - [ASE Interface](#ase-interface)
+  - [Evaluating PET-MAD on a dataset](#evaluating-pet-mad-on-a-dataset)
+  - [Running PET-MAD with LAMMPS](#running-pet-mad-with-lammps)
+  - [Running PET-MAD with empirical dispersion corrections](#running-pet-mad-with-empirical-dispersion-corrections)
+5. [Examples](#examples)
+6. [Fine-tuning](#fine-tuning)
+7. [Documentation](#documentation)
+8. [Citing PET-MAD](#citing-pet-mad)
 
 ## Installation
 
@@ -75,8 +77,19 @@ Currently, we provide the following pre-trained models:
 - **`v1.0.1`**: The updated PET-MAD model with a new, pure PyTorch backend and slightly improved performance.
 - **`v1.0.0`**: PET-MAD model trained on the MAD dataset, which contains 95,595 structures, including 3D and 2D inorganic crystals, surfaces, molecular crystals, nanoclusters, and molecules.
 
+## Interfaces for Atomistic Simulations
+
+PET-MAD integrates with the following atomistic simulation engines:
+
+- **Atomic Simulation Environment (ASE)**
+- **LAMMPS** (including the KOKKOS support)
+- **i-PI**
+- **OpenMM** (coming soon)
+- **GROMACS** (coming soon)
+
 ## Usage
 
+### ASE Interface
 You can use the PET-MAD calculator, which is compatible with the Atomic Simulation Environment (ASE):
 
 ```python
@@ -94,6 +107,7 @@ These ASE methods are ideal for single-structure evaluations, but they are ineff
 for the evaluation on a large number of pre-defined structures. To perform efficient
 evaluation in that case, read [here](docs/README_BATCHED.md).
 
+### Evaluating PET-MAD on a dataset
 Efficient evaluation of PET-MAD on a desired dataset is also available from the command line via 
 [`metatrain`](https://github.com/metatensor/metatrain), which is installed as a depencecy of PET-MAD.
 To evaluate the model, you first need to fetch the PET-MAD model from the HuggingFace repository:
@@ -102,10 +116,9 @@ To evaluate the model, you first need to fetch the PET-MAD model from the Huggin
 mtt export https://huggingface.co/lab-cosmo/pet-mad/resolve/main/models/pet-mad-latest.ckpt
 ```
 
-This command will download the model and convert it to TorchScript format, also collecting the
-libraries required to run the model in the `extensions` folder. Then you need to create the 
-`options.yaml` file and specify the dataset you want to evaluate the model on 
-(where the dataset is stored in `extxyz` format):
+This command will download the model and convert it to TorchScript format. Then you need to create the `options.yaml` file and specify
+the dataset you want to evaluate the model on (where the dataset is
+stored in `extxyz` format):
 
 ```yaml
 systems: your-test-dataset.xyz
@@ -124,16 +137,6 @@ mtt eval pet-mad-latest.pt options.yaml --batch-size=16 --extensions-dir=extensi
 This will create a file called `predictions.xyz` with the predicted energies and forces for each 
 structure in the dataset. More details on how to use `metatrain` can be found in the
 [Metatrain documentation](https://metatensor.github.io/metatrain/latest/getting-started/usage.html#evaluation).
-
-## Interfaces for Atomistic Simulations
-
-PET-MAD integrates with the following atomistic simulation engines:
-
-- **Atomic Simulation Environment (ASE)**
-- **LAMMPS** (including the KOKKOS support)
-- **i-PI**
-- **OpenMM** (coming soon)
-- **GROMACS** (coming soon)
 
 ## Running PET-MAD with LAMMPS
 
