@@ -84,7 +84,9 @@ class PETMADCalculator(MetatensorCalculator):
             path = checkpoint_path
         else:
             logging.info(f"Downloading PET-MAD model version: {version}")
-            path = BASE_URL.format(f"v{version}" if version not in ("latest", "1.1.0") else "main")
+            path = BASE_URL.format(
+                f"v{version}" if version not in ("latest", "1.1.0") else "main"
+            )
         model = load_metatrain_model(path).export(METADATA)
 
         cache_dir = user_cache_dir("pet-mad", "metatensor")
