@@ -140,7 +140,7 @@ structure in the dataset. More details on how to use `metatrain` can be found in
 
 ## Running PET-MAD with LAMMPS
 
-### 1. Install LAMMPS with PET-MAD Support
+### 1. Install LAMMPS with PET-MAD support
 
 To use PET-MAD with LAMMPS, you need to first install PET-MAD from `conda`
 (see the installation instructions above). Then, install **LAMMPS-METATENSOR**,
@@ -266,9 +266,9 @@ lmp -in lammps.in  # For serial version
 mpirun -np 1 lmp -in lammps.in  # For MPI version
 ```
 
-#### 2.2. KOKKOS GPU version
+#### 2.2. KOKKOS-enabled GPU version
 
-Running LAMMPS with KOKKOS GPU support is similar to the CPU version, but you need to
+Running LAMMPS with KOKKOS and GPU support is similar to the CPU version, but you need to
 change the `lammps.in` slightly and run `lmp` binary with a few additional flags.
 
 The updated `lammps.in` file looks like this:
