@@ -1,6 +1,9 @@
+import importlib.util
 import logging
-from typing import List, Optional
+import os
+import warnings
 from platformdirs import user_cache_dir
+from typing import List, Optional
 
 import ase
 import ase.calculators
@@ -8,8 +11,7 @@ import ase.calculators.calculator
 from metatensor.torch.atomistic import ModelMetadata
 from metatensor.torch.atomistic.ase_calculator import MetatensorCalculator
 from metatrain.utils.io import load_model as load_metatrain_model
-from importlib.util import find_spec
-import warnings
+
 
 warnings.filterwarnings(
     "ignore",
@@ -77,14 +79,17 @@ class PETMADCalculator(ase.calculators.calculator.Calculator):
             raise ValueError(
                 f"Version {version} is not supported. Supported versions are {VERSIONS}"
             )
-        if version in ["1.0.0"]:
-            if not find_spec("pet_neighbors_convert"):
+
+        extensions_directory = None
+        if version == "1.0.0":
+            if not importlib.util.find_spec("pet_neighbors_convert"):
                 raise ImportError(
                     f"PET-MAD v{version} is now deprecated. Please consider using the "
                     "`latest` version. If you still want to use it, please install the "
                     "pet-mad package with optional dependencies: "
                     "pip install pet-mad[deprecated]"
                 )
+                extensions_directory = "extensions"
 
         if checkpoint_path is not None:
             logging.info(f"Loading PET-MAD model from checkpoint: {checkpoint_path}")
@@ -95,12 +100,20 @@ class PETMADCalculator(ase.calculators.calculator.Calculator):
         model = load_metatrain_model(path).export(METADATA)
 
         cache_dir = user_cache_dir("pet-mad", "metatensor")
-        pt_path = cache_dir + f"pet-mad-{version}.pt"
+        os.makedirs(cache_dir, exist_ok=True)
+
+        pt_path = cache_dir + f"/pet-mad-{version}.pt"
+        extensions_directory = (
+            (cache_dir + "/" + extensions_directory)
+            if extensions_directory is not None
+            else None
+        )
+
         logging.info(f"Exporting checkpoint to TorchScript at {pt_path}")
-        model.save(pt_path)
+        model.save(pt_path, collect_extensions=extensions_directory)
 
         self._calculator = MetatensorCalculator(
-            model, *args, non_conservative=False, **kwargs
+            pt_path, *args, non_conservative=False, **kwargs
         )
 
     def calculate(
