@@ -17,7 +17,7 @@ This repository contains **PET-MAD** - a universal interatomic potential for adv
 - **Infrastructure**: Various MD engines are available for diverse research and application needs.
 - **HPC Compatibility**: Efficient in HPC environments for extensive simulations.
 
-# Table of Contents
+## Table of Contents
 1. [Installation](#installation)
 2. [Pre-trained Models](#pre-trained-models)
 3. [Usage](#usage)
