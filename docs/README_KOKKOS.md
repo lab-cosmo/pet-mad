@@ -1,22 +1,15 @@
-# Building LAMMPS-METATENSOR with KOKKOS support
+# Building LAMMPS-METATENSOR from source with KOKKOS support
 
 The original LAMMPS-METATENSOR package is distributed via Anaconda,
 where the pre-build binaries are available for CPU and GPU versions
 of the code. This allows for easy installation, which does not reqiure
 building from source, and thus make the life easier for the users.
 
-By default, KOKKOS can be only compiled for a specific GPU architecture.
-In the Anaconda distributions we therefore compiled the LAMMPS with KOKKOS
-package against the lowest supported GPU architecture, which is Keppler (3.5)
-in the case of CUDA 11.8 build and Maxwell (5.0) in the case of CUDA version
-12.6. However, it is possible to run the code more modern GPU architectures
-thanks to PTX, which translates the CUDA code on-the-fly. 
-
-Unfortunately, this pipeline was broken in CUDA version 12.6, which makes
-impossible using the code for the modern GPUs. More details are available
-in [this](https://matsci.org/t/support-for-multiple-gpu-architectures/61693/8)
-thread. Thus, to use KOKKOS-enabled LAMMPS on the modern GPUs, one needs to
-build the code from source. This document describes how to do it.
+However, if the conda installation didn't work for you (for example,
+if additional LAMMPS packages or compilation flags are required), you
+can build the LAMMPS-METATENSOR from source. This guide will help
+you to build the KOKKOS-enabled version of LAMMPS-METATENSOR with
+PET-MAD support.
 
 ## Prerequisites
 
@@ -61,57 +54,65 @@ options for the build process.
 The `meta.yaml` file for the LAMMPS-KOKKOS package is as follows:
 
 ```yaml
-{% set version = "27Jun2024" %}
-{% set build = 0 %}
-{% set cuda_major = environ.get("cuda_compiler_version", "0.0").split(".")[0]|int %}
+{% set version = "2Apr2025" %}
+{% set date = datetime.datetime.strptime(version, "%d%b%Y") %}
+{% set conda_version = "{:%Y.%m.%d}".format(date) %}
 
-# Use a higher build number for the CUDA variant, to ensure that it's
-# preferred by conda's solver, and it's preferentially
-# installed where the platform supports it.
-{% if cuda_compiler_version != "None" %}
-{% set build = build + 200 %}
+{% set build = 1 %}
+{% set git_rev = "12b2d26ed286fd4d8c4c7a340257aecb2e4b0e55" %}
+# increase this by 1 everytime you change the git commit above without also
+# changing the `version`
+{% set git_rev_count = "0" %}
+
+# Use a higher build number for prefered variants, to ensure that they are
+# picked first by conda's solver, and installed where the platform supports it.
+{% if cuda_compiler_version == "None" %}
+# pick CPU before GPU
+{% set build = build + 10000 %}
+{% endif %}
+
+# pick openmpi first, then mpich, then no-mpi variant
+{% if mpi == 'openmpi' %}
+  {% set build = build + 2000 %}
 {% endif %}
 
 {% if mpi == 'mpich' %}
-{% set build = build + 50 %}
+  {% set build = build + 1000 %}
 {% endif %}
 
-{% if mpi == 'openmpi' %}
-{% set build = build + 100 %}
+{% if mpi != 'nompi' %}
+  {% set mpi_prefix = "mpi_" + mpi %}
+{% else %}
+  {% set mpi_prefix = "nompi" %}
+{% endif %}
+
+{% if cuda_compiler_version != "None" %}
+  {% set cuda_prefix = "cuda" + environ.get("cuda_compiler_version", "0.0").replace(".", "") %}
+  {% set cuda_prefix = cuda_prefix + "_kokkos_arch_" + environ.get("kokkos_arch", "") %}
+{% else %}
+  {% set cuda_prefix = "cpu" %}
 {% endif %}
 
 
 package:
   name: lammps-metatensor
-  version: {{ version }}
+  version: {{ conda_version }}.mts{{ git_rev_count }}
 
 source:
   git_url: https://github.com/metatensor/lammps.git
+  git_rev: {{ git_rev }}
   depth: 1
-{% if cuda_compiler_version != "None" %}
-  git_rev: kokkos-pet-mad
-{% endif %}
+  patches:
+    - kokkos-log2-vectorsize.patch
+
+
 build:
   number: {{ build }}
-  {% if mpi != 'nompi' %}
-  {% set mpi_prefix = "mpi_" + mpi %}
-  {% else %}
-  {% set mpi_prefix = "nompi" %}
-  {% endif %}
   skip: True  # [win]
-  skip: True  # [cuda_compiler_version == "10.2"]
-  skip: True  # [cuda_compiler_version == "11.2"]
-  track_features:
-    - cudatoolkit               # [cuda_compiler_version != "None"]
-  string: cuda{{ cuda_compiler_version | replace('.', '') }}_py{{ CONDA_PY }}_h{{ PKG_HASH }}_{{ mpi_prefix }}_{{ PKG_BUILDNUM }}  # [cuda_compiler_version != "None"]
-  string: cpu_py{{ CONDA_PY }}_h{{ PKG_HASH }}_{{ mpi_prefix }}_{{ PKG_BUILDNUM }} # [cuda_compiler_version == "None"]
-  script_env:
-{% if cuda_major == 11 %}
-    - Kokkos_OPT_ARGS=-DKokkos_ARCH_KEPLER35=ON
-{% endif %}
-{% if cuda_major == 12 %}
-    - Kokkos_OPT_ARGS=-DKokkos_ARCH_MAXWELL50=ON
-{% endif %}
+  skip: True  # [cuda_compiler_version == "11.8"]
+  skip: True  # [linux and kokkos_arch == "None" and cuda_compiler_version != "None"]
+  skip: True  # [linux and kokkos_arch != "None" and cuda_compiler_version == "None"]
+  string: {{cuda_prefix}}_h{{ PKG_HASH }}_{{ mpi_prefix }}_git.{{ git_rev[:7] }}_{{ PKG_BUILDNUM }}
 
 
 requirements:
@@ -119,51 +120,51 @@ requirements:
     - {{ compiler('c') }}
     - {{ compiler('cxx') }}
     - {{ stdlib("c") }}
-    - {{ compiler('cuda') }}    # [cuda_compiler_version != "None"]
-    - rust
+    - {{ compiler('cuda') }}  # [cuda_compiler_version != "None"]
+    - {{ mpi }}               # [build_platform != target_platform and mpi == "openmpi"]
     - make
-    - cmake=3.28
+    - cmake
+    - pkg-config
+    - llvm-openmp  # [osx]
+    - libgomp      # [linux]
+
   host:
     - {{ mpi }}  # [mpi != 'nompi']
-    - cuda-version {{ environ.get("cuda_compiler_version") }}.*  # [cuda_compiler_version != "None"]
-    {% if cuda_major == 11 %}
-    - cudatoolkit {{ environ.get("cuda_compiler_version") }}.*
-    {% endif %}
-    {% if cuda_major == 12 %}
-    - nvidia/label/cuda-{{ environ.get("cuda_compiler_version") }}.*::cuda-toolkit # [cuda_compiler_version != "None"]
-    - cuda-cudart-dev
-    - cuda-driver-dev
-    {% endif %}
-    - libtorch  =*=cpu*  # [cuda_compiler_version == "None"]
-    - libtorch  =*=cuda{{ cuda_compiler_version | replace('.', '') }}*  # [cuda_compiler_version != "None"]
-    - fftw
+    - cuda-version {{ cuda_compiler_version }} # [cuda_compiler_version != "None"]
+    - cuda-toolkit  {{ cuda_compiler_version }} # [cuda_compiler_version != "None"]
     - fftw * {{ mpi_prefix }}_*
-    - mkl
-    - gsl
-    - voro
-    # https://github.com/lammps/lammps/blob/8389e2eb8074712b6850b3bf25fd3c3852e36f10/src/PLUMED/fix_plumed.cpp#L80-L82
-    - plumed >=2.4,<2.10 # [target_platform == linux-64]
-    - plumed * {{ mpi_prefix }}_*  # [target_platform == linux-64 and mpi != 'nompi' and build_platform == target_platform]
+    - plumed
+    - libmetatensor-torch >=0.7.6,<0.8.0
+    # always build against the CPU version of libtorch, we can still pick the
+    # cuda one at runtime
+    - libtorch * cpu*
   run:
     - {{ mpi }}  # [mpi != 'nompi']
-    - __cuda  # [cuda_compiler_version != "None"]
-    - mkl
-    - libtorch  =*=cpu*  # [cuda_compiler_version == "None"]
-    - libtorch  =*=cuda{{ cuda_compiler_version | replace('.', '') }}*  # [cuda_compiler_version != "None"]
+    - plumed
+    - libmetatensor-torch >=0.7.6,<0.8.0
+    - libmetatensor >=0.1.14,<0.2.0
+    - {{ pin_compatible('cuda-version', max_pin='x', min_pin='x') }}  # [cuda_compiler_version != "None"]
+    - libcufft  # [cuda_compiler_version != "None"]
+
+test:
+  commands:
+    - export OMPI_MCA_plm_rsh_agent=false
+    - lmp -h  # [mpi == 'nompi' and cuda_compiler_version == "None"]
+    - mpirun -np 2 lmp -h  # [mpi != 'nompi' and cuda_compiler_version == "None"]
 
 about:
-  home: https://docs.metatensor.org/latest/index.html
-  license: BSD-3-Clause
-  license_family: BSD
+  home: https://docs.metatensor.org/metatomic/latest/engines/lammps.html
+  license:  GPL-2.0-only
+  license_family: GPL
   summary: 'Metatensor-enabled version of LAMMPS'
-  description: |
-    Metatensor-enabled version of LAMMPS
-  doc_url: https://docs.metatensor.org/latest/atomistic/engines/lammps.html
+  description: Metatensor-enabled version of LAMMPS
+  doc_url: https://docs.metatensor.org/metatomic/latest/engines/lammps.html
   dev_url: https://github.com/metatensor/lammps
 
 extra:
   recipe-maintainers:
     - abmazitov
+    - Luthaf
 ```
 
 The `build.sh` script is as follows:
@@ -172,73 +173,68 @@ The `build.sh` script is as follows:
 #!/bin/bash
 
 PLATFORM=$(uname)
-args=""
 
 if [[ "$PLATFORM" == 'Darwin' ]]; then
   BUILD_OMP=OFF
-else
+elif [[ "$PLATFORM" == 'Linux' ]]; then
   BUILD_OMP=ON
   if [[ ${cuda_compiler_version} != "None" ]]; then
-    CUDA_TOOLKIT_ROOT_DIR=$BUILD_PREFIX/targets/x86_64-linux
-    args=$args" -DPKG_KOKKOS=ON -DKokkos_ENABLE_OPENMP=ON -DKokkos_ENABLE_CUDA=ON ${Kokkos_OPT_ARGS} -DCUDA_TOOLKIT_ROOT_DIR=$CUDA_TOOLKIT_ROOT_DIR "
-  fi
-  # PLUMED (for now only available on linux)
-  args=$args" -DPKG_PLUMED=ON "
-  if [[ ${mpi} != "nompi" ]]; then
-    MPICC=mpicc
-    MPICXX=mpicxx
-    args=$args" -DPLUMED_CONFIG_CC=$MPICC -DPLUMED_CONFIG_CXX=$MPICXX "
-  fi
+    CMAKE_ARGS="$CMAKE_ARGS -DPKG_KOKKOS=ON -DKokkos_ENABLE_OPENMP=ON -DKokkos_ENABLE_CUDA=ON"
+    # inspired by lammps' `cmake/presets/kokkos-cuda.cmake`
+    CMAKE_ARGS="$CMAKE_ARGS -DFFT_KOKKOS=CUFFT"
+    CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_CXX_COMPILER=$(pwd)/lib/kokkos/bin/nvcc_wrapper"
+    CMAKE_ARGS="$CMAKE_ARGS -DKokkos_ENABLE_DEPRECATION_WARNINGS=OFF"
+    CMAKE_ARGS="$CMAKE_ARGS -DKokkos_ARCH_${kokkos_arch}=ON"
 
+    # silent a warning about "calling a constexpr __host__ function from a __host__ __device__ function"
+    CMAKE_ARGS="$CMAKE_ARGS -DCMAKE_CXX_FLAGS=--expt-relaxed-constexpr"
+  else
+    # Make sure to link to `libtorch.so` and not just `libtorch_cpu.so`. This
+    # way, the code will try to load `libtorch_cuda.so` as well, enabling cuda
+    # device where available even when not using kokkos.
+    export LDFLAGS="-lm -ldl -Wl,--no-as-needed,$PREFIX/lib/libtorch.so -Wl,--as-needed"
+  fi
 fi
-
-# Parallel and library
-export LDFLAGS="-L$PREFIX/lib $LDFLAGS"
-export LD_LIBRARY_PATH="$PREFIX/lib:$LD_LIBRARY_PATH"
 
 if [ "${mpi}" == "nompi" ]; then
   ENABLE_MPI=OFF
 else
   ENABLE_MPI=TRUE
-  export LDFLAGS="-lmpi ${LDFLAGS}"
 fi
 
 
 mkdir build && cd build
 
-cmake -DPKG_ML-METATENSOR=ON \
+cmake -DCMAKE_INSTALL_PREFIX=$PREFIX \
+      -DCMAKE_INSTALL_RPATH_USE_LINK_PATH=TRUE \
       -DLAMMPS_INSTALL_RPATH=ON \
-      -DCMAKE_PREFIX_PATH="$TORCH_PREFIX" \
+      -DBUILD_OMP=$BUILD_OMP \
+      -DENABLE_MPI=$ENABLE_MPI \
+      -DWITH_JPEG=OFF \
+      -DWITH_PNG=OFF \
       -DPKG_REPLICA=ON \
       -DPKG_MC=ON \
       -DPKG_MOLECULE=ON \
       -DPKG_MISC=ON \
+      -DPKG_PLUMED=ON \
+      -DDOWNLOAD_PLUMED=OFF \
+      -DPLUMED_MODE="shared" \
       -DPKG_KSPACE=ON \
       -DPKG_MANIFOLD=ON \
+      -DPKG_ML-METATENSOR=ON \
+      -DDOWNLOAD_METATENSOR=OFF \
       -DPKG_QTB=ON \
       -DPKG_REACTION=ON \
       -DPKG_RIGID=ON \
       -DPKG_SHOCK=ON \
       -DPKG_SPIN=ON \
-      -DPKG_VORONOI=ON \
       -DPKG_MPIIO=$ENABLE_MPI \
       -DPKG_EXTRA_PAIR=ON \
-      -DBUILD_OMP=$BUILD_OMP \
-      -DENABLE_MPI=$ENABLE_MPI \
-      -DCMAKE_INSTALL_PREFIX=$PREFIX \
-      -DCMAKE_INSTALL_RPATH_USE_LINK_PATH=TRUE \
-      -DCMAKE_INSTALL_RPATH=$PREFIX/lib \
-      $args \
+      $CMAKE_ARGS \
       ../cmake
 
 cmake --build . --parallel ${CPU_COUNT} -- VERBOSE=1
 cmake --build . --target install
-
-if [ "${mpi}" == "nompi" ]; then
-  cp lmp ${PREFIX}/bin/lmp_serial
-else
-  cp lmp ${PREFIX}/bin/lmp_mpi
-fi
 ```
 
 In this file, it is possible to add or remove the LAMMPS packages, which are
@@ -278,6 +274,8 @@ gsl:
 - '2.7'
 mpi:
 - openmpi
+kokkos_arch:
+- AMPERE80
 mpich:
 - '4'
 openmpi:
@@ -291,14 +289,15 @@ build the package.
 
 ## Building the package
 
-In order to adapt the build recipe for your system, you need to check that the following
-variables are set correctly:
+In order to adapt the build recipe for your system, you need to check that the 
+following variables are set correctly in the `conda_build_config.yaml`
 
-- `Kokkos_OPT_ARGS=-DKokkos_ARCH_KEPLER35=ON` - check that here the correct version of the
-    GPU architecture is set in `meta.yaml`. The available options can be found
-    [here](https://kokkos.org/kokkos-core-wiki/get-started/configuration-guide.html#nvidia-gpus).
-- `mpi` - check that the correct MPI implementation is set in `conda_build_config.yaml`.
-    The avaiable options are: `nompi`, `mpich`, `openmpi`.
+- `kokkos_arch` - check that here the correct version of the GPU architecture is set. 
+  The available options can be found
+    [here](https://kokkos.org/kokkos-core-wiki/get-started/configuration-guide.html#nvidia-gpus), 
+    and [here](https://developer.nvidia.com/cuda-gpus). 
+- `mpi` - check that the correct MPI implementation is set in.
+  The avaiable options are: `nompi`, `mpich`, `openmpi`.
 
 The package can be built using the following command (to be run from the "root" directory of this
 guide, i.e., the one which contains `lammps-kokkos\`):
@@ -333,70 +332,3 @@ This will install the package into the current conda environment. You might need
 check that the package which is planned to install is the same, as the one you built.
 Otherwise, copy the exact name of the package from the output of the `conda search`
 command.
-
-## Running KOKKOS-enabled LAMMPS-METATENSOR with PET-MAD
-
-After the installation of the KOKKOS-enabled LAMMPS-METATENSOR, you can run the
-simulation with PET-MAD. The procedure is the same as for the plain GPU-accelerated
-LAMMPS, but involves a few changes in the input files to activate the KOKKOS-enabled
-subroutines.
-
-The example of the input file **`lammps.in`** is as follows:
-
-```bash
-# LAMMPS input file with KOKKOS support
-units metal
-atom_style atomic/kk
-read_data silicon.data
-run_style verlet/kk
-pair_style metatensor/kk pet-mad-latest.pt device cuda extensions extensions/ check_consistency off
-pair_coeff * * 14
-neighbor 2.0 bin
-timestep 0.001
-dump myDump all xyz 10 trajectory.xyz
-dump_modify myDump element Si
-thermo_style multi
-thermo 1
-velocity all create 300 87287 mom yes rot yes
-fix 1 all nvt temp 300 300 0.10
-run 100
-```
-
-Next, create a **`silicon.data`** file (doesn't require any changes):
-
-```bash
-# LAMMPS data file for Silicon unit cell
-8 atoms
-1 atom types
-
-0.0  5.43  xlo xhi
-0.0  5.43  ylo yhi
-0.0  5.43  zlo zhi
-
-Masses
-
-1  28.084999992775295 # Si
-
-Atoms # atomic
-
-1   1   0   0   0
-2   1   1.3575   1.3575   1.3575
-3   1   0   2.715   2.715
-4   1   1.3575   4.0725   4.0725
-5   1   2.715   0   2.715
-6   1   4.0725   1.3575   4.0725
-7   1   2.715   2.715   0
-8   1   4.0725   4.0725   1.3575
-```
-
-Finally, run the simulation:
-
-```bash
-lmp_serial -k on g 1 -pk kokkos newton on -in lammps.in  # Serial version   
-mpirun -np 1 lmp_mpi -k on g 1 -pk kokkos newton on -in lammps.in  # MPI version
-```
-
-Here, the `-k on g 1 -pk kokkos newton on` flags are used to activate the KOKKOS
-subroutines. Specifically `g 1` is used to specify, how many GPUs are the simulation is
-parallelized over, so if running the large systems on two or more GPUs, this number
-should be adjusted accordingly.

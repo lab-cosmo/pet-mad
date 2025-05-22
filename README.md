@@ -17,6 +17,18 @@ This repository contains **PET-MAD** - a universal interatomic potential for adv
 - **Infrastructure**: Various MD engines are available for diverse research and application needs.
 - **HPC Compatibility**: Efficient in HPC environments for extensive simulations.
 
+# Table of Contents
+1. [Installation](#installation)
+2. [Pre-trained Models](#pre-trained-models)
+3. [Usage](#usage)
+   - [Interfaces for Atomistic Simulations](#interfaces-for-atomistic-simulations)
+   - [Running PET-MAD with LAMMPS](#running-pet-mad-with-lammps)
+   - [Running PET-MAD with empirical dispersion corrections](#running-pet-mad-with-empirical-dispersion-corrections)
+4. [Examples](#examples)
+5. [Fine-tuning](#fine-tuning)
+6. [Documentation](#documentation)
+7. [Citing PET-MAD](#citing-pet-mad)
+
 ## Installation
 
 You can install PET-MAD using pip:
@@ -178,6 +190,8 @@ conda install -c metatensor -c conda-forge "lammps-metatensor=*=cuda*AMPERE80*op
 
 ### 2. Run LAMMPS with PET-MAD
 
+#### 2.1. CPU version
+
 Fetch the PET-MAD checkpoint from the HuggingFace repository:
 
 ```bash
@@ -249,6 +263,55 @@ lmp -in lammps.in  # For serial version
 mpirun -np 1 lmp -in lammps.in  # For MPI version
 ```
 
+#### 2.2. KOKKOS GPU version
+
+Running LAMMPS with KOKKOS GPU support is similar to the CPU version, but you need to
+change the `lammps.in` slightly and run `lmp` binary with a few additional flags.
+
+The updated `lammps.in` file looks like this:
+
+```
+units metal
+atom_style atomic/kk
+run_style verlet/kk
+
+read_data silicon.data
+
+pair_style metatensor/kk pet-mad-latest.pt &
+  device cpu # Change this to cuda evaluate PET-MAD on GPU
+pair_coeff * * 14  
+
+neighbor 2.0 bin
+timestep 0.001
+
+dump myDump all xyz 10 trajectory.xyz
+dump_modify myDump element Si
+
+thermo_style multi
+thermo 1
+
+velocity all create 300 87287 mom yes rot yes
+
+fix 1 all nvt temp 300 300 0.10
+
+run 100
+```
+
+The **silicon.data** file remains the same.
+
+To run the KOKKOS-enabled version of LAMMPS, you need to run
+
+```bash
+lmp -in lammps.in -k on g 1 -sf kk -pk kokkos newton on neigh half # For serial version
+mpirun -np 1 lmp -in lammps.in -k on g 1 -sf kk -pk kokkos newton on neigh half # For MPI version
+```
+
+Here, the `-k on g 1 -sf kk -pk kokkos newton on neigh half` flags are used to activate the KOKKOS
+subroutines. Specifically `g 1` is used to specify, how many GPUs are the simulation is
+parallelized over, so if running the large systems on two or more GPUs, this number
+should be adjusted accordingly.
+
+
 ### 3. Important Notes
 
 - For **CPU calculations**, use a single MPI task unless simulating large systems (30+ Å box size). Multi-threading can be enabled via:
@@ -259,9 +322,9 @@ mpirun -np 1 lmp -in lammps.in  # For MPI version
 
 - For **GPU calculations**, use **one MPI task per GPU**.
 
-### 4. Running PET-MAD with empirical dispersion corrections
+## Running PET-MAD with empirical dispersion corrections
 
-#### In **ASE**:
+### In **ASE**:
 You can combine the PET-MAD calculator with the torch based implementation of the D3 dispersion correction of `pfnet-research` - `torch-dftd`:
 
 Within the PET-MAD environment you can install `torch-dftd` via:
@@ -285,7 +348,7 @@ dft_d3 = TorchDFTD3Calculator(device=device, xc="pbesol", damping="bj")
 combined_calc = SumCalculator([calc_MAD, dft_d3])
 
 # assign the calculator to the atoms object
-# atoms.calc = combined_calc
+atoms.calc = combined_calc
 
 ```
 
