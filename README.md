@@ -132,49 +132,49 @@ To use PET-MAD with LAMMPS, you need to first install PET-MAD from `conda`
 which enables PET-MAD support:
 
 ```bash
-conda install -c metatensor -c conda-forge lammps-metatensor
+conda install -c metatensor -c conda-forge "lammps-metatensor=*=cpu*nompi*"
 ```
 
-> [!WARNING]
-> Running LAMMPS with GPU acceleration is currently disabled.
-> Please use the CPU version for now. We are working on enabling GPU support.
+This command will install a serial CPU version of LAMMPS-METATENSOR, which only allows the molecular dynamics trajectory integration on CPU,
+but supports both CPU and GPU modes of PET-MAD evaluation using PyTorch
+primitives.
 
-For GPU-accelerated LAMMPS:
+For full GPU-acceleration, you need to install KOKKOS-enabled ``cuda`` version of LAMMPS-METATENSOR. To do this, you need to know the so-called [compute capability](https://developer.nvidia.com/cuda-gpus) of your GPU.
+Please find you GPU using the link above, or run the following command:
 
 ```bash
-conda install -c metatensor -c conda-forge lammps-metatensor=*=cuda*
+nvidia-smi --query-gpu=compute_cap --format=csv,noheader
 ```
 
-Different MPI implementations are available:
+Currently, the following compute capabilities are supported:
+
+- VOLTA70
+- AMPERE80
+- AMPERE86
+- ADA89
+- HOPPER90
+
+For example, if you have a **NVIDIA A100 GPU**, it's compute capability is `8.0` (AMPERE80).
+
+To install the KOKKOS-enabled version of LAMMPS-METATENSOR, use the following command:
+
+```bash
+conda install -c metatensor -c conda-forge "lammps-metatensor=*=cuda*AMPERE80*nompi*"
+```
+
+Different MPI implementations of LAMMPS-METATENSOR are available:
 
 - **`nompi`**: Serial version
 - **`openmpi`**: OpenMPI
 - **`mpich`**: MPICH
 
-Example for GPU-accelerated OpenMPI version:
+If you want to use the MPI version of LAMMPS-METATENSOR, you need to choose a desired MPI implementation and install the corresponding version of the package. Please note, that if you want to use the libraries from the system, please follow [these instructions](https://conda-forge.org/docs/user/tipsandtricks/#using-external-message-passing-interface-mpi-libraries) to install the dummy MPI packages first.
+
+Finally, for installing the GPU-accelerated version of LAMMPS-METATENSOR, compatible with NVIDIA A100 GPU and using OpenMPI as the MPI provider, run:
 
 ```bash
-conda install -c metatensor -c conda-forge lammps-metatensor=*=cuda*openmpi*
+conda install -c metatensor -c conda-forge "lammps-metatensor=*=cuda*AMPERE80*openmpi*"
 ```
-
-Please note that this version is not KOKKOS-enabled, so it provides limited performance on GPUs.
-A recipe to install the KOKKOS-enabled version of LAMMPS-METATENSOR is available [here](docs/README_KOKKOS.md),
-and a direct conda installation will also be available soon.
-
-To use system-installed MPI for HPC, install dummy MPI packages first:
-
-```bash
-conda install "mpich=x.y.z=external_*"
-conda install "openmpi=x.y.z=external_*"
-```
-
-where `x.y.z` is the version of your system-installed MPI. For example, for OpenMPI 4.1.4, use:
-
-```bash
-conda install "openmpi=4.1.4=external_*"
-```
-
-Then, install LAMMPS-METATENSOR with the `openmpi` variant:
 
 ### 2. Run LAMMPS with PET-MAD
 
@@ -198,8 +198,7 @@ atom_style atomic
 read_data silicon.data
 
 pair_style metatensor pet-mad-latest.pt &
-  device cpu &
-  extensions extensions
+  device cpu # Change this to cuda evaluate PET-MAD on GPU
 pair_coeff * * 14  
 
 neighbor 2.0 bin
@@ -244,10 +243,6 @@ Atoms # atomic
 7   1   2.715   2.715   0
 8   1   4.0725   4.0725   1.3575
 ```
-
-Run LAMMPS. By default, LAMMPS installs the `lmp_serial` executable for 
-the serial version and `lmp_mpi` for the MPI version. Because of that,
-the running command will be different depending on the version:
 
 ```bash
 lmp -in lammps.in  # For serial version
