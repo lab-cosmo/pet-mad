@@ -73,7 +73,7 @@ conda install -c metatensor -c conda-forge pet-mad
 
 Currently, we provide the following pre-trained models:
 
-- **`v1.1`** or **`latest`**: The updated PET-MAD model with an ability to run simulations using the non-conservative forces and stresses (temporarily disabled).
+- **`v1.1.0`** or **`latest`**: The updated PET-MAD model with an ability to run simulations using the non-conservative forces and stresses (temporarily disabled).
 - **`v1.0.1`**: The updated PET-MAD model with a new, pure PyTorch backend and slightly improved performance.
 - **`v1.0.0`**: PET-MAD model trained on the MAD dataset, which contains 95,595 structures, including 3D and 2D inorganic crystals, surfaces, molecular crystals, nanoclusters, and molecules.
 
