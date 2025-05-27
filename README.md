@@ -276,7 +276,6 @@ The updated `lammps.in` file looks like this:
 ```
 units metal
 atom_style atomic/kk
-run_style verlet/kk
 
 read_data silicon.data
 
@@ -296,6 +295,8 @@ thermo 1
 velocity all create 300 87287 mom yes rot yes
 
 fix 1 all nvt temp 300 300 0.10
+
+run_style verlet/kk
 
 run 100
 ```
