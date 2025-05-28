@@ -177,6 +177,12 @@ To install the KOKKOS-enabled version of LAMMPS-METATENSOR, use the following co
 conda install -c metatensor -c conda-forge "lammps-metatensor=*=cuda*AMPERE80*nompi*"
 ```
 
+> [!WARNING]
+> Be aware that some HPC clusters may be set up without NVIDIA drivers installed on the head/login node.
+> This will result in conda not detecting the system configuration of the compute nodes (which probably have GPUs if you are in this section) and will not install correct torch and cuda libraries.
+> To fix it, you should run the installs from a GPU node (check that after running `conda info` on the node your installing from, a `__cuda` is appearing in the `virtual packages` section).
+> You can also "trick" conda into installing cuda enabled versions from a login node without NVIDIA drivers, by prepending the environment variable `$CONDA_OVERRIDE_CUDA=12.4 conda install ...` before the conda install.
+
 Different MPI implementations of LAMMPS-METATENSOR are available:
 
 - **`nompi`**: Serial version
