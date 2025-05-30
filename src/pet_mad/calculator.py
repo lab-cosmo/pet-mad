@@ -5,8 +5,8 @@ import warnings
 from platformdirs import user_cache_dir
 from typing import Optional
 
-from metatensor.torch.atomistic import ModelMetadata
-from metatensor.torch.atomistic.ase_calculator import MetatensorCalculator
+from metatomic.torch import ModelMetadata
+from metatomic.torch.ase_calculator import MetatomicCalculator
 from metatrain.utils.io import load_model as load_metatrain_model
 
 warnings.filterwarnings(
@@ -39,7 +39,7 @@ BASE_URL = (
 )
 
 
-class PETMADCalculator(MetatensorCalculator):
+class PETMADCalculator(MetatomicCalculator):
     """
     PET-MAD ASE Calculator
     """

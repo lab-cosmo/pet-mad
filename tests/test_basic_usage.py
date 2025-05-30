@@ -9,10 +9,12 @@ def test_basic_usage():
     _ = atoms.get_potential_energy()
     _ = atoms.get_forces()
 
+
 @pytest.mark.parametrize(
     "version",
     [
         "latest",
+        "1.1.0",
         "1.0.1",
     ],
 )
@@ -21,6 +23,7 @@ def test_version(version):
     atoms.calc = PETMADCalculator(version=version)
     _ = atoms.get_potential_energy()
     _ = atoms.get_forces()
+
 
 @pytest.mark.parametrize(
     "version",

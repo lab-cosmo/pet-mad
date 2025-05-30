@@ -7,14 +7,23 @@
 
 # PET-MAD: A Universal Interatomic Potential for Advanced Materials Modeling
 
-This repository contains **PET-MAD** - a universal interatomic potential for advanced materials modeling across the periodic table. This model is based on the **Point Edge Transformer (PET)** model trained on the **Massive Atomic Diversity (MAD) Dataset** and is capable of predicting energies and forces in complex atomistic simulations.
+This repository contains **PET-MAD** - a universal interatomic potential for
+advanced materials modeling across the periodic table. This model is based on
+the **Point Edge Transformer (PET)** model trained on the **Massive Atomic
+Diversity (MAD) Dataset** and is capable of predicting energies and forces in
+complex atomistic simulations.
 
 ## Key Features
 
-- **Universality**: PET-MAD is a generally-applicable model that can be used for a wide range of materials and molecules.
-- **Accuracy**: PET-MAD achieves high accuracy in various types of atomistic simulations of organic and inorganic systems, comparable with system-specific models, while being fast and efficient.
-- **Efficiency**: PET-MAD achieves high computational efficiency and low memory usage, making it suitable for large-scale simulations.
-- **Infrastructure**: Various MD engines are available for diverse research and application needs.
+- **Universality**: PET-MAD is a generally-applicable model that can be used for
+  a wide range of materials and molecules.
+- **Accuracy**: PET-MAD achieves high accuracy in various types of atomistic
+  simulations of organic and inorganic systems, comparable with system-specific
+  models, while being fast and efficient.
+- **Efficiency**: PET-MAD achieves high computational efficiency and low memory
+  usage, making it suitable for large-scale simulations.
+- **Infrastructure**: Various MD engines are available for diverse research and
+  application needs.
 - **HPC Compatibility**: Efficient in HPC environments for extensive simulations.
 
 ## Table of Contents
@@ -45,14 +54,16 @@ Or directly from the GitHub repository:
 pip install git+https://github.com/lab-cosmo/pet-mad.git
 ```
 
-Alternatively, you can install PET-MAD using `conda` package manager, which is especially important
-for running PET-MAD with **LAMMPS**.
+Alternatively, you can install PET-MAD using `conda` package manager, which is
+especially important for running PET-MAD with **LAMMPS**.
 
 > [!WARNING]
-> We strongly recommend installing PET-MAD using [`Miniforge`](https://github.com/conda-forge/miniforge)
-> as a base `conda` provider, because other `conda` providers (such as `Anaconda`) may yield undesired
-> behavior when resolving dependencies and are usually slower than `Miniforge`. Smooth installation
-> and use of PET-MAD is not guaranteed with other `conda` providers.
+> We strongly recommend installing PET-MAD using
+> [`Miniforge`](https://github.com/conda-forge/miniforge) as a base `conda`
+> provider, because other `conda` providers (such as `Anaconda`) may yield
+> undesired behavior when resolving dependencies and are usually slower than
+> `Miniforge`. Smooth installation and use of PET-MAD is not guaranteed with
+> other `conda` providers.
 
 To install Miniforge on unix-like systems, run:
 
@@ -61,7 +72,8 @@ wget "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforg
 bash Miniforge3-$(uname)-$(uname -m).sh
 ```
 
-Once Miniforge is installed, create a new conda environment and install PET-MAD with:
+Once Miniforge is installed, create a new conda environment and install PET-MAD
+with:
 
 ```bash
 conda create -n pet-mad
@@ -73,9 +85,14 @@ conda install -c metatensor -c conda-forge pet-mad
 
 Currently, we provide the following pre-trained models:
 
-- **`v1.1.0`** or **`latest`**: The updated PET-MAD model with an ability to run simulations using the non-conservative forces and stresses (temporarily disabled).
-- **`v1.0.1`**: The updated PET-MAD model with a new, pure PyTorch backend and slightly improved performance.
-- **`v1.0.0`**: PET-MAD model trained on the MAD dataset, which contains 95,595 structures, including 3D and 2D inorganic crystals, surfaces, molecular crystals, nanoclusters, and molecules.
+- **`v1.1.0`** or **`latest`**: The updated PET-MAD model with an ability to run
+  simulations using the non-conservative forces and stresses (temporarily
+  disabled).
+- **`v1.0.1`**: The updated PET-MAD model with a new, pure PyTorch backend and
+  slightly improved performance.
+- **`v1.0.0`**: PET-MAD model trained on the MAD dataset, which contains 95,595
+  structures, including 3D and 2D inorganic crystals, surfaces, molecular
+  crystals, nanoclusters, and molecules.
 
 ## Interfaces for Atomistic Simulations
 
@@ -90,7 +107,9 @@ PET-MAD integrates with the following atomistic simulation engines:
 ## Usage
 
 ### ASE Interface
-You can use the PET-MAD calculator, which is compatible with the Atomic Simulation Environment (ASE):
+
+You can use the PET-MAD calculator, which is compatible with the Atomic
+Simulation Environment (ASE):
 
 ```python
 from pet_mad.calculator import PETMADCalculator
@@ -103,22 +122,24 @@ energy = atoms.get_potential_energy()
 forces = atoms.get_forces()
 ```
 
-These ASE methods are ideal for single-structure evaluations, but they are inefficient
-for the evaluation on a large number of pre-defined structures. To perform efficient
-evaluation in that case, read [here](docs/README_BATCHED.md).
+These ASE methods are ideal for single-structure evaluations, but they are
+inefficient for the evaluation on a large number of pre-defined structures. To
+perform efficient evaluation in that case, read [here](docs/README_BATCHED.md).
 
 ### Evaluating PET-MAD on a dataset
-Efficient evaluation of PET-MAD on a desired dataset is also available from the command line via 
-[`metatrain`](https://github.com/metatensor/metatrain), which is installed as a depencecy of PET-MAD.
-To evaluate the model, you first need to fetch the PET-MAD model from the HuggingFace repository:
+
+Efficient evaluation of PET-MAD on a desired dataset is also available from the
+command line via [`metatrain`](https://github.com/metatensor/metatrain), which
+is installed as a dependency of PET-MAD. To evaluate the model, you first need
+to fetch the PET-MAD model from the HuggingFace repository:
 
 ```bash
 mtt export https://huggingface.co/lab-cosmo/pet-mad/resolve/main/models/pet-mad-latest.ckpt
 ```
 
-This command will download the model and convert it to TorchScript format. Then you need to create the `options.yaml` file and specify
-the dataset you want to evaluate the model on (where the dataset is
-stored in `extxyz` format):
+This command will download the model and convert it to TorchScript format. Then
+you need to create the `options.yaml` file and specify the dataset you want to
+evaluate the model on (where the dataset is stored in `extxyz` format):
 
 ```yaml
 systems: your-test-dataset.xyz
@@ -134,68 +155,17 @@ Then, you can use the `mtt eval` command to evaluate the model on a dataset:
 mtt eval pet-mad-latest.pt options.yaml --batch-size=16 --extensions-dir=extensions --output=predictions.xyz
 ```
 
-This will create a file called `predictions.xyz` with the predicted energies and forces for each 
-structure in the dataset. More details on how to use `metatrain` can be found in the
-[Metatrain documentation](https://metatensor.github.io/metatrain/latest/getting-started/usage.html#evaluation).
+This will create a file called `predictions.xyz` with the predicted energies and
+forces for each structure in the dataset. More details on how to use `metatrain`
+can be found in the [Metatrain documentation](https://metatensor.github.io/metatrain/latest/getting-started/usage.html#evaluation).
 
 ## Running PET-MAD with LAMMPS
 
-### 1. Install LAMMPS with PET-MAD support
+### 1. Install LAMMPS with metatomic support
 
-To use PET-MAD with LAMMPS, you need to first install PET-MAD from `conda`
-(see the installation instructions above). Then, install **LAMMPS-METATENSOR**,
-which enables PET-MAD support:
-
-```bash
-conda install -c metatensor -c conda-forge "lammps-metatensor=*=cpu*nompi*"
-```
-
-This command will install a serial CPU version of LAMMPS-METATENSOR, which only allows the molecular dynamics trajectory integration on CPU,
-but supports both CPU and GPU modes of PET-MAD evaluation using PyTorch
-primitives.
-
-For full GPU-acceleration, you need to install KOKKOS-enabled ``cuda`` version of LAMMPS-METATENSOR. To do this, you need to know the so-called [compute capability](https://developer.nvidia.com/cuda-gpus) of your GPU.
-Please find you GPU using the link above, or run the following command:
-
-```bash
-nvidia-smi --query-gpu=compute_cap --format=csv,noheader
-```
-
-Currently, the following compute capabilities are supported:
-
-- VOLTA70
-- AMPERE80
-- AMPERE86
-- ADA89
-- HOPPER90
-
-For example, if you have a **NVIDIA A100 GPU**, it's compute capability is `8.0` (AMPERE80).
-
-To install the KOKKOS-enabled version of LAMMPS-METATENSOR, use the following command:
-
-```bash
-conda install -c metatensor -c conda-forge "lammps-metatensor=*=cuda*AMPERE80*nompi*"
-```
-
-> [!WARNING]
-> Be aware that some HPC clusters may be set up without NVIDIA drivers installed on the head/login node.
-> This will result in conda not detecting the system configuration of the compute nodes (which probably have GPUs if you are in this section) and will not install correct torch and cuda libraries.
-> To fix it, you should run the installs from a GPU node (check that after running `conda info` on the node your installing from, a `__cuda` is appearing in the `virtual packages` section).
-> You can also "trick" conda into installing cuda enabled versions from a login node without NVIDIA drivers, by prepending the environment variable `$CONDA_OVERRIDE_CUDA=12.4 conda install ...` before the conda install.
-
-Different MPI implementations of LAMMPS-METATENSOR are available:
-
-- **`nompi`**: Serial version
-- **`openmpi`**: OpenMPI
-- **`mpich`**: MPICH
-
-If you want to use the MPI version of LAMMPS-METATENSOR, you need to choose a desired MPI implementation and install the corresponding version of the package. Please note, that if you want to use the libraries from the system, please follow [these instructions](https://conda-forge.org/docs/user/tipsandtricks/#using-external-message-passing-interface-mpi-libraries) to install the dummy MPI packages first.
-
-Finally, for installing the GPU-accelerated version of LAMMPS-METATENSOR, compatible with NVIDIA A100 GPU and using OpenMPI as the MPI provider, run:
-
-```bash
-conda install -c metatensor -c conda-forge "lammps-metatensor=*=cuda*AMPERE80*openmpi*"
-```
+To use PET-MAD with LAMMPS, you need to first install PET-MAD from `conda` (see
+the installation instructions above). Then, follow the instructions
+[here](https://docs.metatensor.org/metatomic/latest/engines/lammps.html#how-to-install-the-code) to install lammps-metatomic. We recomend you also use conda to install lammps.
 
 ### 2. Run LAMMPS with PET-MAD
 
@@ -207,12 +177,14 @@ Fetch the PET-MAD checkpoint from the HuggingFace repository:
 mtt export https://huggingface.co/lab-cosmo/pet-mad/resolve/main/models/pet-mad-latest.ckpt
 ```
 
-This will download the model and convert it to TorchScript format compatible with LAMMPS,
-using the `metatensor` and `metatrain` libraries, which PET-MAD is based on. 
+This will download the model and convert it to TorchScript format compatible
+with LAMMPS, using the `metatomic` and `metatrain` libraries, which PET-MAD is
+based on.
 
-Prepare a **`lammps.in`** file using the metatensor `pair_style` and defining the
-mapping from LAMMPS types in the data file to elements PET-MAD can handle using the
-`pair_coeff * *` syntax. Here we use 14 for Si.
+Prepare a lammps input file using `pair_style metatomic` and defining the
+mapping from LAMMPS types in the data file to elements PET-MAD can handle using
+`pair_coeff` syntax. Here we indicate that lammps atom type 1 is Silicon (atomic
+number 14).
 
 ```
 units metal
@@ -220,9 +192,8 @@ atom_style atomic
 
 read_data silicon.data
 
-pair_style metatensor pet-mad-latest.pt &
-  device cpu # Change this to cuda evaluate PET-MAD on GPU
-pair_coeff * * 14  
+pair_style metatomic pet-mad-latest.pt device cpu # Change device to 'cuda' evaluate PET-MAD on GPU
+pair_coeff * * 14
 
 neighbor 2.0 bin
 timestep 0.001
@@ -240,7 +211,7 @@ fix 1 all nvt temp 300 300 0.10
 run 100
 ```
 
-Create the **`silicon.data`** data file for a silicon system. 
+Create the **`silicon.data`** data file for a silicon system.
 
 ```
 # LAMMPS data file for Silicon unit cell
@@ -274,20 +245,22 @@ mpirun -np 1 lmp -in lammps.in  # For MPI version
 
 #### 2.2. KOKKOS-enabled GPU version
 
-Running LAMMPS with KOKKOS and GPU support is similar to the CPU version, but you need to
-change the `lammps.in` slightly and run `lmp` binary with a few additional flags.
+Running LAMMPS with KOKKOS and GPU support is similar to the CPU version, but
+you need to change the `lammps.in` slightly and run `lmp` binary with a few
+additional flags.
 
 The updated `lammps.in` file looks like this:
 
 ```
+package kokkos newton on neigh half
+
 units metal
 atom_style atomic/kk
 
 read_data silicon.data
 
-pair_style metatensor/kk pet-mad-latest.pt &
-  device cpu # Change this to cuda evaluate PET-MAD on GPU
-pair_coeff * * 14  
+pair_style metatensor/kk pet-mad-latest.pt # This will use the same device as the kokkos simulation
+pair_coeff * * 14
 
 neighbor 2.0 bin
 timestep 0.001
@@ -303,7 +276,6 @@ velocity all create 300 87287 mom yes rot yes
 fix 1 all nvt temp 300 300 0.10
 
 run_style verlet/kk
-
 run 100
 ```
 
@@ -312,20 +284,21 @@ The **silicon.data** file remains the same.
 To run the KOKKOS-enabled version of LAMMPS, you need to run
 
 ```bash
-lmp -in lammps.in -k on g 1 -sf kk -pk kokkos newton on neigh half # For serial version
-mpirun -np 1 lmp -in lammps.in -k on g 1 -sf kk -pk kokkos newton on neigh half # For MPI version
+lmp -in lammps.in -k on g 1 --suffix kk # For serial version
+mpirun -np 1 lmp -in lammps.in -k on g 1 --suffix kk # For MPI version
 ```
 
-Here, the `-k on g 1 -sf kk -pk kokkos newton on neigh half` flags are used to activate the KOKKOS
-subroutines. Specifically `g 1` is used to specify, how many GPUs are the simulation is
-parallelized over, so if running the large systems on two or more GPUs, this number
-should be adjusted accordingly.
+Here, the `-k on g 1 --suffix kk` flags are used to activate the KOKKOS
+subroutines. Specifically `g 1` is used to specify, how many GPUs are the
+simulation is parallelized over, so if running the large systems on two or more
+GPUs, this number should be adjusted accordingly.
 
 
 ### 3. Important Notes
 
-- For **CPU calculations**, use a single MPI task unless simulating large systems (30+ Å box size). Multi-threading can be enabled via:
-  
+- For **CPU calculations**, use a single MPI task unless simulating large
+  systems (30+ Å box size). Multi-threading can be enabled via:
+
   ```bash
   export OMP_NUM_THREADS=4
   ```
@@ -335,7 +308,9 @@ should be adjusted accordingly.
 ## Running PET-MAD with empirical dispersion corrections
 
 ### In **ASE**:
-You can combine the PET-MAD calculator with the torch based implementation of the D3 dispersion correction of `pfnet-research` - `torch-dftd`:
+
+You can combine the PET-MAD calculator with the torch based implementation of
+the D3 dispersion correction of `pfnet-research` - `torch-dftd`:
 
 Within the PET-MAD environment you can install `torch-dftd` via:
 
@@ -350,7 +325,7 @@ from torch_dftd.torch_dftd3_calculator import TorchDFTD3Calculator
 from pet_mad.calculator import PETMADCalculator
 from  ase.calculators.mixing import SumCalculator
 
-device = "cuda:0" if torch.cuda.is_available() else "cpu"
+device = "cuda" if torch.cuda.is_available() else "cpu"
 
 calc_MAD = PETMADCalculator(version="latest", device=device)
 dft_d3 = TorchDFTD3Calculator(device=device, xc="pbesol", damping="bj")
@@ -364,20 +339,26 @@ atoms.calc = combined_calc
 
 ## Examples
 
-More examples for **ASE, i-PI, and LAMMPS** are available in the [Atomistic Cookbook](https://atomistic-cookbook.org/examples/pet-mad/pet-mad.html).
+More examples for **ASE, i-PI, and LAMMPS** are available in the [Atomistic
+Cookbook](https://atomistic-cookbook.org/examples/pet-mad/pet-mad.html).
 
 ## Fine-tuning
 
-PET-MAD can be fine-tuned using the [Metatrain](https://metatensor.github.io/metatrain/latest/advanced-concepts/fine-tuning.html) library.
+PET-MAD can be fine-tuned using the
+[Metatrain](https://metatensor.github.io/metatrain/latest/advanced-concepts/fine-tuning.html)
+library.
 
 ## Documentation
 
-Additional documentation can be found in the [Metatensor](https://docs.metatensor.org) and [Metatrain](https://metatensor.github.io/metatrain/latest/index.html) repositories.
+Additional documentation can be found in the
+[metatensor](https://docs.metatensor.org),
+[metatomic](https://docs.metatensor.org/metatomic) and
+[metatrain](https://metatensor.github.io/metatrain/) repositories.
 
 - [Training a model](https://metatensor.github.io/metatrain/latest/getting-started/usage.html#training)
 - [Fine-tuning](https://metatensor.github.io/metatrain/latest/advanced-concepts/fine-tuning.html)
-- [LAMMPS interface](https://docs.metatensor.org/latest/atomistic/engines/lammps.html)
-- [i-PI interface](https://docs.metatensor.org/latest/atomistic/engines/ipi.html)
+- [LAMMPS interface](https://docs.metatensor.org/metatomic/latest/engines/lammps.html)
+- [i-PI interface](https://docs.metatensor.org/metatomic/latest/engines/ipi.html)
 
 ## Citing PET-MAD
 
@@ -385,7 +366,7 @@ If you use PET-MAD in your research, please cite:
 
 ```bibtex
 @misc{PET-MAD-2025,
-      title={PET-MAD, a universal interatomic potential for advanced materials modeling}, 
+      title={PET-MAD, a universal interatomic potential for advanced materials modeling},
       author={Arslan Mazitov and Filippo Bigi and Matthias Kellner and Paolo Pegolo and Davide Tisi and Guillaume Fraux and Sergey Pozdnyakov and Philip Loche and Michele Ceriotti},
       year={2025},
       eprint={2503.14118},
