@@ -284,11 +284,11 @@ The **silicon.data** file remains the same.
 To run the KOKKOS-enabled version of LAMMPS, you need to run
 
 ```bash
-lmp -in lammps.in -k on g 1 --suffix kk # For serial version
-mpirun -np 1 lmp -in lammps.in -k on g 1 --suffix kk # For MPI version
+lmp -in lammps.in -k on g 1 -sf kk # For serial version
+mpirun -np 1 lmp -in lammps.in -k on g 1 -sf kk # For MPI version
 ```
 
-Here, the `-k on g 1 --suffix kk` flags are used to activate the KOKKOS
+Here, the `-k on g 1 -sf kk` flags are used to activate the KOKKOS
 subroutines. Specifically `g 1` is used to specify, how many GPUs are the
 simulation is parallelized over, so if running the large systems on two or more
 GPUs, this number should be adjusted accordingly.
