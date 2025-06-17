@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Optional, Union
 
 import numpy as np
 import torch
@@ -6,7 +6,7 @@ from torch import nn
 
 
 class TorchStandardScaler(nn.Module):
-    def __init__(self, mean: float = None, std: float = None):
+    def __init__(self, mean: Optional[float] = None, std: Optional[float] = None):
         super().__init__()
         self.register_buffer("mean", mean)
         self.register_buffer("std", std)

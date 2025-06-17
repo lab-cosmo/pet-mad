@@ -32,7 +32,7 @@ class MADExplorer(nn.Module):
         self,
         mtt_model: Union[str, Path, mta.AtomisticModel],
         mlp_checkpoint: Optional[str] = None,
-        extensions_directory: str = None,
+        extensions_directory: Optional[str] = None,
         check_consistency: bool = False,
         input_dim: int = 1024,
         output_dim: int = 3,
