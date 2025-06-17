@@ -90,27 +90,19 @@ class MADExplorer(nn.Module):
                 "keys. Only 'features' is supported"
             )
 
-        if not outputs["features"].per_atom:
-            raise NotImplementedError(
-                "Model uses per-atom features to get mean and std features"
-            )
-
-        if selected_atoms is None:
-            raise ValueError("MADExplorer requires 'selected_atoms' to be provided")
+        per_atom = outputs["features"].per_atom
+        if per_atom and selected_atoms is None:
+            raise ValueError("Selected atoms must be provided for per-atom features")
 
         length_unit = self.petmad.capabilities().length_unit
         options = mta.ModelEvaluationOptions(
             length_unit=length_unit,
-            outputs={
-                self.features_output: mta.ModelOutput(
-                    per_atom=selected_atoms is not None
-                )
-            },
+            outputs={self.features_output: mta.ModelOutput(per_atom=per_atom)},
             selected_atoms=selected_atoms,
         )
 
         systems = [s.to(self.dtype, self.device) for s in systems]
-        features = self._get_descriptors(systems, options)
+        features = self._get_descriptors(systems, options, per_atom)
 
         if self.feature_scaler.mean is not None and self.feature_scaler.std is not None:
             features = self.feature_scaler.transform(features)
@@ -153,7 +145,10 @@ class MADExplorer(nn.Module):
         return {"features": tensor_map}
 
     def _get_descriptors(
-        self, systems: List[mta.System], options: mta.ModelEvaluationOptions
+        self,
+        systems: List[mta.System],
+        options: mta.ModelEvaluationOptions,
+        per_atom: bool,
     ) -> torch.Tensor:
         """
         Compute embeddings for the given systems using the PET-MAD model.
@@ -169,24 +164,23 @@ class MADExplorer(nn.Module):
         )
         features = output[self.features_output]
 
-        if options.selected_atoms is not None:
+        if per_atom:
             mean = mts.mean_over_samples(features, "atom")
             mean_vals = torch.cat([block.values for block in mean.blocks()], dim=0)
 
             std = mts.std_over_samples(features, "atom")
             std_vals = torch.cat([block.values for block in std.blocks()], dim=0)
 
-            combined_features = torch.cat([mean_vals, std_vals], dim=1)
-
-            if combined_features.shape[1] != self.projector.input_dim:
-                raise ValueError(
-                    f"Expected input dim for projector: {self.projector.input_dim}, got :"
-                    f"{combined_features.shape[1]}"
-                )
-
-            return combined_features.detach()
+            descriptors = torch.cat([mean_vals, std_vals], dim=1)
         else:
-            return features.block().values.detach()
+            descriptors = features.block().values
+
+        if descriptors.shape[1] != self.projector.input_dim:
+            raise ValueError(
+                f"Expected input dim for projector: {self.projector.input_dim}, got: {descriptors.shape[1]}"
+            )
+
+        return descriptors.detach()
 
     def get_atomic_types(self) -> List[int]:
         return self.petmad.capabilities().atomic_types
