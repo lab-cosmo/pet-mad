@@ -3,8 +3,12 @@ from torch import nn
 
 
 class MLPProjector(nn.Module):
-    """A simple MLP used to project feature vectors to low dimention
-    representations"""
+    """
+    MLP used to project feature vectors to low-dimensional representations
+
+    :param input_dim: dimensionality of input features
+    :param output_dim: target output dimensionality
+    """
 
     def __init__(self, input_dim: int = 1024, output_dim: int = 3):
         super().__init__()

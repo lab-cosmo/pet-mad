@@ -12,30 +12,30 @@ from src.mad_explorer.scaler import TorchStandardScaler
 
 class MADExplorer(nn.Module):
     """
-    Metatomic wrapper model for that extracts PET-MAD last-layer features and
-    projects them into a low-dimensional space using an MLP.
+    Metatomic wrapper model for extracting last-layer features from a PET-MAD and
+    projecting them into a low-dimensional space using an MLP.
 
     The model is intended for exploratory analysis and visualization of the
     learned representations.
 
-    :param mtt_model: path to a saved PET-MAD model or an instance of a loaded
-        model
-    :param extensions_directory: path to model extensions
-    :param check_consistency: whether to verify consistency between model and
-        system inputs
-    :param input_dim : dimensionality of the input PET-MAD features
-    :param output_dim: target low dimensionality for the projected features
-    :param device: device on which to run the model
+    :param mtt_model: path to a saved PET-MAD checkpoint or an in-memory instance
+    :param mlp_checkpoint: path to a saved MLP checkpoint including projector weights and scalers
+    :param extensions_directory: path to model extensions (if any)
+    :param check_consistency: whether to verify consistency between model and system inputs
+    :param input_dim: dimensionality of the input PET-MAD features for projector
+    :param output_dim: target low dimensionality for the projected embeddings
+    :param device: cpu or cuda
+    :param features_output: key to access the PET-MAD feature output
     """
 
     def __init__(
         self,
         mtt_model: Union[str, Path, mta.AtomisticModel],
-        mlp_checkpoint: Optional[str] = None,
-        extensions_directory: Optional[str] = None,
+        mlp_checkpoint: str,
         check_consistency: bool = False,
         input_dim: int = 1024,
         output_dim: int = 3,
+        extensions_directory: Optional[str] = None,
         device: Optional[Union[str, torch.device]] = "cpu",
         features_output: str = "mtt::aux::energy_last_layer_features",
     ):
@@ -69,14 +69,7 @@ class MADExplorer(nn.Module):
         self.projection_scaler = TorchStandardScaler().to(device)
 
         if mlp_checkpoint:
-            checkpoint = torch.load(mlp_checkpoint, weights_only=False)
-            self.projector.load_state_dict(checkpoint["projector_state_dict"])
-
-            self.feature_scaler.mean = checkpoint["feature_mean"].to(device)
-            self.feature_scaler.std = checkpoint["feature_std"].to(device)
-
-            self.projection_scaler.mean = checkpoint["projection_mean"].to(device)
-            self.projection_scaler.std = checkpoint["projection_std"].to(device)
+            self.load_checkpoint(mlp_checkpoint)
 
     def forward(
         self,
@@ -153,8 +146,8 @@ class MADExplorer(nn.Module):
         """
         Compute embeddings for the given systems using the PET-MAD model.
 
-        The method computes per-atom mean and std of features and returns as a
-        combined tensor.
+        For per-atom features, it concatenates mean and standard deviation of
+        features across atoms
         """
 
         output = self.petmad(
@@ -184,6 +177,16 @@ class MADExplorer(nn.Module):
 
     def get_atomic_types(self) -> List[int]:
         return self.petmad.capabilities().atomic_types
+
+    def load_checkpoint(self, path: str):
+        checkpoint = torch.load(path, weights_only=False)
+        self.projector.load_state_dict(checkpoint["projector_state_dict"])
+
+        self.feature_scaler.mean = checkpoint["feature_mean"].to(self.device)
+        self.feature_scaler.std = checkpoint["feature_std"].to(self.device)
+
+        self.projection_scaler.mean = checkpoint["projection_mean"].to(self.device)
+        self.projection_scaler.std = checkpoint["projection_std"].to(self.device)
 
     def save_checkpoint(self, path: str):
         checkpoint = {
