@@ -205,13 +205,13 @@ metadata = mta.ModelMetadata(
 )
 
 outputs = {
-    "features": mta.ModelOutput(quantity="length", unit="angstrom", per_atom=True),
+    "features": mta.ModelOutput(per_atom=True),
 }
 
 capabilities = mta.ModelCapabilities(
     outputs=outputs,
     length_unit="angstrom",
-    supported_devices=["cpu"],
+    supported_devices=["cpu", "cuda"],
     dtype="float64",
     interaction_range=0.0,
     atomic_types=model.get_atomic_types(),
