@@ -37,6 +37,7 @@ class MADExplorer(nn.Module):
         input_dim: int = 1024,
         output_dim: int = 3,
         device: Optional[Union[str, torch.device]] = "cpu",
+        features_output: str = "mtt::aux::energy_last_layer_features",
     ):
         super().__init__()
 
@@ -52,9 +53,10 @@ class MADExplorer(nn.Module):
 
         capabilities = self.petmad.capabilities()
 
-        self.output_name = "mtt::aux::energy_last_layer_features"
-        if self.output_name not in capabilities.outputs:
-            raise ValueError(f"this model does not have a '{self.output_name}' output")
+        if features_output not in capabilities.outputs:
+            raise ValueError(f"this model does not have a '{features_output}' output")
+        else:
+            self.features_output = features_output
 
         if capabilities.dtype == "float32":
             self.dtype = torch.float32
@@ -100,7 +102,9 @@ class MADExplorer(nn.Module):
         options = mta.ModelEvaluationOptions(
             length_unit=length_unit,
             outputs={
-                self.output_name: mta.ModelOutput(per_atom=selected_atoms is not None)
+                self.features_output: mta.ModelOutput(
+                    per_atom=selected_atoms is not None
+                )
             },
             selected_atoms=selected_atoms,
         )
@@ -163,7 +167,7 @@ class MADExplorer(nn.Module):
             options,
             check_consistency=self.check_consistency,
         )
-        features = output[self.output_name]
+        features = output[self.features_output]
 
         if options.selected_atoms is not None:
             mean = mts.mean_over_samples(features, "atom")
@@ -173,6 +177,13 @@ class MADExplorer(nn.Module):
             std_vals = torch.cat([block.values for block in std.blocks()], dim=0)
 
             combined_features = torch.cat([mean_vals, std_vals], dim=1)
+
+            if combined_features.shape[1] != self.projector.input_dim:
+                raise ValueError(
+                    f"Expected input dim for projector: {self.projector.input_dim}, got :"
+                    f"{combined_features.shape[1]}"
+                )
+
             return combined_features.detach()
         else:
             return features.block().values.detach()
