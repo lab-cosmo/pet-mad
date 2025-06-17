@@ -25,6 +25,7 @@ dependencies = [
     "metatrain==2025.7",
     "huggingface_hub",
     "platformdirs",
+    "tqdm",
 ]
 
 keywords = ["machine learning", "molecular modeling"]
