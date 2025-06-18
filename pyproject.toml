@@ -25,9 +25,6 @@ dependencies = [
     "metatrain==2025.7",
     "huggingface_hub",
     "platformdirs",
-    "torch",
-    "metatomic-torch >=0.1.0,<0.2",
-    "metatensor-torch >=0.7.6,<0.8",
 ]
 
 keywords = ["machine learning", "molecular modeling"]
