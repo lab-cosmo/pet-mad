@@ -25,7 +25,7 @@ class MADExplorer(nn.Module):
     :param input_dim: dimensionality of the input PET-MAD features for projector
     :param output_dim: target low dimensionality for the projected embeddings
     :param device: cpu or cuda
-    :param features_output: key to access the PET-MAD feature output
+    :param features_output: which features of PET-MAD to use 
     """
 
     def __init__(
