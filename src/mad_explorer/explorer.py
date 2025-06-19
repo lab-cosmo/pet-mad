@@ -4,6 +4,7 @@ from typing import Dict, List, Optional, Union
 import metatensor.torch as mts
 import metatomic.torch as mta
 import torch
+from metatrain.pet import PET
 from torch import nn
 
 from .mlp_projector import MLPProjector
@@ -18,58 +19,39 @@ class MADExplorer(nn.Module):
     The model is intended for exploratory analysis and visualization of the
     learned representations.
 
-    :param mtt_model: path to a saved PET-MAD checkpoint or an in-memory instance
-    :param mlp_checkpoint: path to a saved MLP checkpoint including projector weights and scalers
-    :param extensions_directory: path to model extensions (if any)
-    :param check_consistency: whether to verify consistency between model and system inputs
+    :param pet_checkpoint: path to a saved PET-MAD checkpoint or an in-memory instance
     :param input_dim: dimensionality of the input PET-MAD features for projector
     :param output_dim: target low dimensionality for the projected embeddings
     :param device: cpu or cuda
-    :param features_output: which features of PET-MAD to use 
+    :param features_output: key to access the PET-MAD feature output
     """
 
     def __init__(
         self,
-        mtt_model: Union[str, Path, mta.AtomisticModel],
-        mlp_checkpoint: str,
-        check_consistency: bool = False,
+        pet_checkpoint: Union[str, Path, PET],
         input_dim: int = 1024,
         output_dim: int = 3,
-        extensions_directory: Optional[str] = None,
         device: Optional[Union[str, torch.device]] = "cpu",
         features_output: str = "mtt::aux::energy_last_layer_features",
     ):
         super().__init__()
 
-        self.check_consistency = check_consistency
         self.device = device
 
-        if isinstance(mtt_model, (str, Path)):
-            self.petmad = mta.load_atomistic_model(
-                mtt_model, extensions_directory=extensions_directory
-            )
+        if isinstance(pet_checkpoint, (str, Path)):
+            checkpoint = torch.load(pet_checkpoint, weights_only=False)
         else:
-            self.petmad = mtt_model
+            checkpoint = pet_checkpoint
 
-        capabilities = self.petmad.capabilities()
+        self.pet = PET.load_checkpoint(checkpoint, "export").to(self.device)
 
-        if features_output not in capabilities.outputs:
-            raise ValueError(f"this model does not have a '{features_output}' output")
-        else:
-            self.features_output = features_output
+        self.features_output = features_output
 
-        if capabilities.dtype == "float32":
-            self.dtype = torch.float32
-        else:
-            assert capabilities.dtype == "float64"
-            self.dtype = torch.float64
+        self.dtype = next(self.pet.parameters()).dtype
 
         self.projector = MLPProjector(input_dim, output_dim).to(self.device)
         self.feature_scaler = TorchStandardScaler().to(device)
         self.projection_scaler = TorchStandardScaler().to(device)
-
-        if mlp_checkpoint:
-            self.load_checkpoint(mlp_checkpoint)
 
     def forward(
         self,
@@ -83,19 +65,22 @@ class MADExplorer(nn.Module):
                 "keys. Only 'features' is supported"
             )
 
-        per_atom = outputs["features"].per_atom
-        if per_atom and selected_atoms is None:
-            raise ValueError("Selected atoms must be provided for per-atom features")
+        systems = [s.to(self.dtype, self.device) for s in systems]
 
+        per_atom = outputs["features"].per_atom
+        pet_requested_outputs = {
+            self.features_output: mta.ModelOutput(per_atom=per_atom)
+        }
+        """
         length_unit = self.petmad.capabilities().length_unit
         options = mta.ModelEvaluationOptions(
             length_unit=length_unit,
             outputs={self.features_output: mta.ModelOutput(per_atom=per_atom)},
             selected_atoms=selected_atoms,
         )
-
-        systems = [s.to(self.dtype, self.device) for s in systems]
         features = self._get_descriptors(systems, options, per_atom)
+        """
+        features = self._get_descriptors(systems, pet_requested_outputs, per_atom)
 
         if self.feature_scaler.mean is not None and self.feature_scaler.std is not None:
             features = self.feature_scaler.transform(features)
@@ -150,11 +135,7 @@ class MADExplorer(nn.Module):
         features across atoms
         """
 
-        output = self.petmad(
-            systems,
-            options,
-            check_consistency=self.check_consistency,
-        )
+        output = self.pet(systems, options)
         features = output[self.features_output]
 
         if per_atom:
@@ -176,7 +157,7 @@ class MADExplorer(nn.Module):
         return descriptors.detach()
 
     def get_atomic_types(self) -> List[int]:
-        return self.petmad.capabilities().atomic_types
+        return self.pet.atomic_types
 
     def load_checkpoint(self, path: str):
         checkpoint = torch.load(path, weights_only=False)
@@ -199,7 +180,8 @@ class MADExplorer(nn.Module):
         torch.save(checkpoint, path)
 
 
-model = MADExplorer("pet-mad-latest.pt", mlp_checkpoint="mtt_projection_model.pt")
+"""
+model = MADExplorer("pet-mad-latest.ckpt", mlp_checkpoint="mtt_projection_model.pt")
 
 metadata = mta.ModelMetadata(
     name="mad-explorer",
@@ -227,3 +209,4 @@ capabilities = mta.ModelCapabilities(
 
 mad_explorer = mta.AtomisticModel(model.eval(), metadata, capabilities)
 mad_explorer.save("mad_explorer.pt")
+"""
