@@ -6,8 +6,8 @@ import metatomic.torch as mta
 import torch
 from torch import nn
 
-from src.mad_explorer.mlp_projector import MLPProjector
-from src.mad_explorer.scaler import TorchStandardScaler
+from .mlp_projector import MLPProjector
+from .scaler import TorchStandardScaler
 
 
 class MADExplorer(nn.Module):
