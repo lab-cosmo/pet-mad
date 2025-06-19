@@ -72,7 +72,7 @@ class MADExplorer(nn.Module):
             self.features_output: mta.ModelOutput(per_atom=per_atom)
         }
 
-        if selected_atoms:
+        if selected_atoms is not None:
             selected_atoms = selected_atoms.to(self.device)
 
         features = self.get_descriptors(
@@ -161,27 +161,21 @@ class MADExplorer(nn.Module):
         return self.pet.atomic_types
 
     def load_checkpoint(self, path: Union[str, Path]):
-        checkpoint = torch.load(path, map_location=self.device, weights_only=False)
-
+        checkpoint = torch.load(path, map_location=self.device)
         self.projector.load_state_dict(checkpoint["projector_state_dict"])
 
-        if "feature_scaler_state_dict" in checkpoint:
-            self.feature_scaler.load_state_dict(checkpoint["feature_scaler_state_dict"])
-
-        if "projection_scaler_state_dict" in checkpoint:
-            self.projection_scaler.load_state_dict(
-                checkpoint["projection_scaler_state_dict"]
-            )
-
-        self.projector.to(self.device)
-        self.feature_scaler.to(self.device)
-        self.projection_scaler.to(self.device)
+        self.feature_scaler.mean = checkpoint["feature_scaler_mean"]
+        self.feature_scaler.std = checkpoint["feature_scaler_std"]
+        self.projection_scaler.mean = checkpoint["projection_scaler_mean"]
+        self.projection_scaler.std = checkpoint["projection_scaler_std"]
 
     def save_checkpoint(self, path: Union[str, Path]):
         checkpoint = {
             "projector_state_dict": self.projector.state_dict(),
-            "feature_scaler_state_dict": self.feature_scaler.state_dict(),
-            "projection_scaler_state_dict": self.projection_scaler.state_dict(),
+            "feature_scaler_mean": self.feature_scaler.mean,
+            "feature_scaler_std": self.feature_scaler.std,
+            "projection_scaler_mean": self.projection_scaler.mean,
+            "projection_scaler_std": self.projection_scaler.std,
         }
         torch.save(checkpoint, path)
 
