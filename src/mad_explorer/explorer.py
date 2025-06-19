@@ -72,7 +72,9 @@ class MADExplorer(nn.Module):
             self.features_output: mta.ModelOutput(per_atom=per_atom)
         }
 
-        selected_atoms = selected_atoms.to(self.device)
+        if selected_atoms:
+            selected_atoms = selected_atoms.to(self.device)
+
         features = self.get_descriptors(
             systems, pet_requested_outputs, per_atom, selected_atoms
         )
@@ -158,23 +160,28 @@ class MADExplorer(nn.Module):
     def get_atomic_types(self) -> List[int]:
         return self.pet.atomic_types
 
-    def load_checkpoint(self, path: str):
-        checkpoint = torch.load(path, weights_only=False)
+    def load_checkpoint(self, path: Union[str, Path]):
+        checkpoint = torch.load(path, map_location=self.device, weights_only=False)
+
         self.projector.load_state_dict(checkpoint["projector_state_dict"])
 
-        self.feature_scaler.mean = checkpoint["feature_mean"].to(self.device)
-        self.feature_scaler.std = checkpoint["feature_std"].to(self.device)
+        if "feature_scaler_state_dict" in checkpoint:
+            self.feature_scaler.load_state_dict(checkpoint["feature_scaler_state_dict"])
 
-        self.projection_scaler.mean = checkpoint["projection_mean"].to(self.device)
-        self.projection_scaler.std = checkpoint["projection_std"].to(self.device)
+        if "projection_scaler_state_dict" in checkpoint:
+            self.projection_scaler.load_state_dict(
+                checkpoint["projection_scaler_state_dict"]
+            )
 
-    def save_checkpoint(self, path: str):
+        self.projector.to(self.device)
+        self.feature_scaler.to(self.device)
+        self.projection_scaler.to(self.device)
+
+    def save_checkpoint(self, path: Union[str, Path]):
         checkpoint = {
             "projector_state_dict": self.projector.state_dict(),
-            "feature_mean": self.feature_scaler.mean,
-            "feature_std": self.feature_scaler.std,
-            "projection_mean": self.projection_scaler.mean,
-            "projection_std": self.projection_scaler.std,
+            "feature_scaler_state_dict": self.feature_scaler.state_dict(),
+            "projection_scaler_state_dict": self.projection_scaler.state_dict(),
         }
         torch.save(checkpoint, path)
 
