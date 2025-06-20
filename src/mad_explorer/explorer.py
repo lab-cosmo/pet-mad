@@ -13,17 +13,19 @@ from .scaler import TorchStandardScaler
 
 class MADExplorer(nn.Module):
     """
-    Metatomic wrapper model for extracting last-layer features from a PET-MAD and
-    projecting them into a low-dimensional space using an MLP.
+    Metatomic wrapper model for extracting last-layer features from a PET-MAD
+    and projecting them into a low-dimensional space using an MLP.
 
     The model is intended for exploratory analysis and visualization of the
     learned representations.
 
-    :param pet_checkpoint: path to a saved PET-MAD checkpoint or an in-memory instance
+    :param pet_checkpoint: path to a saved PET-MAD checkpoint or an in-memory
+        instance
     :param input_dim: dimensionality of the input PET-MAD features for projector
     :param output_dim: target low dimensionality for the projected embeddings
     :param device: cpu or cuda
-    :param features_output: key to access the PET-MAD feature output
+    :param features_output: key to access the PET-MAD feature output.
+        mtt::aux::energy_last_layer_features is used by default
     """
 
     def __init__(
@@ -40,10 +42,9 @@ class MADExplorer(nn.Module):
 
         if isinstance(pet_checkpoint, (str, Path)):
             checkpoint = torch.load(pet_checkpoint, weights_only=False)
+            self.pet = PET.load_checkpoint(checkpoint, "export").to(self.device)
         else:
-            checkpoint = pet_checkpoint
-
-        self.pet = PET.load_checkpoint(checkpoint, "export").to(self.device)
+            self.pet = pet_checkpoint
 
         self.features_output = features_output
 
