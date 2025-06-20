@@ -179,35 +179,3 @@ class MADExplorer(nn.Module):
             "projection_scaler_std": self.projection_scaler.std,
         }
         torch.save(checkpoint, path)
-
-
-"""
-model = MADExplorer("pet-mad-latest.ckpt", mlp_checkpoint="mtt_projection_model.pt")
-
-metadata = mta.ModelMetadata(
-    name="mad-explorer",
-    description="Exploration tool for PET-MAD model features upon SMAP projections",
-    authors=["TODO"],
-    references={
-        "architecture": ["https://arxiv.org/abs/2305.19302v3"],
-        "model": ["http://arxiv.org/abs/2503.14118"],
-        "implementation": ["https://doi.org/10.1073/pnas.1108486108"],
-    },
-)
-
-outputs = {
-    "features": mta.ModelOutput(per_atom=True),
-}
-
-capabilities = mta.ModelCapabilities(
-    outputs=outputs,
-    length_unit="angstrom",
-    supported_devices=["cpu", "cuda"],
-    dtype="float64",
-    interaction_range=0.0,
-    atomic_types=model.get_atomic_types(),
-)
-
-mad_explorer = mta.AtomisticModel(model.eval(), metadata, capabilities)
-mad_explorer.save("mad_explorer.pt")
-"""
