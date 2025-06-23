@@ -1,42 +1,10 @@
-import importlib.util
 import logging
 import os
-import warnings
 from platformdirs import user_cache_dir
 from typing import Optional
 
-from metatomic.torch import ModelMetadata
 from metatomic.torch.ase_calculator import MetatomicCalculator
-from metatrain.utils.io import load_model as load_metatrain_model
-
-warnings.filterwarnings(
-    "ignore",
-    message=("PET assumes that Cartesian tensors"),
-)
-
-METADATA = ModelMetadata(
-    name="PET-MAD",
-    description="A universal interatomic potential for advanced materials modeling",
-    authors=[
-        "Arslan Mazitov (arslan.mazitov@epfl.ch)",
-        "Filippo Bigi",
-        "Matthias Kellner",
-        "Paolo Pegolo",
-        "Davide Tisi",
-        "Guillaume Fraux",
-        "Sergey Pozdnyakov",
-        "Philip Loche",
-        "Michele Ceriotti (michele.ceriotti@epfl.ch)",
-    ],
-    references={
-        "architecture": ["https://arxiv.org/abs/2305.19302v3"],
-        "model": ["http://arxiv.org/abs/2503.14118"],
-    },
-)
-VERSIONS = ("latest", "1.1.0", "1.0.1", "1.0.0")
-BASE_URL = (
-    "https://huggingface.co/lab-cosmo/pet-mad/resolve/{}/models/pet-mad-latest.ckpt"
-)
+from ._models import get_pet_mad
 
 
 class PETMADCalculator(MetatomicCalculator):
@@ -63,34 +31,14 @@ class PETMADCalculator(MetatomicCalculator):
             the options in the model's `supported_device` in order.
         """
 
-        if version not in VERSIONS:
-            raise ValueError(
-                f"Version {version} is not supported. Supported versions are {VERSIONS}"
-            )
-
-        extensions_directory = None
-        if version == "1.0.0":
-            if not importlib.util.find_spec("pet_neighbors_convert"):
-                raise ImportError(
-                    f"PET-MAD v{version} is now deprecated. Please consider using the "
-                    "`latest` version. If you still want to use it, please install the "
-                    "pet-mad package with optional dependencies: "
-                    "pip install pet-mad[deprecated]"
-                )
-                extensions_directory = "extensions"
-
-        if checkpoint_path is not None:
-            logging.info(f"Loading PET-MAD model from checkpoint: {checkpoint_path}")
-            path = checkpoint_path
-        else:
-            logging.info(f"Downloading PET-MAD model version: {version}")
-            path = BASE_URL.format(
-                f"v{version}" if version not in ("latest", "1.1.0") else "main"
-            )
-        model = load_metatrain_model(path).export(METADATA)
+        model = get_pet_mad(version=version, checkpoint_path=checkpoint_path)
 
         cache_dir = user_cache_dir("pet-mad", "metatensor")
         os.makedirs(cache_dir, exist_ok=True)
+
+        extensions_directory = None
+        if version == "1.0.0":
+            extensions_directory = "extensions"
 
         pt_path = cache_dir + f"/pet-mad-{version}.pt"
         extensions_directory = (

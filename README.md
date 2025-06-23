@@ -137,6 +137,17 @@ to fetch the PET-MAD model from the HuggingFace repository:
 mtt export https://huggingface.co/lab-cosmo/pet-mad/resolve/main/models/pet-mad-latest.ckpt
 ```
 
+Alternatively, you can also download the model from Python:
+
+```py
+import pet_mad
+
+pet_mad.save_pet_mad(version="latest", output="pet-mad-latest.pt")
+
+# you can also get a metatomic AtomisticModel for advance usage
+model = pet_mad.get_pet_mad(version="latest")
+```
+
 This command will download the model and convert it to TorchScript format. Then
 you need to create the `options.yaml` file and specify the dataset you want to
 evaluate the model on (where the dataset is stored in `extxyz` format):
