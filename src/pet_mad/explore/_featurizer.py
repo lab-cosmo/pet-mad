@@ -30,6 +30,15 @@ PETMAD_EXPLORER_URL = "https://huggingface.co/sofiia-chorna/pet-mad-explorer/res
 METADATA = mta.ModelMetadata(
     name="PET-MAD explorer",
     description="Exploration tool for PET-MAD model features using Sketch-Map projection",
+    authors=[
+        "Arslan Mazitov (arslan.mazitov@epfl.ch)",
+        "Sofiia Chorna",
+        "Guillaume Fraux",
+        "Marnik Bercx",
+        "Giovanni Pizzi",
+        "Sandip De",
+        "Michele Ceriotti (michele.ceriotti@epfl.ch)",
+    ],
     references={
         "model": ["http://arxiv.org/abs/2503.14118"],
     },
