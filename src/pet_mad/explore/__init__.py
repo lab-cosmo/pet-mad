@@ -1,3 +1,3 @@
-from .featurizer import PETMADFeaturizer
+from ._featurizer import PETMADFeaturizer
 
 __all__ = ["PETMADFeaturizer"]

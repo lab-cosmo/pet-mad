@@ -4,23 +4,22 @@ from typing import Dict, List, Optional, Union
 import metatensor.torch as mts
 import metatomic.torch as mta
 import torch
+
+from metatrain.utils.io import load_model as load_metatrain_model
 from metatrain.pet import PET
-from torch import nn
 
-from .mlp_projector import MLPProjector
-from .scaler import TorchStandardScaler
+from ._modules import MLPProjector, TorchStandardScaler
 
 
-class MADExplorer(nn.Module):
+class MADExplorer(torch.nn.Module):
     """
-    Metatomic wrapper model for extracting last-layer features from a PET-MAD
-    and projecting them into a low-dimensional space using an MLP.
+    Metatomic model projecting the last-layer features from PET-MAD into a
+    low-dimensional space.
 
-    The model is intended for exploratory analysis and visualization of the
-    learned representations.
+    The model is intended for exploratory analysis and visualization of the learned
+    representations.
 
-    :param pet_checkpoint: path to a saved PET-MAD checkpoint or an in-memory
-        instance
+    :param model: path to a saved PET-MAD checkpoint or an in-memory instance
     :param input_dim: dimensionality of the input PET-MAD features for projector
     :param output_dim: target low dimensionality for the projected embeddings
     :param device: cpu or cuda
@@ -30,7 +29,7 @@ class MADExplorer(nn.Module):
 
     def __init__(
         self,
-        pet_checkpoint: Union[str, Path, PET],
+        model: Union[str, Path, PET],
         input_dim: int = 1024,
         output_dim: int = 3,
         device: Optional[Union[str, torch.device]] = "cpu",
@@ -40,11 +39,10 @@ class MADExplorer(nn.Module):
 
         self.device = device
 
-        if isinstance(pet_checkpoint, (str, Path)):
-            checkpoint = torch.load(pet_checkpoint, weights_only=False)
-            self.pet = PET.load_checkpoint(checkpoint, "export").to(self.device)
+        if isinstance(model, (str, Path)):
+            self.pet = load_metatrain_model(model)
         else:
-            self.pet = pet_checkpoint
+            self.pet = model
 
         self.features_output = features_output
 
@@ -76,9 +74,7 @@ class MADExplorer(nn.Module):
         if selected_atoms is not None:
             selected_atoms = selected_atoms.to(self.device)
 
-        features = self.get_descriptors(
-            systems, pet_requested_outputs, per_atom, selected_atoms
-        )
+        features = self._get_features(systems, pet_requested_outputs, selected_atoms)
 
         if self.feature_scaler.mean is not None and self.feature_scaler.std is not None:
             features = self.feature_scaler.transform(features)
@@ -120,11 +116,10 @@ class MADExplorer(nn.Module):
 
         return {"features": tensor_map}
 
-    def get_descriptors(
+    def _get_features(
         self,
         systems: List[mta.System],
-        options: Dict[str, mta.ModelOutput],
-        per_atom: bool,
+        outputs: Dict[str, mta.ModelOutput],
         selected_atoms: Optional[mts.Labels],
     ) -> torch.Tensor:
         """
@@ -134,13 +129,13 @@ class MADExplorer(nn.Module):
         features across atoms
         """
 
-        output = self.pet(systems, options)
+        output = self.pet(systems, outputs, selected_atoms)
         features = output[self.features_output]
 
         if selected_atoms is not None:
             features = mts.slice(features, "samples", selected_atoms)
 
-        if per_atom:
+        if outputs[self.features_output].per_atom:
             mean = mts.mean_over_samples(features, "atom")
             mean_vals = torch.cat([block.values for block in mean.blocks()], dim=0)
 
@@ -153,13 +148,11 @@ class MADExplorer(nn.Module):
 
         if descriptors.shape[1] != self.projector.input_dim:
             raise ValueError(
-                f"Expected input dim for projector: {self.projector.input_dim}, got: {descriptors.shape[1]}"
+                f"Expected input dim for projector: {self.projector.input_dim}, "
+                "got: {descriptors.shape[1]}"
             )
 
         return descriptors.detach()
-
-    def get_atomic_types(self) -> List[int]:
-        return self.pet.atomic_types
 
     def load_checkpoint(self, path: Union[str, Path]):
         checkpoint = torch.load(path, map_location=self.device, weights_only=False)
@@ -169,13 +162,3 @@ class MADExplorer(nn.Module):
         self.feature_scaler.std = checkpoint["feature_scaler_std"]
         self.projection_scaler.mean = checkpoint["projection_scaler_mean"]
         self.projection_scaler.std = checkpoint["projection_scaler_std"]
-
-    def save_checkpoint(self, path: Union[str, Path]):
-        checkpoint = {
-            "projector_state_dict": self.projector.state_dict(),
-            "feature_scaler_mean": self.feature_scaler.mean,
-            "feature_scaler_std": self.feature_scaler.std,
-            "projection_scaler_mean": self.projection_scaler.mean,
-            "projection_scaler_std": self.projection_scaler.std,
-        }
-        torch.save(checkpoint, path)

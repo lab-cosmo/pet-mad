@@ -2,7 +2,7 @@ import logging
 import os
 import warnings
 import numpy as np
-from typing import Literal, Optional
+from typing import Optional
 from urllib.request import urlretrieve
 
 import metatensor.torch as mts
@@ -13,7 +13,8 @@ from metatrain.utils.dtype import dtype_to_str
 from platformdirs import user_cache_dir
 from tqdm import tqdm
 
-from .explorer_model import MADExplorer
+from ._explorer import MADExplorer
+from .._models import get_pet_mad
 
 
 warnings.filterwarnings(
@@ -22,19 +23,13 @@ warnings.filterwarnings(
 )
 
 VERSIONS = ["latest"]
-PETMAD_MODEL = {
-    "cache_filename": "pet-mad-latest.ckpt",
-    "url": "https://huggingface.co/lab-cosmo/pet-mad/resolve/main/models/pet-mad-latest.ckpt",
-}
 
-PETMAD_EXPLORER = {
-    "cache_filename": "pet-mad-explorer-{version}.ckpt",
-    "url": "https://huggingface.co/sofiia-chorna/pet-mad-explorer/resolve/{branch}/pet-mad-explorer-latest.ckpt",
-}
+PETMAD_EXPLORER_URL = "https://huggingface.co/sofiia-chorna/pet-mad-explorer/resolve/{branch}/pet-mad-explorer-latest.ckpt"
+
 
 METADATA = mta.ModelMetadata(
-    name="PET-MAD-Explorer",
-    description="Exploration tool for PET-MAD model features upon SMAP projections",
+    name="PET-MAD explorer",
+    description="Exploration tool for PET-MAD model features using Sketch-Map projection",
     references={
         "model": ["http://arxiv.org/abs/2503.14118"],
     },
@@ -75,10 +70,11 @@ class PETMADFeaturizer:
     ):
         """
         :param version: PET-MAD version to use. Supported version is "latest".
-        :param checkpoint_path: path to a checkpoint file to load the exploration model from. If
-            provided, the `version` parameter is ignored.
-        :param pet_checkpoint_path: path to a petmad checkpoint file to use for the model from. If not
-            provided, the latest checkpoint is fetched from HF
+        :param checkpoint_path: path to a checkpoint file to load the exploration model
+            from. If provided, the `version` parameter is ignored.
+        :param pet_checkpoint_path: path to a petmad checkpoint file to use for the
+            model from. If not provided, the latest checkpoint is fetched from
+            HuggingFace.
         :param check_consistency: should we check the model for consistency when
             running, defaults to False.
         :param device: torch device to use for the calculation. If `None`, we will try
@@ -94,19 +90,16 @@ class PETMADFeaturizer:
         cache_dir = user_cache_dir("pet-mad", "metatensor")
         os.makedirs(cache_dir, exist_ok=True)
 
-        petmad_exp_path = self._get_model_path(
-            model_type="explorer",
+        petmad_explorer_path = _get_explorer_path(
             version=version,
             checkpoint_path=checkpoint_path,
             cache_dir=cache_dir,
         )
 
-        petmad_path = self._get_model_path(
-            model_type="model", checkpoint_path=pet_checkpoint_path, cache_dir=cache_dir
-        )
+        petmad = get_pet_mad(version=version, checkpoint_path=pet_checkpoint_path)
 
-        explorer = MADExplorer(petmad_path, device=device)
-        explorer.load_checkpoint(petmad_exp_path)
+        explorer = MADExplorer(petmad.module, device=device)
+        explorer.load_checkpoint(petmad_explorer_path)
 
         outputs = {"features": mta.ModelOutput(per_atom=True)}
         self.dtype = torch.float64
@@ -117,7 +110,7 @@ class PETMADFeaturizer:
             supported_devices=["cpu", "cuda"],
             dtype=dtype_to_str(self.dtype),
             interaction_range=0.0,
-            atomic_types=explorer.get_atomic_types(),
+            atomic_types=explorer.pet.atomic_types,
         )
 
         self.mad_explorer = mta.AtomisticModel(explorer.eval(), METADATA, capabilities)
@@ -169,32 +162,27 @@ class PETMADFeaturizer:
 
         return np.concatenate(outputs)
 
-    def _get_model_path(
-        self,
-        model_type: Literal["model", "explorer"],
-        version: Optional[str] = None,
-        checkpoint_path: Optional[str] = None,
-        cache_dir: str = "",
-    ) -> str:
-        if checkpoint_path is not None:
-            logging.info(f"Loading model from checkpoint: {checkpoint_path}")
-            return checkpoint_path
 
-        if model_type == "explorer":
-            cached_filename = PETMAD_EXPLORER["cache_filename"].format(version=version)
-            branch = f"v{version}" if version != "latest" else "main"
-            url = PETMAD_EXPLORER["url"].format(branch=branch)
-        else:
-            cached_filename = PETMAD_MODEL["cache_filename"]
-            url = PETMAD_MODEL["url"]
+def _get_explorer_path(
+    version: Optional[str] = None,
+    checkpoint_path: Optional[str] = None,
+    cache_dir: str = "",
+) -> str:
+    if checkpoint_path is not None:
+        logging.info(f"Loading model from checkpoint: {checkpoint_path}")
+        return checkpoint_path
 
-        cached_path = os.path.join(cache_dir, cached_filename)
+    cached_filename = "pet-mad-explorer-{version}.ckpt".format(version=version)
+    branch = f"v{version}" if version != "latest" else "main"
+    url = PETMAD_EXPLORER_URL.format(branch=branch)
 
-        if os.path.exists(cached_path):
-            logging.info(f"Loading model from cache: {cached_path}")
-            return cached_path
+    cached_path = os.path.join(cache_dir, cached_filename)
 
-        logging.info("Downloading PET-MAD-Explorer model")
-        path, _ = urlretrieve(url, cached_path)
+    if os.path.exists(cached_path):
+        logging.info(f"Loading model from cache: {cached_path}")
+        return cached_path
 
-        return path
+    logging.info("Downloading PET-MAD-Explorer model")
+    path, _ = urlretrieve(url, cached_path)
+
+    return path
