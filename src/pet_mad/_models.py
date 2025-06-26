@@ -1,9 +1,10 @@
 import importlib.util
-import warnings
 import logging
+import warnings
 
-from metatomic.torch import ModelMetadata, AtomisticModel
+from metatomic.torch import AtomisticModel, ModelMetadata
 from metatrain.utils.io import load_model as load_metatrain_model
+
 
 METADATA = ModelMetadata(
     name="PET-MAD",
