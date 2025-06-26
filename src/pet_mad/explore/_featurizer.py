@@ -78,7 +78,8 @@ class PETMADFeaturizer:
         progress_bar=tqdm,
     ):
         """
-        :param version: PET-MAD version to use. Supported version is "latest".
+        :param version: PET-MAD Explorer version to use. Supported versions are "latest",
+            "1.0.0".
         :param checkpoint_path: path to a checkpoint file to load the exploration model
             from. If provided, the `version` parameter is ignored.
         :param pet_checkpoint_path: path to a petmad checkpoint file to use for the
@@ -105,7 +106,7 @@ class PETMADFeaturizer:
             cache_dir=cache_dir,
         )
 
-        petmad = get_pet_mad(version=version, checkpoint_path=pet_checkpoint_path)
+        petmad = get_pet_mad(version="latest", checkpoint_path=pet_checkpoint_path)
 
         explorer = MADExplorer(petmad.module, device=device)
         explorer.load_checkpoint(petmad_explorer_path)
