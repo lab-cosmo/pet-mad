@@ -1,20 +1,20 @@
 import logging
 import os
 import warnings
-import numpy as np
 from typing import Optional
 from urllib.request import urlretrieve
 
 import metatensor.torch as mts
 import metatomic.torch as mta
+import numpy as np
 import torch
 import vesin.metatomic as vesin_metatomic
 from metatrain.utils.dtype import dtype_to_str
 from platformdirs import user_cache_dir
 from tqdm import tqdm
 
-from ._explorer import MADExplorer
 from .._models import get_pet_mad
+from ._explorer import MADExplorer
 
 
 warnings.filterwarnings(
