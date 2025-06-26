@@ -22,7 +22,7 @@ warnings.filterwarnings(
     message=("PET assumes that Cartesian tensors"),
 )
 
-VERSIONS = ["latest"]
+VERSIONS = ["latest", "1.0.0"]
 
 PETMAD_EXPLORER_URL = "https://huggingface.co/lab-cosmo/pet-mad-explorer/resolve/{branch}/pet-mad-explorer-latest.ckpt"
 
