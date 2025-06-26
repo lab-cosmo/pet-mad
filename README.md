@@ -35,6 +35,7 @@ complex atomistic simulations.
     - [Evaluating PET-MAD on a dataset](#evaluating-pet-mad-on-a-dataset)
     - [Running PET-MAD with LAMMPS](#running-pet-mad-with-lammps)
     - [Running PET-MAD with empirical dispersion corrections](#running-pet-mad-with-empirical-dispersion-corrections)
+    - [Dataset visualization with the PET-MAD featurizer](#dataset-visualization-with-the-pet-mad-featurizer)
 5. [Examples](#examples)
 6. [Fine-tuning](#fine-tuning)
 7. [Documentation](#documentation)
@@ -346,6 +347,35 @@ combined_calc = SumCalculator([calc_MAD, dft_d3])
 # assign the calculator to the atoms object
 atoms.calc = combined_calc
 
+```
+
+## Dataset visualization with the PET-MAD featurizer
+ 
+You can use PET-MAD last-layer features together with a pre-trained 
+sketch-map dimensionality reduction to obtain 2D and 3D representations
+of a dataset, e.g. to identify structural or chemical motifs.
+This can be used as a stand-alone feature builder, or combined with
+the [chemiscope viewer](https://chemiscope.org) to generate an 
+interactive visualization. 
+
+```python
+import ase.io
+import chemiscope
+from pet_mad.explore import PETMADFeaturizer
+
+featurizer = PETMADFeaturizer(version="latest")
+
+# Load structures
+frames = ase.io.read("dataset.xyz", ":")
+
+# You can just compute features
+features = featurizer(frames, None)
+
+# Or create an interactive visualization in a Jupyter notebook
+chemiscope.explore(
+    frames,
+    featurize=featurizer
+)
 ```
 
 ## Examples
