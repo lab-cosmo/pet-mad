@@ -24,7 +24,7 @@ warnings.filterwarnings(
 
 VERSIONS = ["latest"]
 
-PETMAD_EXPLORER_URL = "https://huggingface.co/sofiia-chorna/pet-mad-explorer/resolve/{branch}/pet-mad-explorer-latest.ckpt"
+PETMAD_EXPLORER_URL = "https://huggingface.co/lab-cosmo/pet-mad-explorer/resolve/{branch}/pet-mad-explorer-latest.ckpt"
 
 
 METADATA = mta.ModelMetadata(
