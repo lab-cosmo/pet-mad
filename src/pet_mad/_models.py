@@ -34,8 +34,8 @@ BASE_URL = (
 def get_pet_mad(*, version="latest", checkpoint_path=None) -> AtomisticModel:
     """Get a metatomic ``AtomisticModel`` for PET-MAD.
 
-    :param version: PET-MAD version to use. Supported versions are "latest", "1.0.1",
-        "1.1.0". Defaults to "latest".
+    :param version: PET-MAD version to use. Supported versions are "latest", "1.1.0",
+        "1.0.1", "1.0.0". Defaults to "latest".
     :param checkpoint_path: path to a checkpoint file to load the model from. If
         provided, the `version` parameter is ignored.
     """
@@ -79,8 +79,8 @@ def save_pet_mad(*, version="latest", checkpoint_path=None, output=None):
     Save the PET-MAD model to a TorchScript file (``pet-mad-xxx.pt``). These files can
     be used with LAMMPS and other tools to run simulations without Python.
 
-    :param version: PET-MAD version to use. Supported versions are "latest", "1.0.1",
-        "1.1.0". Defaults to "latest".
+    :param version: PET-MAD version to use. Supported versions are "latest", "1.1.0",
+        "1.0.1", "1.0.0". Defaults to "latest".
     :param checkpoint_path: path to a checkpoint file to load the model from. If
         provided, the `version` parameter is ignored.
     :param output: path to use for the output model, defaults to
