@@ -1,9 +1,10 @@
 import logging
 import os
-from platformdirs import user_cache_dir
 from typing import Optional
 
 from metatomic.torch.ase_calculator import MetatomicCalculator
+from platformdirs import user_cache_dir
+
 from ._models import get_pet_mad
 
 
