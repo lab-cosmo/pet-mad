@@ -1,9 +1,10 @@
 import logging
 import os
-from platformdirs import user_cache_dir
 from typing import Optional
 
 from metatomic.torch.ase_calculator import MetatomicCalculator
+from platformdirs import user_cache_dir
+
 from ._models import get_pet_mad
 
 
@@ -21,8 +22,8 @@ class PETMADCalculator(MetatomicCalculator):
         device=None,
     ):
         """
-        :param version: PET-MAD version to use. Supported versions are "latest",
-            "v1.0.1", "1.0.0". Defaults to "latest".
+        :param version: PET-MAD version to use. Supported versions are "latest", "1.1.0",
+            "1.0.1", "1.0.0". Defaults to "latest".
         :param checkpoint_path: path to a checkpoint file to load the model from. If
             provided, the `version` parameter is ignored.
         :param check_consistency: should we check the model for consistency when
