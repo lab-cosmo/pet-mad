@@ -92,7 +92,7 @@ def save_pet_mad(*, version="latest", checkpoint_path=None, output=None):
         logging.info("putting TorchScript extensions in `extensions/`")
         extensions_directory = "extensions"
 
-    model = get_pet_mad(version, checkpoint_path)
+    model = get_pet_mad(version=version, checkpoint_path=checkpoint_path)
 
     if output is None:
         if checkpoint_path is None:
