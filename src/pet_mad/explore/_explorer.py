@@ -38,14 +38,14 @@ class MADExplorer(torch.nn.Module):
         super().__init__()
 
         self.device = device
+        self.features_output = features_output
 
         if isinstance(model, (str, Path)):
             self.pet = load_metatrain_model(model)
         else:
             self.pet = model
 
-        self.features_output = features_output
-
+        self.pet = self.pet.to(self.device)
         self.dtype = next(self.pet.parameters()).dtype
 
         self.projector = MLPProjector(input_dim, output_dim).to(self.device)
