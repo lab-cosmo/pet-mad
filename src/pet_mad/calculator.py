@@ -18,6 +18,7 @@ class PETMADCalculator(MetatomicCalculator):
         version: str = "latest",
         checkpoint_path: Optional[str] = None,
         *,
+        non_conservative=False,
         check_consistency=False,
         device=None,
     ):
@@ -26,6 +27,8 @@ class PETMADCalculator(MetatomicCalculator):
             "1.0.1", "1.0.0". Defaults to "latest".
         :param checkpoint_path: path to a checkpoint file to load the model from. If
             provided, the `version` parameter is ignored.
+        :param non_conservative: whether to use the non-conservative regime of forces and
+            stresses prediction. Defaults to False.
         :param check_consistency: should we check the model for consistency when
             running, defaults to False.
         :param device: torch device to use for the calculation. If `None`, we will try
@@ -56,6 +59,6 @@ class PETMADCalculator(MetatomicCalculator):
             extensions_directory=extensions_directory,
             check_consistency=check_consistency,
             device=device,
-            non_conservative=False,
+            non_conservative=non_conservative,
             additional_outputs={},
         )

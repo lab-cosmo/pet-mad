@@ -1,10 +1,19 @@
 from pet_mad.calculator import PETMADCalculator
 from ase.build import bulk
-import pytest
+import numpy as np
 
-@pytest.mark.skip(reason="Waiting until https://github.com/metatensor/metatensor/pull/914 is merged")
 def test_non_conservative():
     atoms = bulk("Si", cubic=True, a=5.43, crystalstructure="diamond")
-    atoms.calc = PETMADCalculator(version="latest", non_conservative=True)
-    _ = atoms.get_potential_energy()
-    _ = atoms.get_forces()
+    calc = PETMADCalculator(version="latest", non_conservative=False)
+    calc_nc = PETMADCalculator(version="latest", non_conservative=True)
+
+    atoms.calc = calc
+    forces = atoms.get_forces()
+    stresses = atoms.get_stress()
+
+    atoms.calc = calc_nc
+    forces_nc = atoms.get_forces()
+    stresses_nc = atoms.get_stress()
+
+    assert np.allclose(forces, forces_nc, atol=1e-1)
+    assert np.allclose(stresses, stresses_nc, atol=1e-1)

@@ -32,6 +32,8 @@ complex atomistic simulations.
 3. [Interfaces for Atomistic Simulations](#interfaces-for-atomistic-simulations)
 4. [Usage](#usage)
     - [ASE Interface](#ase-interface)
+        - [Basic usage](#basic-usage)
+        - [Non-conservative (direct) forces and stresses prediction](#non-conservative-direct-forces-and-stresses-prediction)
     - [Evaluating PET-MAD on a dataset](#evaluating-pet-mad-on-a-dataset)
     - [Running PET-MAD with LAMMPS](#running-pet-mad-with-lammps)
     - [Running PET-MAD with empirical dispersion corrections](#running-pet-mad-with-empirical-dispersion-corrections)
@@ -87,8 +89,7 @@ conda install -c metatensor -c conda-forge pet-mad
 Currently, we provide the following pre-trained models:
 
 - **`v1.1.0`** or **`latest`**: The updated PET-MAD model with an ability to run
-  simulations using the non-conservative forces and stresses (temporarily
-  disabled).
+  simulations using the non-conservative forces and stresses.
 - **`v1.0.1`**: The updated PET-MAD model with a new, pure PyTorch backend and
   slightly improved performance.
 - **`v1.0.0`**: PET-MAD model trained on the MAD dataset, which contains 95,595
@@ -109,6 +110,8 @@ PET-MAD integrates with the following atomistic simulation engines:
 
 ### ASE Interface
 
+#### Basic usage
+
 You can use the PET-MAD calculator, which is compatible with the Atomic
 Simulation Environment (ASE):
 
@@ -126,6 +129,35 @@ forces = atoms.get_forces()
 These ASE methods are ideal for single-structure evaluations, but they are
 inefficient for the evaluation on a large number of pre-defined structures. To
 perform efficient evaluation in that case, read [here](docs/README_BATCHED.md).
+
+#### Non-conservative (direct) forces and stresses prediction
+
+> [!WARNING]
+> This approach is experimental. Please use it with caution.
+
+PET-MAD also supports the direct prediction of forces and stresses. In that case,
+the forces and stresses are predicted as separated targets along with the energy
+target, i.e. not computed as derivatives of the energy using the PyTorch
+automatic differentiation. This approach typically leads to 2-3x speedup in the
+evaluation time, since backward pass is disabled. However, it requires
+additional care to avoid instabilities during the molecular dynamics simulations.
+
+To use the non-conservative forces and stresses, you need to set the `non_conservative` parameter to `True` when initializing the `PETMADCalculator` class.
+
+```python
+from pet_mad.calculator import PETMADCalculator
+from ase.build import bulk
+
+atoms = bulk("Si", cubic=True, a=5.43, crystalstructure="diamond")
+pet_mad_calculator = PETMADCalculator(version="latest", device="cpu", non_conservative=True)
+atoms.calc = pet_mad_calculator
+energy = atoms.get_potential_energy() # energy is computed as usual
+forces = atoms.get_forces() # forces now are predicted as a separate target
+stresses = atoms.get_stress() # stresses now are predicted as a separate target
+```
+
+More details on how to use the direct forces MD simulations are available in the
+[Atomistic Cookbook](https://atomistic-cookbook.org/examples/pet-mad-nc/pet-mad-nc.html).
 
 ### Evaluating PET-MAD on a dataset
 
