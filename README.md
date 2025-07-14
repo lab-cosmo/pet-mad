@@ -136,11 +136,11 @@ perform efficient evaluation in that case, read [here](docs/README_BATCHED.md).
 > This approach is experimental. Please use it with caution.
 
 PET-MAD also supports the direct prediction of forces and stresses. In that case,
-the forces and stresses are predicted as separated targets along with the energy
+the forces and stresses are predicted as separate targets along with the energy
 target, i.e. not computed as derivatives of the energy using the PyTorch
 automatic differentiation. This approach typically leads to 2-3x speedup in the
 evaluation time, since backward pass is disabled. However, it requires
-additional care to avoid instabilities during the molecular dynamics simulations.
+additional care to avoid instabilities during the molecular dynamics simulations. 
 
 To use the non-conservative forces and stresses, you need to set the `non_conservative` parameter to `True` when initializing the `PETMADCalculator` class.
 
@@ -156,8 +156,8 @@ forces = atoms.get_forces() # forces now are predicted as a separate target
 stresses = atoms.get_stress() # stresses now are predicted as a separate target
 ```
 
-More details on how to use the direct forces MD simulations are available in the
-[Atomistic Cookbook](https://atomistic-cookbook.org/examples/pet-mad-nc/pet-mad-nc.html).
+More details on how to make the direct forces MD simulations reliable are provided 
+in the [Atomistic Cookbook](https://atomistic-cookbook.org/examples/pet-mad-nc/pet-mad-nc.html).
 
 ### Evaluating PET-MAD on a dataset
 
