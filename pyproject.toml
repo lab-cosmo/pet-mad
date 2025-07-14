@@ -22,7 +22,7 @@ maintainers = [
 ]
 
 dependencies = [
-    "metatrain==2025.7",
+    "metatrain==2025.8.1",
     "huggingface_hub",
     "platformdirs",
     "tqdm",
