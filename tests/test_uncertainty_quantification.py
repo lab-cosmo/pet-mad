@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 from packaging.version import Version
 
-UQ_AVAILABILITY_VERSION = Version("1.2.0rc2")
+UQ_AVAILABILITY_VERSION = Version("1.2.0rc1")
 
 @pytest.mark.parametrize("version", ["1.1.0", "1.2.0rc2"])
 def test_uncertainty_quantification(version):
