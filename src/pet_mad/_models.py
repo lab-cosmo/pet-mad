@@ -1,6 +1,7 @@
 import importlib.util
 import logging
 import warnings
+from typing import Optional
 
 from metatomic.torch import AtomisticModel, ModelMetadata
 from metatrain.utils.io import load_model as load_metatrain_model
@@ -25,23 +26,25 @@ METADATA = ModelMetadata(
         "model": ["http://arxiv.org/abs/2503.14118"],
     },
 )
-VERSIONS = ("latest", "1.1.0", "1.0.1", "1.0.0")
+LATEST_VERSION = "1.2.0"
+AVAILABLE_VERSIONS = ("1.2.0", "1.1.0", "1.0.1", "1.0.0")
+
 BASE_URL = (
     "https://huggingface.co/lab-cosmo/pet-mad/resolve/{}/models/pet-mad-latest.ckpt"
 )
 
 
-def get_pet_mad(*, version="latest", checkpoint_path=None) -> AtomisticModel:
+def get_pet_mad(*, version: str = LATEST_VERSION, checkpoint_path: Optional[str] = None) -> AtomisticModel:
     """Get a metatomic ``AtomisticModel`` for PET-MAD.
 
-    :param version: PET-MAD version to use. Supported versions are "latest", "1.1.0",
-        "1.0.1", "1.0.0". Defaults to "latest".
+    :param version: PET-MAD version to use. Supported versions are "1.2.0",
+    "1.1.0", "1.0.1", "1.0.0".
     :param checkpoint_path: path to a checkpoint file to load the model from. If
         provided, the `version` parameter is ignored.
     """
-    if version not in VERSIONS:
+    if version not in AVAILABLE_VERSIONS:
         raise ValueError(
-            f"Version {version} is not supported. Supported versions are {VERSIONS}"
+            f"Version {version} is not supported. Supported versions are {AVAILABLE_VERSIONS}"
         )
 
     if version == "1.0.0":
@@ -61,7 +64,7 @@ def get_pet_mad(*, version="latest", checkpoint_path=None) -> AtomisticModel:
     else:
         logging.info(f"Downloading PET-MAD model version: {version}")
         path = BASE_URL.format(
-            f"v{version}" if version not in ("latest", "1.1.0") else "main"
+            f"v{version}" if version != LATEST_VERSION else "main"
         )
 
     with warnings.catch_warnings():
