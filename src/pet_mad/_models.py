@@ -1,35 +1,20 @@
 import importlib.util
 import logging
 import warnings
+from copy import deepcopy
 from typing import Optional
 
 from metatomic.torch import AtomisticModel, ModelMetadata
 from metatrain.utils.io import load_model as load_metatrain_model
+from .utils import get_metadata
+
+from packaging.version import Version
 
 
-METADATA = ModelMetadata(
-    name="PET-MAD",
-    
-    description="A universal interatomic potential for advanced materials modeling",
-    authors=[
-        "Arslan Mazitov (arslan.mazitov@epfl.ch)",
-        "Filippo Bigi",
-        "Matthias Kellner",
-        "Paolo Pegolo",
-        "Davide Tisi",
-        "Guillaume Fraux",
-        "Sergey Pozdnyakov",
-        "Philip Loche",
-        "Michele Ceriotti (michele.ceriotti@epfl.ch)",
-    ],
-    references={
-        "architecture": ["https://arxiv.org/abs/2305.19302v3"],
-        "model": ["http://arxiv.org/abs/2503.14118"],
-    },
-)
 
-LATEST_VERSION = "1.2.0"
-AVAILABLE_VERSIONS = ("1.2.0", "1.1.0", "1.0.1", "1.0.0")
+
+LATEST_VERSION = "1.2.0rc2"
+AVAILABLE_VERSIONS = ("1.2.0rc2", "1.1.0", "1.0.1", "1.0.0")
 
 BASE_URL = (
     "https://huggingface.co/lab-cosmo/pet-mad/resolve/{}/models/pet-mad-latest.ckpt"
@@ -39,17 +24,20 @@ BASE_URL = (
 def get_pet_mad(*, version: str = LATEST_VERSION, checkpoint_path: Optional[str] = None) -> AtomisticModel:
     """Get a metatomic ``AtomisticModel`` for PET-MAD.
 
-    :param version: PET-MAD version to use. Supported versions are "1.2.0",
+    :param version: PET-MAD version to use. Supported versions are "1.2.0rc2",
     "1.1.0", "1.0.1", "1.0.0". Defaults to the latest version.
     :param checkpoint_path: path to a checkpoint file to load the model from. If
         provided, the `version` parameter is ignored.
     """
-    if version not in AVAILABLE_VERSIONS:
+    if not isinstance(version, Version):
+        version = Version(version)
+
+    if version not in [Version(v) for v in AVAILABLE_VERSIONS]:
         raise ValueError(
             f"Version {version} is not supported. Supported versions are {AVAILABLE_VERSIONS}"
         )
 
-    if version == "1.0.0":
+    if version == Version("1.0.0"):
         if not importlib.util.find_spec("pet_neighbors_convert"):
             raise ImportError(
                 f"PET-MAD v{version} is now deprecated. Please consider using the "
@@ -76,8 +64,9 @@ def get_pet_mad(*, version: str = LATEST_VERSION, checkpoint_path: Optional[str]
         )
         model = load_metatrain_model(path)
 
-    METADATA.name += f" v{version}"
-    return model.export(METADATA)
+    metadata = get_metadata(version)
+    return model.export(metadata)
+
 
 
 def save_pet_mad(*, version: str = LATEST_VERSION, checkpoint_path=None, output=None):
@@ -85,7 +74,7 @@ def save_pet_mad(*, version: str = LATEST_VERSION, checkpoint_path=None, output=
     Save the PET-MAD model to a TorchScript file (``pet-mad-xxx.pt``). These files can
     be used with LAMMPS and other tools to run simulations without Python.
 
-    :param version: PET-MAD version to use. Supported versions are "1.2.0", "1.1.0",
+    :param version: PET-MAD version to use. Supported versions are "1.2.0rc2", "1.1.0",
         "1.0.1", "1.0.0". Defaults to the latest version.
     :param checkpoint_path: path to a checkpoint file to load the model from. If
         provided, the `version` parameter is ignored.
@@ -94,7 +83,7 @@ def save_pet_mad(*, version: str = LATEST_VERSION, checkpoint_path=None, output=
         a checkpoint.
     """
     extensions_directory = None
-    if version == "1.0.0":
+    if version == Version("1.0.0"):
         logging.info("Putting TorchScript extensions in `extensions/`")
         extensions_directory = "extensions"
 

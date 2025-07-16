@@ -6,10 +6,12 @@ from metatomic.torch.ase_calculator import MetatomicCalculator
 from metatomic.torch import ModelOutput
 from platformdirs import user_cache_dir
 
+from packaging.version import Version
+
 from ._models import get_pet_mad
 
-LATEST_VERSION = "1.2.0"
-UQ_AVAILABILITY_VERSION = "1.2.0"
+LATEST_VERSION = Version("1.2.0rc2")
+UQ_AVAILABILITY_VERSION = Version("1.2.0rc1")
 
 class PETMADCalculator(MetatomicCalculator):
     """
@@ -30,7 +32,7 @@ class PETMADCalculator(MetatomicCalculator):
     ):
         """
         :param version: PET-MAD version to use. Supported versions are 
-        "1.2.0" or "latest", "1.1.0", "1.0.1", "1.0.0". Defaults to "latest".
+        "1.2.0rc2" or "latest", "1.1.0", "1.0.1", "1.0.0". Defaults to "latest".
         :param checkpoint_path: path to a checkpoint file to load the model from. If
             provided, the `version` parameter is ignored.
         :param calculate_uncertainty: whether to calculate energy uncertainty.
@@ -51,6 +53,8 @@ class PETMADCalculator(MetatomicCalculator):
 
         if version == "latest":
             version = LATEST_VERSION
+        if not isinstance(version, Version):
+            version = Version(version)
 
         additional_outputs = {}
         if calculate_uncertainty or calculate_ensemble:
@@ -70,7 +74,7 @@ class PETMADCalculator(MetatomicCalculator):
         os.makedirs(cache_dir, exist_ok=True)
 
         extensions_directory = None
-        if version == "1.0.0":
+        if version == Version("1.0.0"):
             extensions_directory = "extensions"
 
         pt_path = cache_dir + f"/pet-mad-{version}.pt"
