@@ -9,6 +9,7 @@ from metatrain.utils.io import load_model as load_metatrain_model
 
 METADATA = ModelMetadata(
     name="PET-MAD",
+    
     description="A universal interatomic potential for advanced materials modeling",
     authors=[
         "Arslan Mazitov (arslan.mazitov@epfl.ch)",
@@ -26,6 +27,7 @@ METADATA = ModelMetadata(
         "model": ["http://arxiv.org/abs/2503.14118"],
     },
 )
+
 LATEST_VERSION = "1.2.0"
 AVAILABLE_VERSIONS = ("1.2.0", "1.1.0", "1.0.1", "1.0.0")
 
@@ -38,7 +40,7 @@ def get_pet_mad(*, version: str = LATEST_VERSION, checkpoint_path: Optional[str]
     """Get a metatomic ``AtomisticModel`` for PET-MAD.
 
     :param version: PET-MAD version to use. Supported versions are "1.2.0",
-    "1.1.0", "1.0.1", "1.0.0".
+    "1.1.0", "1.0.1", "1.0.0". Defaults to the latest version.
     :param checkpoint_path: path to a checkpoint file to load the model from. If
         provided, the `version` parameter is ignored.
     """
@@ -74,16 +76,17 @@ def get_pet_mad(*, version: str = LATEST_VERSION, checkpoint_path: Optional[str]
         )
         model = load_metatrain_model(path)
 
+    METADATA.name += f" v{version}"
     return model.export(METADATA)
 
 
-def save_pet_mad(*, version="latest", checkpoint_path=None, output=None):
+def save_pet_mad(*, version: str = LATEST_VERSION, checkpoint_path=None, output=None):
     """
     Save the PET-MAD model to a TorchScript file (``pet-mad-xxx.pt``). These files can
     be used with LAMMPS and other tools to run simulations without Python.
 
-    :param version: PET-MAD version to use. Supported versions are "latest", "1.1.0",
-        "1.0.1", "1.0.0". Defaults to "latest".
+    :param version: PET-MAD version to use. Supported versions are "1.2.0", "1.1.0",
+        "1.0.1", "1.0.0". Defaults to the latest version.
     :param checkpoint_path: path to a checkpoint file to load the model from. If
         provided, the `version` parameter is ignored.
     :param output: path to use for the output model, defaults to
@@ -92,7 +95,7 @@ def save_pet_mad(*, version="latest", checkpoint_path=None, output=None):
     """
     extensions_directory = None
     if version == "1.0.0":
-        logging.info("putting TorchScript extensions in `extensions/`")
+        logging.info("Putting TorchScript extensions in `extensions/`")
         extensions_directory = "extensions"
 
     model = get_pet_mad(version=version, checkpoint_path=checkpoint_path)
@@ -104,4 +107,4 @@ def save_pet_mad(*, version="latest", checkpoint_path=None, output=None):
             raise
 
     model.save(output, collect_extensions=extensions_directory)
-    logging.info(f"saved pet-mad model to {output}")
+    logging.info(f"Saved PET-MAD model to {output}")
