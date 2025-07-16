@@ -1,5 +1,6 @@
 from metatomic.torch import ModelMetadata
 
+
 def get_metadata(version: str):
     return ModelMetadata(
         name=f"PET-MAD v{version}",
@@ -18,7 +19,5 @@ def get_metadata(version: str):
         references={
             "architecture": ["https://arxiv.org/abs/2305.19302v3"],
             "model": ["http://arxiv.org/abs/2503.14118"],
-        }, 
+        },
     )
-
-

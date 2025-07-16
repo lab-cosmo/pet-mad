@@ -1,16 +1,13 @@
 import importlib.util
 import logging
 import warnings
-from copy import deepcopy
 from typing import Optional
 
-from metatomic.torch import AtomisticModel, ModelMetadata
+from metatomic.torch import AtomisticModel
 from metatrain.utils.io import load_model as load_metatrain_model
 from .utils import get_metadata
 
 from packaging.version import Version
-
-
 
 
 LATEST_VERSION = "1.2.0rc2"
@@ -21,7 +18,9 @@ BASE_URL = (
 )
 
 
-def get_pet_mad(*, version: str = LATEST_VERSION, checkpoint_path: Optional[str] = None) -> AtomisticModel:
+def get_pet_mad(
+    *, version: str = LATEST_VERSION, checkpoint_path: Optional[str] = None
+) -> AtomisticModel:
     """Get a metatomic ``AtomisticModel`` for PET-MAD.
 
     :param version: PET-MAD version to use. Supported versions are "1.2.0rc2",
@@ -53,9 +52,7 @@ def get_pet_mad(*, version: str = LATEST_VERSION, checkpoint_path: Optional[str]
         path = checkpoint_path
     else:
         logging.info(f"Downloading PET-MAD model version: {version}")
-        path = BASE_URL.format(
-            f"v{version}" if version != LATEST_VERSION else "main"
-        )
+        path = BASE_URL.format(f"v{version}" if version != LATEST_VERSION else "main")
 
     with warnings.catch_warnings():
         warnings.filterwarnings(
@@ -66,7 +63,6 @@ def get_pet_mad(*, version: str = LATEST_VERSION, checkpoint_path: Optional[str]
 
     metadata = get_metadata(version)
     return model.export(metadata)
-
 
 
 def save_pet_mad(*, version: str = LATEST_VERSION, checkpoint_path=None, output=None):
