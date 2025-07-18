@@ -106,7 +106,7 @@ class PETMADFeaturizer:
             cache_dir=cache_dir,
         )
 
-        petmad = get_pet_mad(version="latest", checkpoint_path=pet_checkpoint_path)
+        petmad = get_pet_mad(version="1.0.1", checkpoint_path=pet_checkpoint_path)
 
         explorer = MADExplorer(petmad.module, device=device)
         explorer.load_checkpoint(petmad_explorer_path)
