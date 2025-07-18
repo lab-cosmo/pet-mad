@@ -14,7 +14,6 @@ from platformdirs import user_cache_dir
 from tqdm import tqdm
 
 from .._models import get_pet_mad
-from .._version import LATEST_VERSION as PETMAD_LATEST_VERSION
 from ._explorer import MADExplorer
 
 
@@ -107,9 +106,7 @@ class PETMADFeaturizer:
             cache_dir=cache_dir,
         )
 
-        petmad = get_pet_mad(
-            version=PETMAD_LATEST_VERSION, checkpoint_path=pet_checkpoint_path
-        )
+        petmad = get_pet_mad(version="latest", checkpoint_path=pet_checkpoint_path)
 
         explorer = MADExplorer(petmad.module, device=device)
         explorer.load_checkpoint(petmad_explorer_path)
