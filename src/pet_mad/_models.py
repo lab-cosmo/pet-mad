@@ -23,8 +23,8 @@ def get_pet_mad(
 ) -> AtomisticModel:
     """Get a metatomic ``AtomisticModel`` for PET-MAD.
 
-    :param version: PET-MAD version to use. Supported versions are "1.1.0",
-    "1.0.1", "1.0.0". Defaults to the latest version.
+    :param version: PET-MAD version to use. Supported versions are
+        "1.1.0", "1.0.1", "1.0.0". Defaults to latest available version.
     :param checkpoint_path: path to a checkpoint file to load the model from. If
         provided, the `version` parameter is ignored.
     """
