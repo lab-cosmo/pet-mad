@@ -165,7 +165,7 @@ is installed as a dependency of PET-MAD. To evaluate the model, you first need
 to fetch the PET-MAD model from the HuggingFace repository:
 
 ```bash
-mtt export https://huggingface.co/lab-cosmo/pet-mad/resolve/v1.1.0/models/pet-mad-v1.1.0.ckpt
+mtt export https://huggingface.co/lab-cosmo/pet-mad/resolve/v1.1.0/models/pet-mad-v1.1.0.ckpt -o pet-mad-latest.pt
 ```
 
 Alternatively, you can also download the model from Python:
