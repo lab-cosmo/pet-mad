@@ -15,7 +15,7 @@ BASE_URL = "https://huggingface.co/lab-cosmo/pet-mad/resolve/{tag}/models/pet-ma
 
 
 def get_pet_mad(
-    *, version: str = LATEST_VERSION, checkpoint_path: Optional[str] = None
+    *, version: str = "latest", checkpoint_path: Optional[str] = None
 ) -> AtomisticModel:
     """Get a metatomic ``AtomisticModel`` for PET-MAD.
 
@@ -24,6 +24,8 @@ def get_pet_mad(
     :param checkpoint_path: path to a checkpoint file to load the model from. If
         provided, the `version` parameter is ignored.
     """
+    if version == "latest":
+        version = Version(LATEST_VERSION)
     if not isinstance(version, Version):
         version = Version(version)
 
@@ -61,7 +63,7 @@ def get_pet_mad(
     return model.export(metadata)
 
 
-def save_pet_mad(*, version: str = LATEST_VERSION, checkpoint_path=None, output=None):
+def save_pet_mad(*, version: str = "latest", checkpoint_path=None, output=None):
     """
     Save the PET-MAD model to a TorchScript file (``pet-mad-xxx.pt``). These files can
     be used with LAMMPS and other tools to run simulations without Python.
@@ -74,6 +76,11 @@ def save_pet_mad(*, version: str = LATEST_VERSION, checkpoint_path=None, output=
         ``pet-mad-{version}.pt`` when using a version, or the checkpoint path when using
         a checkpoint.
     """
+    if version == "latest":
+        version = Version(LATEST_VERSION)
+    if not isinstance(version, Version):
+        version = Version(version)
+
     extensions_directory = None
     if version == Version("1.0.0"):
         logging.info("Putting TorchScript extensions in `extensions/`")
