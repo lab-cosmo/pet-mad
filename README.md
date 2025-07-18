@@ -216,7 +216,7 @@ the installation instructions above). Then, follow the instructions
 Fetch the PET-MAD checkpoint from the HuggingFace repository:
 
 ```bash
-mtt export https://huggingface.co/lab-cosmo/pet-mad/resolve/main/models/pet-mad-latest.ckpt
+mtt export https://huggingface.co/lab-cosmo/pet-mad/resolve/v1.1.0/models/pet-mad-v1.1.0.ckpt
 ```
 
 This will download the model and convert it to TorchScript format compatible
@@ -234,7 +234,7 @@ atom_style atomic
 
 read_data silicon.data
 
-pair_style metatomic pet-mad-latest.pt device cpu # Change device to 'cuda' evaluate PET-MAD on GPU
+pair_style metatomic pet-mad-v1.1.0.pt device cpu # Change device to 'cuda' evaluate PET-MAD on GPU
 pair_coeff * * 14
 
 neighbor 2.0 bin
@@ -301,7 +301,7 @@ atom_style atomic/kk
 
 read_data silicon.data
 
-pair_style metatensor/kk pet-mad-latest.pt # This will use the same device as the kokkos simulation
+pair_style metatensor/kk pet-mad-v1.1.0.pt # This will use the same device as the kokkos simulation
 pair_coeff * * 14
 
 neighbor 2.0 bin
