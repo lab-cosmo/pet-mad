@@ -24,7 +24,6 @@ class PETMADCalculator(MetatomicCalculator):
         check_consistency: bool = False,
         device: Optional[str] = None,
         non_conservative: bool = False,
-        do_gradients_with_energy: bool = True,
     ):
         """
         :param version: PET-MAD version to use. Supported versions are
@@ -38,8 +37,6 @@ class PETMADCalculator(MetatomicCalculator):
         :param non_conservative: whether to use the non-conservative regime of forces
             and stresses prediction. Defaults to False. Only available for PET-MAD
             version 1.1.0 or higher.
-        :param do_gradients_with_energy: whether to compute gradients with respect to
-            the energy. Defaults to True.
 
         """
 
@@ -74,5 +71,4 @@ class PETMADCalculator(MetatomicCalculator):
             check_consistency=check_consistency,
             device=device,
             non_conservative=non_conservative,
-            do_gradients_with_energy=do_gradients_with_energy,
         )
