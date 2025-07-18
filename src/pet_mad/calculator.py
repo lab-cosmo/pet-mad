@@ -10,7 +10,7 @@ from packaging.version import Version
 
 from ._models import get_pet_mad
 
-LATEST_VERSION = Version("1.2.0rc2")
+LATEST_VERSION = Version("1.1.0")
 UQ_AVAILABILITY_VERSION = Version("1.2.0rc1")
 
 

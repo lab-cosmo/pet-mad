@@ -6,7 +6,7 @@ from packaging.version import Version
 
 UQ_AVAILABILITY_VERSION = Version("1.2.0rc1")
 
-@pytest.mark.parametrize("version", ["1.1.0", "1.2.0rc2"])
+@pytest.mark.parametrize("version", ["1.1.0"])
 def test_uncertainty_quantification(version):
     atoms = bulk("Si", cubic=True, a=5.43, crystalstructure="diamond")
     if Version(version) < UQ_AVAILABILITY_VERSION:

@@ -10,11 +10,11 @@ from .utils import get_metadata
 from packaging.version import Version
 
 
-LATEST_VERSION = "1.2.0rc2"
-AVAILABLE_VERSIONS = ("1.2.0rc2", "1.1.0", "1.0.1", "1.0.0")
+LATEST_VERSION = "1.1.0"
+AVAILABLE_VERSIONS = ("1.1.0", "1.0.1", "1.0.0")
 
 BASE_URL = (
-    "https://huggingface.co/lab-cosmo/pet-mad/resolve/{}/models/pet-mad-latest.ckpt"
+    "https://huggingface.co/lab-cosmo/pet-mad/resolve/{}/models/pet-mad-{}.ckpt"
 )
 
 
@@ -23,8 +23,8 @@ def get_pet_mad(
 ) -> AtomisticModel:
     """Get a metatomic ``AtomisticModel`` for PET-MAD.
 
-    :param version: PET-MAD version to use. Supported versions are "1.2.0rc2",
-    "1.1.0", "1.0.1", "1.0.0". Defaults to the latest version.
+    :param version: PET-MAD version to use. Supported versions are "1.1.0",
+    "1.0.1", "1.0.0". Defaults to the latest version.
     :param checkpoint_path: path to a checkpoint file to load the model from. If
         provided, the `version` parameter is ignored.
     """
@@ -52,7 +52,7 @@ def get_pet_mad(
         path = checkpoint_path
     else:
         logging.info(f"Downloading PET-MAD model version: {version}")
-        path = BASE_URL.format(f"v{version}" if version != LATEST_VERSION else "main")
+        path = BASE_URL.format(f"v{version}", f"v{version}")
 
     with warnings.catch_warnings():
         warnings.filterwarnings(
