@@ -9,9 +9,7 @@ from .utils import get_metadata
 
 from packaging.version import Version
 
-
-LATEST_VERSION = "1.1.0"
-AVAILABLE_VERSIONS = ("1.1.0", "1.0.1", "1.0.0")
+from ._version import LATEST_VERSION, AVAILABLE_VERSIONS
 
 BASE_URL = "https://huggingface.co/lab-cosmo/pet-mad/resolve/{tag}/models/pet-mad-{version}.ckpt"
 

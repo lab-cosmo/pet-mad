@@ -9,9 +9,7 @@ from platformdirs import user_cache_dir
 from packaging.version import Version
 
 from ._models import get_pet_mad
-
-LATEST_VERSION = "1.1.0"
-UQ_AVAILABILITY_VERSION = "1.2.0rc1"
+from ._version import LATEST_VERSION, UQ_AVAILABILITY_VERSION
 
 
 class PETMADCalculator(MetatomicCalculator):
@@ -59,7 +57,7 @@ class PETMADCalculator(MetatomicCalculator):
 
         additional_outputs = {}
         if calculate_uncertainty or calculate_ensemble:
-            if version < UQ_AVAILABILITY_VERSION:
+            if version < Version(UQ_AVAILABILITY_VERSION):
                 raise NotImplementedError(
                     f"Energy uncertainty and ensemble are not available for version {version}. "
                     f"Please use PET-MAD version {UQ_AVAILABILITY_VERSION} or higher, "
