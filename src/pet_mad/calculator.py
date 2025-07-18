@@ -3,7 +3,6 @@ import os
 from typing import Optional
 
 from metatomic.torch.ase_calculator import MetatomicCalculator
-from metatomic.torch import ModelOutput
 from platformdirs import user_cache_dir
 
 from packaging.version import Version
