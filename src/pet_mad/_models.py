@@ -13,9 +13,7 @@ from packaging.version import Version
 LATEST_VERSION = "1.1.0"
 AVAILABLE_VERSIONS = ("1.1.0", "1.0.1", "1.0.0")
 
-BASE_URL = (
-    "https://huggingface.co/lab-cosmo/pet-mad/resolve/{}/models/pet-mad-{}.ckpt"
-)
+BASE_URL = "https://huggingface.co/lab-cosmo/pet-mad/resolve/{}/models/pet-mad-{}.ckpt"
 
 
 def get_pet_mad(
@@ -24,8 +22,8 @@ def get_pet_mad(
     """Get a metatomic ``AtomisticModel`` for PET-MAD.
 
     :param version: PET-MAD version to use. Supported versions are
-        "1.1.0", "1.0.1", "1.0.0". Defaults to latest available version. 
-        If you want to use the current development version of PET-MAD, set 
+        "1.1.0", "1.0.1", "1.0.0". Defaults to latest available version.
+        If you want to use the current development version of PET-MAD, set
         `version="dev"`.
     :param checkpoint_path: path to a checkpoint file to load the model from. If
         provided, the `version` parameter is ignored.

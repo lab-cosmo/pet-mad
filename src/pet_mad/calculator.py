@@ -33,7 +33,7 @@ class PETMADCalculator(MetatomicCalculator):
     ):
         """
         :param version: PET-MAD version to use. Supported versions are
-            "1.1.0", "1.0.1", "1.0.0". Defaults to latest available version. 
+            "1.1.0", "1.0.1", "1.0.0". Defaults to latest available version.
         :param checkpoint_path: path to a checkpoint file to load the model from. If
             provided, the `version` parameter is ignored.
         :param calculate_uncertainty: whether to calculate energy uncertainty.
