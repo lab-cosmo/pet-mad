@@ -13,7 +13,7 @@ from packaging.version import Version
 LATEST_VERSION = "1.1.0"
 AVAILABLE_VERSIONS = ("1.1.0", "1.0.1", "1.0.0")
 
-BASE_URL = "https://huggingface.co/lab-cosmo/pet-mad/resolve/{}/models/pet-mad-{}.ckpt"
+BASE_URL = "https://huggingface.co/lab-cosmo/pet-mad/resolve/{tag}/models/pet-mad-{version}.ckpt"
 
 
 def get_pet_mad(
@@ -23,8 +23,6 @@ def get_pet_mad(
 
     :param version: PET-MAD version to use. Supported versions are
         "1.1.0", "1.0.1", "1.0.0". Defaults to latest available version.
-        If you want to use the current development version of PET-MAD, set
-        `version="dev"`.
     :param checkpoint_path: path to a checkpoint file to load the model from. If
         provided, the `version` parameter is ignored.
     """
@@ -52,7 +50,7 @@ def get_pet_mad(
         path = checkpoint_path
     else:
         logging.info(f"Downloading PET-MAD model version: {version}")
-        path = BASE_URL.format(f"v{version}", f"v{version}")
+        path = BASE_URL.format(tag=f"v{version}", version=f"v{version}")
 
     with warnings.catch_warnings():
         warnings.filterwarnings(
@@ -70,7 +68,7 @@ def save_pet_mad(*, version: str = LATEST_VERSION, checkpoint_path=None, output=
     Save the PET-MAD model to a TorchScript file (``pet-mad-xxx.pt``). These files can
     be used with LAMMPS and other tools to run simulations without Python.
 
-    :param version: PET-MAD version to use. Supported versions are "1.2.0rc2", "1.1.0",
+    :param version: PET-MAD version to use. Supported versions are "1.1.0",
         "1.0.1", "1.0.0". Defaults to the latest version.
     :param checkpoint_path: path to a checkpoint file to load the model from. If
         provided, the `version` parameter is ignored.

@@ -10,8 +10,8 @@ from packaging.version import Version
 
 from ._models import get_pet_mad
 
-LATEST_VERSION = Version("1.1.0")
-UQ_AVAILABILITY_VERSION = Version("1.2.0rc1")
+LATEST_VERSION = "1.1.0"
+UQ_AVAILABILITY_VERSION = "1.2.0rc1"
 
 
 class PETMADCalculator(MetatomicCalculator):
@@ -53,7 +53,7 @@ class PETMADCalculator(MetatomicCalculator):
         """
 
         if version == "latest":
-            version = LATEST_VERSION
+            version = Version(LATEST_VERSION)
         if not isinstance(version, Version):
             version = Version(version)
 
