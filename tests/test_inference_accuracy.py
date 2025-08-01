@@ -38,7 +38,7 @@ def get_performance_summary(subset_resolved_energy_errors, subset_resolved_force
     summary_lines.append(apply_bold_color("=" * 96, "white"))
     
     # Table header
-    header = f"{'Subset':<12} {'Energy MAE':<15} {'Force MAE':<15} {'Target Energy':<15} {'Target Force':<15} {'Max Factor':<10} {'Status':<8}"
+    header = f"{'Subset':<12} {'Energy MAE':<15} {'Force MAE':<15} {'Target Energy MAE':<15} {'Target Force MAE':<15} {'Max Factor':<10} {'Status':<8}"
     summary_lines.append(apply_bold_color(header, "white"))
     summary_lines.append(
         apply_bold_color(
