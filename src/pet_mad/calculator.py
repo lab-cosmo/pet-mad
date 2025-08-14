@@ -1,6 +1,6 @@
 import logging
 import os
-from typing import List, Optional
+from typing import Optional
 
 from metatomic.torch.ase_calculator import MetatomicCalculator
 from platformdirs import user_cache_dir
@@ -12,6 +12,7 @@ from packaging.version import Version
 
 from ._models import get_pet_mad
 from ._version import LATEST_VERSION
+
 
 class PETMADCalculator(MetatomicCalculator):
     """
@@ -75,11 +76,12 @@ class PETMADCalculator(MetatomicCalculator):
             non_conservative=non_conservative,
         )
 
+
 class PETMADDOSCalculator(MetatomicCalculator):
     """
     PET-MAD DOS Calculator
     """
-    
+
     def __init__(
         self,
         model_path: Optional[str] = None,
@@ -103,6 +105,7 @@ class PETMADDOSCalculator(MetatomicCalculator):
         :return: Density of states in .
         """
 
-        results = self.run_model(atoms, outputs={"mtt::dos": ModelOutput(per_atom=per_atom)})
+        results = self.run_model(
+            atoms, outputs={"mtt::dos": ModelOutput(per_atom=per_atom)}
+        )
         return results["mtt::dos"].block().values.squeeze()
-
