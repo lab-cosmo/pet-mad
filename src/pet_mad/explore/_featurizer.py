@@ -50,18 +50,29 @@ class PETMADFeaturizer:
     Converts structures into low-dimensional projections using PET-MAD features,
     with dimensionality reduction based on sketch-map.
 
-    Usage example:
+    Important: This featurizer expects a **list of structures** as input, not a single structure.
+    For a single structure, wrap it in a list.
+
+    Usage examples:
         >>> import ase.io
         >>> import chemiscope
+        >>> from ase.build import bulk
         >>> from pet_mad.explore import PETMADFeaturizer
 
-        >>> # Load structures
+        >>> featurizer = PETMADFeaturizer(version="latest")
+        
+        >>> # Load multiple structures
         >>> frames = ase.io.read("dataset.xyz", ":")
+        >>> features = featurizer(frames, None)
+        
+        >>> # For a single structure, wrap it in a list
+        >>> single_structure = bulk('Al', 'fcc', a=4.05, cubic=True)
+        >>> features = featurizer([single_structure], None)
 
         >>> # Create visualization
         >>> chemiscope.explore(
         ...     frames,
-        ...     featurize=PETMADFeaturizer(version="latest")
+        ...     featurize=featurizer
         ... )
     """
 
@@ -132,7 +143,35 @@ class PETMADFeaturizer:
         self.progress_bar = progress_bar
 
     def __call__(self, frames, environments):
-        systems = mta.systems_to_torch(frames)
+        # Check if user passed a single ASE Atoms object instead of a list
+        try:
+            # Try to import ASE to check if frames is an Atoms object
+            import ase
+            if isinstance(frames, ase.Atoms):
+                raise TypeError(
+                    "PETMADFeaturizer expects a list of structures, not a single structure. "
+                    f"To use a single structure, wrap it in a list: featurizer([atoms], None)"
+                )
+        except ImportError:
+            # ASE not available, skip this check
+            pass
+        
+        # Check if frames is iterable but not a string (common mistake)
+        if isinstance(frames, str):
+            raise TypeError(
+                "PETMADFeaturizer expects a list of structures, not a string. "
+                "Use ase.io.read() to load structures from files."
+            )
+        
+        try:
+            systems = mta.systems_to_torch(frames)
+        except Exception as e:
+            # If systems_to_torch fails, provide a helpful error message
+            raise TypeError(
+                "PETMADFeaturizer expects a list of ASE Atoms objects or similar structures. "
+                f"Original error: {e}"
+            ) from e
+            
         vesin_metatomic.compute_requested_neighbors(
             systems,
             self.length_unit,

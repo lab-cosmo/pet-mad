@@ -84,6 +84,18 @@ conda activate pet-mad
 conda install -c metatensor -c conda-forge pet-mad
 ```
 
+## Requirements
+
+PET-MAD requires **PyTorch 2.5 or higher**. Older versions (especially 2.2 and below) may encounter compatibility issues with tensor data types and are not supported.
+
+```bash
+# Check your PyTorch version
+python -c "import torch; print(f'PyTorch version: {torch.__version__}')"
+
+# Upgrade PyTorch if needed
+pip install torch>=2.5
+```
+
 ## Pre-trained Models
 
 Currently, we provide the following pre-trained models:
@@ -389,18 +401,25 @@ This can be used as a stand-alone feature builder, or combined with
 the [chemiscope viewer](https://chemiscope.org) to generate an 
 interactive visualization. 
 
+> [!IMPORTANT]
+> `PETMADFeaturizer` expects a **list of structures** as input, not a single structure.
+> For a single structure, wrap it in a list: `featurizer([atoms], None)`.
+
 ```python
 import ase.io
 import chemiscope
+from ase.build import bulk
 from pet_mad.explore import PETMADFeaturizer
 
 featurizer = PETMADFeaturizer(version="latest")
 
-# Load structures
+# Load multiple structures from a file
 frames = ase.io.read("dataset.xyz", ":")
-
-# You can just compute features
 features = featurizer(frames, None)
+
+# For a single structure, wrap it in a list
+single_structure = bulk('Al', 'fcc', a=4.05, cubic=True)
+features = featurizer([single_structure], None)
 
 # Or create an interactive visualization in a Jupyter notebook
 chemiscope.explore(
