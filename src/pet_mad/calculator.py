@@ -1,15 +1,17 @@
 import logging
 import os
-from typing import Optional
+from typing import List, Optional
 
 from metatomic.torch.ase_calculator import MetatomicCalculator
 from platformdirs import user_cache_dir
+from metatomic.torch import ModelOutput
+import numpy as np
+from ase import Atoms
 
 from packaging.version import Version
 
 from ._models import get_pet_mad
 from ._version import LATEST_VERSION
-
 
 class PETMADCalculator(MetatomicCalculator):
     """
@@ -72,3 +74,35 @@ class PETMADCalculator(MetatomicCalculator):
             device=device,
             non_conservative=non_conservative,
         )
+
+class PETMADDOSCalculator(MetatomicCalculator):
+    """
+    PET-MAD DOS Calculator
+    """
+    
+    def __init__(
+        self,
+        model_path: Optional[str] = None,
+        *,
+        check_consistency: bool = False,
+        device: Optional[str] = None,
+    ):
+        super().__init__(
+            model_path,
+            additional_outputs={},
+            check_consistency=check_consistency,
+            device=device,
+        )
+
+    def calculate_dos(self, atoms: Atoms, per_atom: bool = False) -> np.ndarray:
+        """
+        Calculate the density of states for a given atoms object.
+
+        :param atoms: ASE atoms object.
+        :param per_atom: Whether to return the density of states per atom.
+        :return: Density of states in .
+        """
+
+        results = self.run_model(atoms, outputs={"mtt::dos": ModelOutput(per_atom=per_atom)})
+        return results["mtt::dos"].block().values.squeeze()
+
