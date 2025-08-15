@@ -1,10 +1,11 @@
 import logging
 import os
-from typing import Optional
+from typing import Optional, Tuple
 
 from metatomic.torch.ase_calculator import MetatomicCalculator
 from platformdirs import user_cache_dir
 from metatomic.torch import ModelOutput
+import torch
 import numpy as np
 from ase import Atoms
 
@@ -12,6 +13,7 @@ from packaging.version import Version
 
 from ._models import get_pet_mad
 from ._version import LATEST_VERSION
+from .utils import get_num_electrons
 
 
 class PETMADCalculator(MetatomicCalculator):
@@ -77,6 +79,11 @@ class PETMADCalculator(MetatomicCalculator):
         )
 
 
+ENERGY_LOWER_BOUND = -159.6456
+ENERGY_UPPER_BOUND = 79.1528 + 1.5
+ENERGY_INTERVAL = 0.05
+
+
 class PETMADDOSCalculator(MetatomicCalculator):
     """
     PET-MAD DOS Calculator
@@ -95,17 +102,41 @@ class PETMADDOSCalculator(MetatomicCalculator):
             check_consistency=check_consistency,
             device=device,
         )
+        n_points = np.ceil((ENERGY_UPPER_BOUND - ENERGY_LOWER_BOUND) / ENERGY_INTERVAL)
+        self.energy_grid = torch.arange(n_points) * ENERGY_INTERVAL + ENERGY_LOWER_BOUND
 
-    def calculate_dos(self, atoms: Atoms, per_atom: bool = False) -> np.ndarray:
+    def calculate_dos(
+        self, atoms: Atoms, per_atom: bool = False
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
         """
         Calculate the density of states for a given atoms object.
 
         :param atoms: ASE atoms object.
         :param per_atom: Whether to return the density of states per atom.
-        :return: Density of states in .
+        :return: Energy grid and corresponding DOS values in torch.Tensor format.
         """
 
         results = self.run_model(
             atoms, outputs={"mtt::dos": ModelOutput(per_atom=per_atom)}
         )
-        return results["mtt::dos"].block().values.squeeze()
+        dos = results["mtt::dos"].block().values.squeeze()
+        return self.energy_grid, dos
+
+    def get_efermi(self, atoms: Atoms, dos: Optional[torch.Tensor] = None) -> float:
+        """
+        Get the Fermi energy for a given atoms object based on a predicted
+        density of states. If the density of states is not provided, it will be
+        first calculated using the `calculate_dos` method.
+
+        :param atoms: ASE atoms object.
+        :param dos: Density of states. If not provided, it will be calculated using
+            the `calculate_dos` method.
+        :return: Fermi energy.
+        """
+        if dos is None:
+            _, dos = self.calculate_dos(atoms, per_atom=False)
+        cdos = torch.cumulative_trapezoid(dos, dx=ENERGY_INTERVAL)
+        num_electrons = get_num_electrons(atoms)
+        efermi_index = torch.where(cdos > num_electrons)[0][0]
+        efermi = self.energy_grid[efermi_index]
+        return efermi.item()
