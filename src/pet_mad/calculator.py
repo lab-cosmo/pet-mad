@@ -1,6 +1,6 @@
 import logging
 import os
-from typing import Optional, Tuple
+from typing import Optional, Tuple, List
 
 from metatomic.torch.ase_calculator import MetatomicCalculator
 from platformdirs import user_cache_dir
@@ -14,6 +14,7 @@ from packaging.version import Version
 from ._models import get_pet_mad
 from ._version import LATEST_VERSION
 from .utils import get_num_electrons
+from .modules import CNN1D
 
 
 class PETMADCalculator(MetatomicCalculator):
@@ -92,6 +93,7 @@ class PETMADDOSCalculator(MetatomicCalculator):
     def __init__(
         self,
         model_path: Optional[str] = None,
+        bandgap_model_path: Optional[str] = None,
         *,
         check_consistency: bool = False,
         device: Optional[str] = None,
@@ -104,7 +106,25 @@ class PETMADDOSCalculator(MetatomicCalculator):
         )
         n_points = np.ceil((ENERGY_UPPER_BOUND - ENERGY_LOWER_BOUND) / ENERGY_INTERVAL)
         self.energy_grid = torch.arange(n_points) * ENERGY_INTERVAL + ENERGY_LOWER_BOUND
+        
+        bandgap_model = CNN1D()
+        bandgap_model.load_state_dict(torch.load(bandgap_model_path, weights_only=False, map_location='cpu'))
+        bandgap_model.to(device)
+        self._bandgap_model = bandgap_model
 
+    def _calculate_dos(self, atoms: Atoms | List[Atoms], per_atom: bool = False) -> torch.Tensor:
+        results = self.run_model(
+            atoms, outputs={"mtt::dos": ModelOutput(per_atom=per_atom)}
+        )
+        dos = results["mtt::dos"].block().values
+        return dos
+    
+    def calculate_bandgap(self, atoms: Atoms | List[Atoms]) -> torch.Tensor:
+        _, dos = self.calculate_dos(atoms, per_atom=False)
+        bandgap = self._bandgap_model(dos.unsqueeze(1)).detach() # Need to make the inputs [n_predictions, 1, 4806]
+        bandgap = torch.nn.functional.relu(bandgap).squeeze()
+        return bandgap
+    
     def calculate_dos(
         self, atoms: Atoms, per_atom: bool = False
     ) -> Tuple[torch.Tensor, torch.Tensor]:
@@ -115,28 +135,22 @@ class PETMADDOSCalculator(MetatomicCalculator):
         :param per_atom: Whether to return the density of states per atom.
         :return: Energy grid and corresponding DOS values in torch.Tensor format.
         """
-
-        results = self.run_model(
-            atoms, outputs={"mtt::dos": ModelOutput(per_atom=per_atom)}
-        )
-        dos = results["mtt::dos"].block().values.squeeze()
+        dos = self._calculate_dos(atoms, per_atom=per_atom)
+        dos = torch.nn.functional.relu(dos)
         return self.energy_grid, dos
 
-    def get_efermi(self, atoms: Atoms, dos: Optional[torch.Tensor] = None) -> float:
+    def calculate_efermi(self, atoms: Atoms | List[Atoms]) -> float:
         """
         Get the Fermi energy for a given atoms object based on a predicted
-        density of states. If the density of states is not provided, it will be
-        first calculated using the `calculate_dos` method.
+        density of states.
 
         :param atoms: ASE atoms object.
-        :param dos: Density of states. If not provided, it will be calculated using
-            the `calculate_dos` method.
         :return: Fermi energy.
         """
-        if dos is None:
-            _, dos = self.calculate_dos(atoms, per_atom=False)
+        dos = self._calculate_dos(atoms, per_atom=False)
         cdos = torch.cumulative_trapezoid(dos, dx=ENERGY_INTERVAL)
         num_electrons = get_num_electrons(atoms)
-        efermi_index = torch.where(cdos > num_electrons)[0][0]
-        efermi = self.energy_grid[efermi_index]
-        return efermi.item()
+        num_electrons.to(dos.device)
+        efermi_indices = torch.argmax((cdos > num_electrons.unsqueeze(1)).float(), dim=1)
+        efermi = self.energy_grid[efermi_indices]
+        return efermi

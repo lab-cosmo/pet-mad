@@ -1,5 +1,7 @@
 from metatomic.torch import ModelMetadata
 from ase import Atoms
+from typing import List
+import torch
 
 NUM_ELECTRONS_PER_ELEMENT = {
     "Al": 3.0,
@@ -112,8 +114,13 @@ def get_metadata(version: str):
     )
 
 
-def get_num_electrons(atoms: Atoms) -> int:
-    num_electrons = int(
-        sum([NUM_ELECTRONS_PER_ELEMENT[symbol] for symbol in atoms.symbols])
-    )
+def get_num_electrons(atoms: Atoms | List[Atoms]) -> torch.Tensor:
+    num_electrons = []
+    if isinstance(atoms, Atoms):
+        atoms = [atoms]
+    for item in atoms:
+        num_electrons.append(int(
+            sum([NUM_ELECTRONS_PER_ELEMENT[symbol] for symbol in item.symbols])
+        ))
+    num_electrons = torch.tensor(num_electrons)
     return num_electrons
