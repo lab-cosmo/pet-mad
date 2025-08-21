@@ -1,7 +1,16 @@
 from metatomic.torch import ModelMetadata
 from ase import Atoms
-from typing import List, Union
+from typing import List, Union, Optional
 import torch
+from pathlib import Path
+from urllib.parse import unquote
+from huggingface_hub import hf_hub_download
+import re
+
+
+hf_pattern = re.compile(
+    r"^https://huggingface\.co/(?P<endpoint>[^/]+)/(?P<repo_id>[^/]+)/(?P<revision>[^/]+)/(?P<filename>.*)$"
+)
 
 NUM_ELECTRONS_PER_ELEMENT = {
     "Al": 3.0,
@@ -145,3 +154,41 @@ def get_num_electrons(atoms: Union[Atoms, List[Atoms]]) -> torch.Tensor:
         )
     num_electrons = torch.tensor(num_electrons)
     return num_electrons
+
+
+def hf_hub_download_url(
+    url: str,
+    hf_token: Optional[str] = None,
+    cache_dir: Optional[Union[str, Path]] = None,
+) -> str:
+    """Wrapper around `hf_hub_download` allowing passing the URL directly.
+
+    Function is in inverse of `hf_hub_url`
+    """
+
+    match = hf_pattern.match(url)
+
+    if not match:
+        raise ValueError(f"URL '{url}' has an invalid format for the Hugging Face Hub.")
+
+    endpoint = match.group("endpoint")
+    repo_id = match.group("repo_id")
+    revision = unquote(match.group("revision"))
+    filename = unquote(match.group("filename"))
+
+    # Extract subfolder if applicable
+    parts = filename.split("/", 1)
+    if len(parts) == 2:
+        subfolder, filename = parts
+    else:
+        subfolder = None
+
+    return hf_hub_download(
+        repo_id=repo_id,
+        filename=filename,
+        subfolder=subfolder,
+        cache_dir=cache_dir,
+        revision=revision,
+        token=hf_token,
+        endpoint=endpoint,
+    )

@@ -5,8 +5,7 @@ from typing import Optional
 
 from metatomic.torch import AtomisticModel
 from metatrain.utils.io import load_model as load_metatrain_model
-from metatrain.utils.io import _hf_hub_download_url
-from .utils import get_pet_mad_metadata, get_pet_mad_dos_metadata
+from .utils import get_pet_mad_metadata, get_pet_mad_dos_metadata, hf_hub_download_url
 from urllib.parse import urlparse
 from urllib.request import urlretrieve
 from .modules import BandgapModel
@@ -171,7 +170,7 @@ def _get_bandgap_model(version: str = "latest", model_path: Optional[str] = None
 
         if url.scheme:
             if url.netloc == "huggingface.co":
-                path = _hf_hub_download_url(url=url.geturl(), hf_token=None)
+                path = hf_hub_download_url(url=url.geturl(), hf_token=None)
             else:
                 # Avoid caching generic URLs due to lack of a model hash for proper cache
                 # invalidation
