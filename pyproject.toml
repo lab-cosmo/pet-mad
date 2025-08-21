@@ -22,8 +22,10 @@ maintainers = [
 ]
 
 dependencies = [
-    "metatrain==2025.8.1",
+    "metatrain==2025.9.1",
     "huggingface_hub",
+    "hf_xet",
+    "packaging",
     "platformdirs",
     "tqdm",
 ]

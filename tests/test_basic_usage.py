@@ -4,7 +4,7 @@ from ase.build import bulk
 import os
 import pytest
 
-VERSIONS = ("1.1.0", "1.0.1")
+VERSIONS = ("1.1.0", "1.0.2", "1.0.1")
 
 @pytest.mark.parametrize(
     "version",
