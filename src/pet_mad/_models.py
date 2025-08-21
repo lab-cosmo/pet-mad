@@ -9,7 +9,7 @@ from .utils import get_metadata
 
 from packaging.version import Version
 
-from ._version import LATEST_VERSION, AVAILABLE_VERSIONS
+from ._version import LATEST_STABLE_VERSION, AVAILABLE_VERSIONS
 
 BASE_URL = "https://huggingface.co/lab-cosmo/pet-mad/resolve/{tag}/models/pet-mad-{version}.ckpt"
 
@@ -19,13 +19,12 @@ def get_pet_mad(
 ) -> AtomisticModel:
     """Get a metatomic ``AtomisticModel`` for PET-MAD.
 
-    :param version: PET-MAD version to use. Supported versions are
-        "1.1.0", "1.0.1", "1.0.0". Defaults to latest available version.
+    :param version: PET-MAD version to use. Defaults to the latest stable version.
     :param checkpoint_path: path to a checkpoint file to load the model from. If
         provided, the `version` parameter is ignored.
     """
     if version == "latest":
-        version = Version(LATEST_VERSION)
+        version = Version(LATEST_STABLE_VERSION)
     if not isinstance(version, Version):
         version = Version(version)
 
@@ -68,8 +67,7 @@ def save_pet_mad(*, version: str = "latest", checkpoint_path=None, output=None):
     Save the PET-MAD model to a TorchScript file (``pet-mad-xxx.pt``). These files can
     be used with LAMMPS and other tools to run simulations without Python.
 
-    :param version: PET-MAD version to use. Supported versions are "1.1.0",
-        "1.0.1", "1.0.0". Defaults to the latest version.
+    :param version: PET-MAD version to use. Defaults to the latest stable version.
     :param checkpoint_path: path to a checkpoint file to load the model from. If
         provided, the `version` parameter is ignored.
     :param output: path to use for the output model, defaults to
@@ -77,7 +75,7 @@ def save_pet_mad(*, version: str = "latest", checkpoint_path=None, output=None):
         a checkpoint.
     """
     if version == "latest":
-        version = Version(LATEST_VERSION)
+        version = Version(LATEST_STABLE_VERSION)
     if not isinstance(version, Version):
         version = Version(version)
 
