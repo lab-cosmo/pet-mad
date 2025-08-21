@@ -5,13 +5,17 @@
   </picture>
 </div>
 
-# PET-MAD: A Universal Interatomic Potential for Advanced Materials Modeling
+# PET-MAD: Universal Models for Advanced Atomistic Simulations
 
 This repository contains **PET-MAD** - a universal interatomic potential for
 advanced materials modeling across the periodic table. This model is based on
-the **Point Edge Transformer (PET)** model trained on the **Massive Atomic
-Diversity (MAD) Dataset** and is capable of predicting energies and forces in
-complex atomistic simulations.
+the **Point Edge Transformer (PET)** model trained on the **Massive Atomic Diversity (MAD) Dataset** 
+and is capable of predicting energies and forces in complex atomistic simulations.
+
+In addition, it contains the **PET-MAD DOS** - a universal model for predicting
+the density of states of materials, as well as their Fermi levels and bandgaps.
+**PET-MAD DOS** is using a slightly modified **PET** architecture, and the same
+**MAD** dataset. 
 
 ## Key Features
 
@@ -130,6 +134,28 @@ forces = atoms.get_forces()
 These ASE methods are ideal for single-structure evaluations, but they are
 inefficient for the evaluation on a large number of pre-defined structures. To
 perform efficient evaluation in that case, read [here](docs/README_BATCHED.md).
+
+Similarly, you can use the **PET-MAD-DOS** calculator to predict the density of
+states of materials, as well as their Fermi levels and bandgaps.
+
+```python
+from pet_mad.calculator import PETMADDOSCalculator
+
+atoms = bulk("Si", cubic=True, a=5.43, crystalstructure="diamond")
+pet_mad_dos_calculator = PETMADDOSCalculator(version="latest", device="cpu")
+
+# Predicting the density of states for the crystal
+energies, dos = pet_mad_dos_calculator.calculate_dos(atoms, per_atom=False)
+
+# Predicting the density of states for every atom in the crystal
+energies, dos = pet_mad_dos_calculator.calculate_dos(atoms, per_atom=True)
+
+# Predicting the bandgap for the crystal
+bandgap = pet_mad_dos_calculator.calculate_bandgap(atoms)
+
+# Predicting the Fermi level for the crystal
+efermi = pet_mad_dos_calculator.calculate_efermi(atoms)
+```
 
 #### Non-conservative (direct) forces and stresses prediction
 
