@@ -119,8 +119,8 @@ def get_num_electrons(atoms: Atoms | List[Atoms]) -> torch.Tensor:
     if isinstance(atoms, Atoms):
         atoms = [atoms]
     for item in atoms:
-        num_electrons.append(int(
-            sum([NUM_ELECTRONS_PER_ELEMENT[symbol] for symbol in item.symbols])
-        ))
+        num_electrons.append(
+            int(sum([NUM_ELECTRONS_PER_ELEMENT[symbol] for symbol in item.symbols]))
+        )
     num_electrons = torch.tensor(num_electrons)
     return num_electrons
