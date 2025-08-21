@@ -36,6 +36,7 @@ complex atomistic simulations.
         - [Non-conservative (direct) forces and stresses prediction](#non-conservative-direct-forces-and-stresses-prediction)
     - [Evaluating PET-MAD on a dataset](#evaluating-pet-mad-on-a-dataset)
     - [Running PET-MAD with LAMMPS](#running-pet-mad-with-lammps)
+    - [Uncertainty Quantification](#uncertainty-quantification)
     - [Running PET-MAD with empirical dispersion corrections](#running-pet-mad-with-empirical-dispersion-corrections)
     - [Dataset visualization with the PET-MAD featurizer](#dataset-visualization-with-the-pet-mad-featurizer)
 5. [Examples](#examples)
