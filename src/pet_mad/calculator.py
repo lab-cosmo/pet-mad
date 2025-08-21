@@ -9,7 +9,11 @@ from platformdirs import user_cache_dir
 from packaging.version import Version
 
 from ._models import get_pet_mad
-from ._version import LATEST_STABLE_VERSION, UQ_AVAILABILITY_VERSION, NC_AVAILABILITY_VERSION
+from ._version import (
+    LATEST_STABLE_VERSION,
+    UQ_AVAILABILITY_VERSION,
+    NC_AVAILABILITY_VERSION,
+)
 
 
 class PETMADCalculator(MetatomicCalculator):
@@ -27,7 +31,6 @@ class PETMADCalculator(MetatomicCalculator):
         check_consistency: bool = False,
         device: Optional[str] = None,
         non_conservative: bool = False,
-
     ):
         """
         :param version: PET-MAD version to use. Defaults to the latest stable version.
@@ -53,20 +56,28 @@ class PETMADCalculator(MetatomicCalculator):
             version = Version(version)
 
         if non_conservative and version < Version(NC_AVAILABILITY_VERSION):
-            raise NotImplementedError(f"Non-conservative forces and stresses are not available for version {version}. "
-                                      f"Please use PET-MAD version {NC_AVAILABILITY_VERSION} or higher.")
+            raise NotImplementedError(
+                f"Non-conservative forces and stresses are not available for version {version}. "
+                f"Please use PET-MAD version {NC_AVAILABILITY_VERSION} or higher."
+            )
 
         additional_outputs = {}
         if calculate_uncertainty or calculate_ensemble:
             if version < Version(UQ_AVAILABILITY_VERSION):
-                raise NotImplementedError(f"Energy uncertainty and ensemble are not available for version {version}. "
-                                          f"Please use PET-MAD version {UQ_AVAILABILITY_VERSION} or higher, "
-                                          f"or disable the calculation of energy uncertainty and energy ensemble.")
+                raise NotImplementedError(
+                    f"Energy uncertainty and ensemble are not available for version {version}. "
+                    f"Please use PET-MAD version {UQ_AVAILABILITY_VERSION} or higher, "
+                    f"or disable the calculation of energy uncertainty and energy ensemble."
+                )
             else:
                 if calculate_uncertainty:
-                    additional_outputs['energy_uncertainty'] = ModelOutput(quantity='energy', unit='eV', per_atom=False)
+                    additional_outputs["energy_uncertainty"] = ModelOutput(
+                        quantity="energy", unit="eV", per_atom=False
+                    )
                 if calculate_ensemble:
-                    additional_outputs['energy_ensemble'] = ModelOutput(quantity='energy', unit='eV', per_atom=False)
+                    additional_outputs["energy_ensemble"] = ModelOutput(
+                        quantity="energy", unit="eV", per_atom=False
+                    )
 
         model = get_pet_mad(version=version, checkpoint_path=checkpoint_path)
 
@@ -98,14 +109,22 @@ class PETMADCalculator(MetatomicCalculator):
 
     def _get_uq_output(self, output_name: str):
         if output_name not in self.additional_outputs:
-            quantity = output_name.split('_')[1]
-            raise ValueError(f"Energy {quantity} is not available. Please make sure that you have initialized the "
-                             f"calculator with `calculate_{quantity}=True` and performed evaluation. "
-                             f"This option is only available for PET-MAD version {UQ_AVAILABILITY_VERSION} or higher.")
-        return self.additional_outputs[output_name].block().values.detach().numpy().squeeze()
+            quantity = output_name.split("_")[1]
+            raise ValueError(
+                f"Energy {quantity} is not available. Please make sure that you have initialized the "
+                f"calculator with `calculate_{quantity}=True` and performed evaluation. "
+                f"This option is only available for PET-MAD version {UQ_AVAILABILITY_VERSION} or higher."
+            )
+        return (
+            self.additional_outputs[output_name]
+            .block()
+            .values.detach()
+            .numpy()
+            .squeeze()
+        )
 
     def get_energy_uncertainty(self):
-        return self._get_uq_output('energy_uncertainty')
+        return self._get_uq_output("energy_uncertainty")
 
     def get_energy_ensemble(self):
-        return self._get_uq_output('energy_ensemble')
+        return self._get_uq_output("energy_ensemble")
