@@ -173,7 +173,9 @@ class PETMADDOSCalculator(MetatomicCalculator):
         self._bandgap_model = bandgap_model
 
         n_points = np.ceil((ENERGY_UPPER_BOUND - ENERGY_LOWER_BOUND) / ENERGY_INTERVAL)
-        self._energy_grid = torch.arange(n_points) * ENERGY_INTERVAL + ENERGY_LOWER_BOUND
+        self._energy_grid = (
+            torch.arange(n_points) * ENERGY_INTERVAL + ENERGY_LOWER_BOUND
+        )
 
     def calculate_bandgap(self, atoms: Union[Atoms, List[Atoms]]) -> torch.Tensor:
         """
