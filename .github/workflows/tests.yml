@@ -41,7 +41,8 @@ jobs:
 
     - name: run Python tests
       run: |
-        tox -e tests
+        tox -e pet-mad-tests
+        tox -e pet-mad-dos-tests
         tox -e deprecated-pet-tests
       env:
         # Use the CPU only version of torch when building/running the code
