@@ -12,9 +12,9 @@ advanced materials modeling across the periodic table. This model is based on
 the **Point Edge Transformer (PET)** model trained on the **Massive Atomic Diversity (MAD) Dataset** 
 and is capable of predicting energies and forces in complex atomistic simulations.
 
-In addition, it contains the **PET-MAD DOS** - a universal model for predicting
+In addition, it contains the **PET-MAD-DOS** - a universal model for predicting
 the density of states of materials, as well as their Fermi levels and bandgaps.
-**PET-MAD DOS** is using a slightly modified **PET** architecture, and the same
+**PET-MAD-DOS** is using a slightly modified **PET** architecture, and the same
 **MAD** dataset. 
 
 ## Key Features
@@ -36,7 +36,8 @@ the density of states of materials, as well as their Fermi levels and bandgaps.
 3. [Interfaces for Atomistic Simulations](#interfaces-for-atomistic-simulations)
 4. [Usage](#usage)
     - [ASE Interface](#ase-interface)
-        - [Basic usage](#basic-usage)
+        - [Basic usage: PET-MAD](#basic-usage-pet-mad)
+        - [Basic usage: PET-MAD-DOS](#basic-usage-pet-mad-dos)
         - [Non-conservative (direct) forces and stresses prediction](#non-conservative-direct-forces-and-stresses-prediction)
     - [Evaluating PET-MAD on a dataset](#evaluating-pet-mad-on-a-dataset)
     - [Running PET-MAD with LAMMPS](#running-pet-mad-with-lammps)
@@ -115,7 +116,7 @@ PET-MAD integrates with the following atomistic simulation engines:
 
 ### ASE Interface
 
-#### Basic usage
+#### Basic usage: PET-MAD
 
 You can use the PET-MAD calculator, which is compatible with the Atomic
 Simulation Environment (ASE):
@@ -134,6 +135,9 @@ forces = atoms.get_forces()
 These ASE methods are ideal for single-structure evaluations, but they are
 inefficient for the evaluation on a large number of pre-defined structures. To
 perform efficient evaluation in that case, read [here](docs/README_BATCHED.md).
+
+
+#### Basic usage: PET-MAD-DOS
 
 Similarly, you can use the **PET-MAD-DOS** calculator to predict the density of
 states of materials, as well as their Fermi levels and bandgaps.
