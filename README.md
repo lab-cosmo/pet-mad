@@ -88,13 +88,13 @@ conda install -c metatensor -c conda-forge pet-mad
 
 Currently, we provide the following pre-trained models:
 
-- **`v1.1.0`** or **`latest`**: The updated PET-MAD model with an ability to run
-  simulations using the non-conservative forces and stresses.
-- **`v1.0.1`**: The updated PET-MAD model with a new, pure PyTorch backend and
-  slightly improved performance.
-- **`v1.0.0`**: PET-MAD model trained on the MAD dataset, which contains 95,595
+- **`v1.1.0`**: The dev version of the PET-MAD model with the non-conservative
+  forces and stresses. This version has notably worse performance on molecular
+  systems, and is not recommended for production use, as for now.
+- **`v1.0.2`**: Stable PET-MAD model trained on the MAD dataset, which contains 95,595
   structures, including 3D and 2D inorganic crystals, surfaces, molecular
-  crystals, nanoclusters, and molecules.
+  crystals, nanoclusters, and molecules. Use this version in the case you want
+  to repoduce the results from the [PET-MAD paper](https://arxiv.org/abs/2503.14118).
 
 ## Interfaces for Atomistic Simulations
 
@@ -165,7 +165,7 @@ is installed as a dependency of PET-MAD. To evaluate the model, you first need
 to fetch the PET-MAD model from the HuggingFace repository:
 
 ```bash
-mtt export https://huggingface.co/lab-cosmo/pet-mad/resolve/v1.1.0/models/pet-mad-v1.1.0.ckpt -o pet-mad-latest.pt
+mtt export https://huggingface.co/lab-cosmo/pet-mad/resolve/v1.0.2/models/pet-mad-v1.0.2.ckpt -o pet-mad-latest.pt
 ```
 
 Alternatively, you can also download the model from Python:
@@ -217,7 +217,7 @@ the installation instructions above). Then, follow the instructions
 Fetch the PET-MAD checkpoint from the HuggingFace repository:
 
 ```bash
-mtt export https://huggingface.co/lab-cosmo/pet-mad/resolve/v1.1.0/models/pet-mad-v1.1.0.ckpt -o pet-mad-latest.pt
+mtt export https://huggingface.co/lab-cosmo/pet-mad/resolve/v1.0.2/models/pet-mad-v1.0.2.ckpt -o pet-mad-latest.pt
 ```
 
 This will download the model and convert it to TorchScript format compatible
