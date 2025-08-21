@@ -229,5 +229,5 @@ class PETMADDOSCalculator(MetatomicCalculator):
         efermi_indices = torch.argmax(
             (cdos > num_electrons.unsqueeze(1)).float(), dim=1
         )
-        efermi = self.energy_grid[efermi_indices]
+        efermi = self._energy_grid[efermi_indices]
         return efermi
