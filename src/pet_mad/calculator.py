@@ -9,7 +9,7 @@ from platformdirs import user_cache_dir
 from packaging.version import Version
 
 from ._models import get_pet_mad
-from ._version import LATEST_STABLE_VERSION,UQ_AVAILABILITY_VERSION
+from ._version import LATEST_STABLE_VERSION, UQ_AVAILABILITY_VERSION, NC_AVAILABILITY_VERSION
 
 
 class PETMADCalculator(MetatomicCalculator):
@@ -34,9 +34,9 @@ class PETMADCalculator(MetatomicCalculator):
         :param checkpoint_path: path to a checkpoint file to load the model from. If
             provided, the `version` parameter is ignored.
         :param calculate_uncertainty: whether to calculate energy uncertainty.
-            Defaults to False. Only available for PET-MAD version 1.2.0 or higher.
+            Defaults to False. Only available for PET-MAD version 1.0.2.
         :param calculate_ensemble: whether to calculate energy ensemble.
-            Defaults to False. Only available for PET-MAD version 1.2.0 or higher.
+            Defaults to False. Only available for PET-MAD version 1.0.2.
         :param check_consistency: should we check the model for consistency when
             running, defaults to False.
         :param device: torch device to use for the calculation. If `None`, we will try
@@ -51,6 +51,10 @@ class PETMADCalculator(MetatomicCalculator):
             version = Version(LATEST_STABLE_VERSION)
         if not isinstance(version, Version):
             version = Version(version)
+
+        if non_conservative and version < Version(NC_AVAILABILITY_VERSION):
+            raise NotImplementedError(f"Non-conservative forces and stresses are not available for version {version}. "
+                                      f"Please use PET-MAD version {NC_AVAILABILITY_VERSION} or higher.")
 
         additional_outputs = {}
         if calculate_uncertainty or calculate_ensemble:

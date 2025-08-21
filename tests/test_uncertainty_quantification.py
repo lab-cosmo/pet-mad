@@ -1,19 +1,22 @@
 from pet_mad.calculator import PETMADCalculator
 from ase.build import bulk
 import numpy as np
-import pytest
+from pet_mad._version import UQ_AVAILABILITY_VERSION
 from packaging.version import Version
+import pytest
 
-UQ_AVAILABILITY_VERSION = Version("1.2.0")
+VERSIONS = ("1.0.2", "1.0.1")
 
-@pytest.mark.skip(reason="This test is not working because the version with UQ is not released yet")
-@pytest.mark.parametrize("version", ["1.1.0", "1.2.0"])
+@pytest.mark.parametrize(
+    "version",
+    VERSIONS,
+)
 def test_uncertainty_quantification(version):
     atoms = bulk("Si", cubic=True, a=5.43, crystalstructure="diamond")
-    if Version(version) < UQ_AVAILABILITY_VERSION:
-        with pytest.raises(NotImplementedError) as e:
+    if Version(version) < Version(UQ_AVAILABILITY_VERSION):
+        msg = f"Energy uncertainty and ensemble are not available for version {version}."
+        with pytest.raises(NotImplementedError, match=msg):
             calc = PETMADCalculator(version=version, calculate_uncertainty=True, calculate_ensemble=True)
-        assert f"Energy uncertainty and ensemble are not available for version {version}. " in str(e.value)
     else:
         calc = PETMADCalculator(version=version, calculate_uncertainty=True, calculate_ensemble=True)
         atoms.calc = calc

@@ -1,13 +1,12 @@
 from pet_mad.calculator import PETMADCalculator
 from ase.build import bulk
 import numpy as np
-
-NC_VERSION = "1.1.0"
+from pet_mad._version import NC_AVAILABILITY_VERSION
     
 def test_non_conservative():
     atoms = bulk("Si", cubic=True, a=5.43, crystalstructure="diamond")
-    calc = PETMADCalculator(version=NC_VERSION, non_conservative=False)
-    calc_nc = PETMADCalculator(version=NC_VERSION, non_conservative=True)
+    calc = PETMADCalculator(version=NC_AVAILABILITY_VERSION, non_conservative=False)
+    calc_nc = PETMADCalculator(version=NC_AVAILABILITY_VERSION, non_conservative=True)
 
     atoms.calc = calc
     forces = atoms.get_forces()
