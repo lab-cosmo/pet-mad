@@ -181,7 +181,8 @@ class PETMADDOSCalculator(MetatomicCalculator):
         or a list of ase.Atoms objects.
 
         :param atoms: ASE atoms object or a list of ASE atoms objects
-        :return: bandgap values for each atoms object.
+        :return: bandgap values for each ase.Atoms object object stored in a
+        torch.Tensor format.
         """
         if isinstance(atoms, Atoms):
             atoms = [atoms]
@@ -218,7 +219,8 @@ class PETMADDOSCalculator(MetatomicCalculator):
         density of states.
 
         :param atoms: ASE atoms object or a list of ASE atoms objects
-        :return: Fermi energy.
+        :return: Fermi energy for each ase.Atoms object stored in a torch.Tensor
+        format.
         """
         _, dos = self.calculate_dos(atoms, per_atom=False)
         cdos = torch.cumulative_trapezoid(dos, dx=ENERGY_INTERVAL)
