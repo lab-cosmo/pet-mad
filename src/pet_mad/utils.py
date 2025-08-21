@@ -92,7 +92,7 @@ NUM_ELECTRONS_PER_ELEMENT = {
 }
 
 
-def get_metadata(version: str):
+def get_pet_mad_metadata(version: str):
     return ModelMetadata(
         name=f"PET-MAD v{version}",
         description="A universal interatomic potential for advanced materials modeling",
@@ -110,6 +110,26 @@ def get_metadata(version: str):
         references={
             "architecture": ["https://arxiv.org/abs/2305.19302v3"],
             "model": ["http://arxiv.org/abs/2503.14118"],
+        },
+    )
+
+def get_pet_mad_dos_metadata(version: str):
+    return ModelMetadata(
+        name=f"PET-MAD-DOS v{version}",
+        description="A universal machine learning model for the electronic density of states",
+        authors=[
+            "Wei Bin How (weibin.how@epfl.ch)",
+            "Pol Febrer",
+            "Sanggyu Chong",
+            "Arslan Mazitov",
+            "Filippo Bigi",
+            "Matthias Kellner",
+            "Sergey Pozdnyakov",
+            "Michele Ceriotti (michele.ceriotti@epfl.ch)",
+        ],
+        references={
+            "architecture": ["https://arxiv.org/abs/2508.09000"],
+            "model": [],
         },
     )
 

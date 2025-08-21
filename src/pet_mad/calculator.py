@@ -12,7 +12,7 @@ from ase import Atoms
 from packaging.version import Version
 
 from ._models import get_pet_mad, get_pet_mad_dos, _get_bandgap_model
-from ._version import LATEST_VERSION, LATEST_PET_MAD_DOS_VERSION
+from ._version import LATEST_PET_MAD_VERSION, LATEST_PET_MAD_DOS_VERSION
 from .utils import get_num_electrons
 
 
@@ -46,7 +46,7 @@ class PETMADCalculator(MetatomicCalculator):
         """
 
         if version == "latest":
-            version = Version(LATEST_VERSION)
+            version = Version(LATEST_PET_MAD_VERSION)
         if not isinstance(version, Version):
             version = Version(version)
 

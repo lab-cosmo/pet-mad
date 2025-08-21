@@ -6,7 +6,7 @@ from typing import Optional
 from metatomic.torch import AtomisticModel
 from metatrain.utils.io import load_model as load_metatrain_model
 from metatrain.utils.io import _hf_hub_download_url
-from .utils import get_metadata
+from .utils import get_pet_mad_metadata, get_pet_mad_dos_metadata
 from urllib.parse import urlparse
 from urllib.request import urlretrieve
 from .modules import BandgapModel
@@ -15,8 +15,8 @@ import torch
 from packaging.version import Version
 
 from ._version import (
-    LATEST_VERSION,
-    AVAILABLE_VERSIONS,
+    LATEST_PET_MAD_VERSION,
+    AVAILABLE_PET_MAD_VERSIONS,
     LATEST_PET_MAD_DOS_VERSION,
     AVAILABLE_PET_MAD_DOS_VERSIONS,
 )
@@ -35,13 +35,13 @@ def get_pet_mad(
         provided, the `version` parameter is ignored.
     """
     if version == "latest":
-        version = Version(LATEST_VERSION)
+        version = Version(LATEST_PET_MAD_VERSION)
     if not isinstance(version, Version):
         version = Version(version)
 
-    if version not in [Version(v) for v in AVAILABLE_VERSIONS]:
+    if version not in [Version(v) for v in AVAILABLE_PET_MAD_VERSIONS]:
         raise ValueError(
-            f"Version {version} is not supported. Supported versions are {AVAILABLE_VERSIONS}"
+            f"Version {version} is not supported. Supported versions are {AVAILABLE_PET_MAD_VERSIONS}"
         )
 
     if version == Version("1.0.0"):
@@ -69,7 +69,7 @@ def get_pet_mad(
         )
         model = load_metatrain_model(path)
 
-    metadata = get_metadata(version)
+    metadata = get_pet_mad_metadata(version)
     return model.export(metadata)
 
 
@@ -87,7 +87,7 @@ def save_pet_mad(*, version: str = "latest", checkpoint_path=None, output=None):
         a checkpoint.
     """
     if version == "latest":
-        version = Version(LATEST_VERSION)
+        version = Version(LATEST_PET_MAD_VERSION)
     if not isinstance(version, Version):
         version = Version(version)
 
@@ -141,6 +141,8 @@ def get_pet_mad_dos(
         path = BASE_URL_PET_MAD_DOS.format(tag=f"v{version}", version=f"v{version}")
 
     model = load_metatrain_model(path)
+    metadata = get_pet_mad_dos_metadata(version)
+    model._metadata = metadata
     return model
 
 
