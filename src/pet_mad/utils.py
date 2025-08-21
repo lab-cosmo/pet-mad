@@ -1,6 +1,6 @@
 from metatomic.torch import ModelMetadata
 from ase import Atoms
-from typing import List
+from typing import List, Union
 import torch
 
 NUM_ELECTRONS_PER_ELEMENT = {
@@ -135,7 +135,7 @@ def get_pet_mad_dos_metadata(version: str):
     )
 
 
-def get_num_electrons(atoms: Atoms | List[Atoms]) -> torch.Tensor:
+def get_num_electrons(atoms: Union[Atoms, List[Atoms]]) -> torch.Tensor:
     num_electrons = []
     if isinstance(atoms, Atoms):
         atoms = [atoms]

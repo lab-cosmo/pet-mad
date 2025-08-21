@@ -1,6 +1,6 @@
 import logging
 import os
-from typing import Optional, Tuple, List
+from typing import Optional, Tuple, List, Union
 
 from metatomic.torch.ase_calculator import MetatomicCalculator
 from platformdirs import user_cache_dir
@@ -119,7 +119,7 @@ class PETMADDOSCalculator(MetatomicCalculator):
         n_points = np.ceil((ENERGY_UPPER_BOUND - ENERGY_LOWER_BOUND) / ENERGY_INTERVAL)
         self.energy_grid = torch.arange(n_points) * ENERGY_INTERVAL + ENERGY_LOWER_BOUND
 
-    def calculate_bandgap(self, atoms: Atoms | List[Atoms]) -> torch.Tensor:
+    def calculate_bandgap(self, atoms: Union[Atoms, List[Atoms]]) -> torch.Tensor:
         """
         Calculate the bandgap for a given ase.Atoms object,
         or a list of ase.Atoms objects.
@@ -139,7 +139,7 @@ class PETMADDOSCalculator(MetatomicCalculator):
         return bandgap
 
     def calculate_dos(
-        self, atoms: Atoms | List[Atoms], per_atom: bool = False
+        self, atoms: Union[Atoms, List[Atoms]], per_atom: bool = False
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         """
         Calculate the density of states for a given ase.Atoms object,
@@ -155,7 +155,7 @@ class PETMADDOSCalculator(MetatomicCalculator):
         dos = results["mtt::dos"].block().values
         return self.energy_grid, dos
 
-    def calculate_efermi(self, atoms: Atoms | List[Atoms]) -> float:
+    def calculate_efermi(self, atoms: Union[Atoms, List[Atoms]]) -> float:
         """
         Get the Fermi energy for a given ase.Atoms object,
         or a list of ase.Atoms objects, based on a predicted
