@@ -5,7 +5,6 @@ from typing import Optional, Tuple, List, Union
 from metatomic.torch import ModelOutput
 from metatomic.torch.ase_calculator import MetatomicCalculator
 from platformdirs import user_cache_dir
-from metatomic.torch import ModelOutput
 import torch
 import numpy as np
 from ase import Atoms
