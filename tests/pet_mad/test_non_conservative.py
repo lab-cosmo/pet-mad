@@ -1,32 +1,33 @@
 from pet_mad.calculator import PETMADCalculator
 from ase.build import bulk
 import numpy as np
+from pet_mad._version import NC_AVAILABILITY_VERSION
 import pytest
+from packaging.version import Version
+    
+VERSIONS = ("1.1.0", "1.0.2", "1.0.1")
 
-def test_non_conservative():
-    atoms = bulk("Si", cubic=True, a=5.43, crystalstructure="diamond")
+@pytest.mark.parametrize(
+    "version",
+    VERSIONS,
+)
+def test_non_conservative(version):
+    if Version(version) < Version(NC_AVAILABILITY_VERSION):
+        msg = f"Non-conservative forces and stresses are not available for version {version}."
+        with pytest.raises(NotImplementedError, match=msg):
+            calc = PETMADCalculator(version=version, non_conservative=True)
+    else:
+        atoms = bulk("Si", cubic=True, a=5.43, crystalstructure="diamond")
+        calc = PETMADCalculator(version=version, non_conservative=False)
+        calc_nc = PETMADCalculator(version=version, non_conservative=True)
 
-    msg1 = (
-        "trying to upgrade an old model checkpoint with unknown version, this "
-        "might fail and require manual modifications"
-    )
-    msg2 = (
-        "PET assumes that Cartesian tensors of rank 2 are stress-like, meaning that "
-        "they are symmetric and intensive. If this is not the case, please use a "
-        "different model."
-    )
+        atoms.calc = calc
+        forces = atoms.get_forces()
+        stresses = atoms.get_stress()
 
-    with pytest.warns(UserWarning, match=f"({msg1}|{msg2})"):
-        calc = PETMADCalculator(version="latest", non_conservative=False)
-        calc_nc = PETMADCalculator(version="latest", non_conservative=True)
+        atoms.calc = calc_nc
+        forces_nc = atoms.get_forces()
+        stresses_nc = atoms.get_stress()
 
-    atoms.calc = calc
-    forces = atoms.get_forces()
-    stresses = atoms.get_stress()
-
-    atoms.calc = calc_nc
-    forces_nc = atoms.get_forces()
-    stresses_nc = atoms.get_stress()
-
-    assert np.allclose(forces, forces_nc, atol=1e-1)
-    assert np.allclose(stresses, stresses_nc, atol=1e-1)
+        assert np.allclose(forces, forces_nc, atol=1e-1)
+        assert np.allclose(stresses, stresses_nc, atol=1e-1)
