@@ -15,10 +15,10 @@ import torch
 from packaging.version import Version
 
 from ._version import (
-    LATEST_PET_MAD_VERSION,
-    AVAILABLE_PET_MAD_VERSIONS,
-    LATEST_PET_MAD_DOS_VERSION,
-    AVAILABLE_PET_MAD_DOS_VERSIONS,
+    PET_MAD_LATEST_STABLE_VERSION,
+    PET_MAD_AVAILABLE_VERSIONS,
+    PET_MAD_DOS_LATEST_VERSION,
+    PET_MAD_DOS_AVAILABLE_VERSIONS,
 )
 
 BASE_URL = "https://huggingface.co/lab-cosmo/pet-mad/resolve/{tag}/models/pet-mad-{version}.ckpt"
@@ -29,19 +29,18 @@ def get_pet_mad(
 ) -> AtomisticModel:
     """Get a metatomic ``AtomisticModel`` for PET-MAD.
 
-    :param version: PET-MAD version to use. Supported versions are
-        "1.1.0", "1.0.1", "1.0.0". Defaults to latest available version.
+    :param version: PET-MAD version to use. Defaults to the latest stable version.
     :param checkpoint_path: path to a checkpoint file to load the model from. If
         provided, the `version` parameter is ignored.
     """
     if version == "latest":
-        version = Version(LATEST_PET_MAD_VERSION)
+        version = Version(PET_MAD_LATEST_STABLE_VERSION)
     if not isinstance(version, Version):
         version = Version(version)
 
-    if version not in [Version(v) for v in AVAILABLE_PET_MAD_VERSIONS]:
+    if version not in [Version(v) for v in PET_MAD_AVAILABLE_VERSIONS]:
         raise ValueError(
-            f"Version {version} is not supported. Supported versions are {AVAILABLE_PET_MAD_VERSIONS}"
+            f"Version {version} is not supported. Supported versions are {PET_MAD_AVAILABLE_VERSIONS}"
         )
 
     if version == Version("1.0.0"):
@@ -78,8 +77,7 @@ def save_pet_mad(*, version: str = "latest", checkpoint_path=None, output=None):
     Save the PET-MAD model to a TorchScript file (``pet-mad-xxx.pt``). These files can
     be used with LAMMPS and other tools to run simulations without Python.
 
-    :param version: PET-MAD version to use. Supported versions are "1.1.0",
-        "1.0.1", "1.0.0". Defaults to the latest version.
+    :param version: PET-MAD version to use. Defaults to the latest stable version.
     :param checkpoint_path: path to a checkpoint file to load the model from. If
         provided, the `version` parameter is ignored.
     :param output: path to use for the output model, defaults to
@@ -87,7 +85,7 @@ def save_pet_mad(*, version: str = "latest", checkpoint_path=None, output=None):
         a checkpoint.
     """
     if version == "latest":
-        version = Version(LATEST_PET_MAD_VERSION)
+        version = Version(PET_MAD_LATEST_STABLE_VERSION)
     if not isinstance(version, Version):
         version = Version(version)
 
@@ -124,13 +122,13 @@ def get_pet_mad_dos(
         provided, the `version` parameter is ignored.
     """
     if version == "latest":
-        version = Version(LATEST_PET_MAD_DOS_VERSION)
+        version = Version(PET_MAD_DOS_LATEST_VERSION)
     if not isinstance(version, Version):
         version = Version(version)
 
-    if version not in [Version(v) for v in AVAILABLE_PET_MAD_DOS_VERSIONS]:
+    if version not in [Version(v) for v in PET_MAD_DOS_AVAILABLE_VERSIONS]:
         raise ValueError(
-            f"Version {version} is not supported. Supported versions are {AVAILABLE_PET_MAD_DOS_VERSIONS}"
+            f"Version {version} is not supported. Supported versions are {PET_MAD_DOS_AVAILABLE_VERSIONS}"
         )
 
     if model_path is not None:
@@ -151,13 +149,13 @@ def _get_bandgap_model(version: str = "latest", model_path: Optional[str] = None
     Get a bandgap model for PET-MAD-DOS
     """
     if version == "latest":
-        version = Version(LATEST_PET_MAD_DOS_VERSION)
+        version = Version(PET_MAD_DOS_LATEST_VERSION)
     if not isinstance(version, Version):
         version = Version(version)
 
-    if version not in [Version(v) for v in AVAILABLE_PET_MAD_DOS_VERSIONS]:
+    if version not in [Version(v) for v in PET_MAD_DOS_AVAILABLE_VERSIONS]:
         raise ValueError(
-            f"Version {version} is not supported. Supported versions are {AVAILABLE_PET_MAD_DOS_VERSIONS}"
+            f"Version {version} is not supported. Supported versions are {PET_MAD_DOS_AVAILABLE_VERSIONS}"
         )
 
     if model_path is not None:

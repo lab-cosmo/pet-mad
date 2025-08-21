@@ -36,6 +36,7 @@ complex atomistic simulations.
         - [Non-conservative (direct) forces and stresses prediction](#non-conservative-direct-forces-and-stresses-prediction)
     - [Evaluating PET-MAD on a dataset](#evaluating-pet-mad-on-a-dataset)
     - [Running PET-MAD with LAMMPS](#running-pet-mad-with-lammps)
+    - [Uncertainty Quantification](#uncertainty-quantification)
     - [Running PET-MAD with empirical dispersion corrections](#running-pet-mad-with-empirical-dispersion-corrections)
     - [Dataset visualization with the PET-MAD featurizer](#dataset-visualization-with-the-pet-mad-featurizer)
 5. [Examples](#examples)
@@ -88,13 +89,13 @@ conda install -c metatensor -c conda-forge pet-mad
 
 Currently, we provide the following pre-trained models:
 
-- **`v1.1.0`** or **`latest`**: The updated PET-MAD model with an ability to run
-  simulations using the non-conservative forces and stresses.
-- **`v1.0.1`**: The updated PET-MAD model with a new, pure PyTorch backend and
-  slightly improved performance.
-- **`v1.0.0`**: PET-MAD model trained on the MAD dataset, which contains 95,595
+- **`v1.1.0`**: The dev version of the PET-MAD model with the non-conservative
+  forces and stresses. This version has notably worse performance on molecular
+  systems, and is not recommended for production use, as for now.
+- **`v1.0.2`**: Stable PET-MAD model trained on the MAD dataset, which contains 95,595
   structures, including 3D and 2D inorganic crystals, surfaces, molecular
-  crystals, nanoclusters, and molecules.
+  crystals, nanoclusters, and molecules. Use this version in the case you want
+  to repoduce the results from the [PET-MAD paper](https://arxiv.org/abs/2503.14118).
 
 ## Interfaces for Atomistic Simulations
 
@@ -165,7 +166,7 @@ is installed as a dependency of PET-MAD. To evaluate the model, you first need
 to fetch the PET-MAD model from the HuggingFace repository:
 
 ```bash
-mtt export https://huggingface.co/lab-cosmo/pet-mad/resolve/v1.1.0/models/pet-mad-v1.1.0.ckpt -o pet-mad-latest.pt
+mtt export https://huggingface.co/lab-cosmo/pet-mad/resolve/v1.0.2/models/pet-mad-v1.0.2.ckpt -o pet-mad-latest.pt
 ```
 
 Alternatively, you can also download the model from Python:
@@ -202,6 +203,39 @@ This will create a file called `predictions.xyz` with the predicted energies and
 forces for each structure in the dataset. More details on how to use `metatrain`
 can be found in the [Metatrain documentation](https://metatensor.github.io/metatrain/latest/getting-started/usage.html#evaluation).
 
+### Uncertainty Quantification
+
+PET-MAD can also be used to calculate the uncertainty of the energy prediction.
+This feature is particularly important if you are interested in probing the model
+on the data that is far away from the training data. Another important use case
+is a propagation of the uncertainty of the energy prediction to other observables,
+like phase transition temperatures, diffusion coefficients, etc.
+
+To activate the uncertainty quantification, you need to set the
+`calculate_uncertainty` and / or`calculate_ensemble` parameters to `True` when
+initializing the `PETMADCalculator` class. The first feature will calculate the
+uncertainty of the energy prediction, while the second one will calculate the
+ensemble of the energy predictions based on the shallow ensemble of the last
+layers of the model.
+
+```python
+from pet_mad.calculator import PETMADCalculator
+from ase.build import bulk
+
+atoms = bulk("Si", cubic=True, a=5.43, crystalstructure="diamond")
+pet_mad_calculator = PETMADCalculator(version="latest", device="cpu", calculate_uncertainty=True, calculate_ensemble=True)
+atoms.calc = pet_mad_calculator
+energy = atoms.get_potential_energy()
+
+energy_uncertainty = atoms.calc.get_energy_uncertainty()
+energy_ensemble = atoms.calc.get_energy_ensemble()
+```
+
+More details on the uncertainty quantification and shallow
+ensemble method can be found in [this](https://doi.org/10.1088/2632-2153/ad594a) and [this](https://doi.org/10.1088/2632-2153/ad805f) papers. 
+
+
+
 ## Running PET-MAD with LAMMPS
 
 ### 1. Install LAMMPS with metatomic support
@@ -217,7 +251,7 @@ the installation instructions above). Then, follow the instructions
 Fetch the PET-MAD checkpoint from the HuggingFace repository:
 
 ```bash
-mtt export https://huggingface.co/lab-cosmo/pet-mad/resolve/v1.1.0/models/pet-mad-v1.1.0.ckpt -o pet-mad-latest.pt
+mtt export https://huggingface.co/lab-cosmo/pet-mad/resolve/v1.0.2/models/pet-mad-v1.0.2.ckpt -o pet-mad-latest.pt
 ```
 
 This will download the model and convert it to TorchScript format compatible
