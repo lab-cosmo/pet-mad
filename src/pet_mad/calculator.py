@@ -14,12 +14,11 @@ from packaging.version import Version
 
 from ._models import get_pet_mad, get_pet_mad_dos, _get_bandgap_model
 from .utils import get_num_electrons
-from ._models import get_pet_mad
 from ._version import (
     PET_MAD_LATEST_STABLE_VERSION,
     PET_MAD_UQ_AVAILABILITY_VERSION,
     PET_MAD_NC_AVAILABILITY_VERSION,
-    PET_MAD_DOS_LATEST_VERSION,
+    PET_MAD_DOS_LATEST_STABLE_VERSION,
 )
 
 
@@ -114,6 +113,28 @@ class PETMADCalculator(MetatomicCalculator):
             non_conservative=non_conservative,
         )
 
+    def _get_uq_output(self, output_name: str):
+        if output_name not in self.additional_outputs:
+            quantity = output_name.split("_")[1]
+            raise ValueError(
+                f"Energy {quantity} is not available. Please make sure that you have initialized the "
+                f"calculator with `calculate_{quantity}=True` and performed evaluation. "
+                f"This option is only available for PET-MAD version {PET_MAD_UQ_AVAILABILITY_VERSION} or higher."
+            )
+        return (
+            self.additional_outputs[output_name]
+            .block()
+            .values.detach()
+            .numpy()
+            .squeeze()
+        )
+
+    def get_energy_uncertainty(self):
+        return self._get_uq_output("energy_uncertainty")
+
+    def get_energy_ensemble(self):
+        return self._get_uq_output("energy_ensemble")
+
 
 ENERGY_LOWER_BOUND = -159.6456
 ENERGY_UPPER_BOUND = 79.1528 + 1.5
@@ -135,7 +156,7 @@ class PETMADDOSCalculator(MetatomicCalculator):
         device: Optional[str] = None,
     ):
         if version == "latest":
-            version = Version(PET_MAD_DOS_LATEST_VERSION)
+            version = Version(PET_MAD_DOS_LATEST_STABLE_VERSION)
         if not isinstance(version, Version):
             version = Version(version)
 
@@ -209,24 +230,3 @@ class PETMADDOSCalculator(MetatomicCalculator):
         )
         efermi = self.energy_grid[efermi_indices]
         return efermi
-    def _get_uq_output(self, output_name: str):
-        if output_name not in self.additional_outputs:
-            quantity = output_name.split("_")[1]
-            raise ValueError(
-                f"Energy {quantity} is not available. Please make sure that you have initialized the "
-                f"calculator with `calculate_{quantity}=True` and performed evaluation. "
-                f"This option is only available for PET-MAD version {PET_MAD_UQ_AVAILABILITY_VERSION} or higher."
-            )
-        return (
-            self.additional_outputs[output_name]
-            .block()
-            .values.detach()
-            .numpy()
-            .squeeze()
-        )
-
-    def get_energy_uncertainty(self):
-        return self._get_uq_output("energy_uncertainty")
-
-    def get_energy_ensemble(self):
-        return self._get_uq_output("energy_ensemble")

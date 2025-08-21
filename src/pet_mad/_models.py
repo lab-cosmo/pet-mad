@@ -17,7 +17,7 @@ from packaging.version import Version
 from ._version import (
     PET_MAD_LATEST_STABLE_VERSION,
     PET_MAD_AVAILABLE_VERSIONS,
-    PET_MAD_DOS_LATEST_VERSION,
+    PET_MAD_DOS_LATEST_STABLE_VERSION,
     PET_MAD_DOS_AVAILABLE_VERSIONS,
 )
 
@@ -122,7 +122,7 @@ def get_pet_mad_dos(
         provided, the `version` parameter is ignored.
     """
     if version == "latest":
-        version = Version(PET_MAD_DOS_LATEST_VERSION)
+        version = Version(PET_MAD_DOS_LATEST_STABLE_VERSION)
     if not isinstance(version, Version):
         version = Version(version)
 
@@ -149,7 +149,7 @@ def _get_bandgap_model(version: str = "latest", model_path: Optional[str] = None
     Get a bandgap model for PET-MAD-DOS
     """
     if version == "latest":
-        version = Version(PET_MAD_DOS_LATEST_VERSION)
+        version = Version(PET_MAD_DOS_LATEST_STABLE_VERSION)
     if not isinstance(version, Version):
         version = Version(version)
 
