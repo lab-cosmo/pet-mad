@@ -113,6 +113,7 @@ def get_pet_mad_metadata(version: str):
         },
     )
 
+
 def get_pet_mad_dos_metadata(version: str):
     return ModelMetadata(
         name=f"PET-MAD-DOS v{version}",
