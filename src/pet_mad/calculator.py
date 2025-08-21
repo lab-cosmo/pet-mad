@@ -11,10 +11,9 @@ from ase import Atoms
 
 from packaging.version import Version
 
-from ._models import get_pet_mad
-from ._version import LATEST_VERSION
+from ._models import get_pet_mad, get_pet_mad_dos, _get_bandgap_model
+from ._version import LATEST_VERSION, LATEST_PET_MAD_DOS_VERSION
 from .utils import get_num_electrons
-from .modules import CNN1D
 
 
 class PETMADCalculator(MetatomicCalculator):
@@ -92,65 +91,85 @@ class PETMADDOSCalculator(MetatomicCalculator):
 
     def __init__(
         self,
+        version: str = "latest",
         model_path: Optional[str] = None,
         bandgap_model_path: Optional[str] = None,
         *,
         check_consistency: bool = False,
         device: Optional[str] = None,
     ):
+        if version == "latest":
+            version = Version(LATEST_PET_MAD_DOS_VERSION)
+        if not isinstance(version, Version):
+            version = Version(version)
+
+        model = get_pet_mad_dos(version=version, model_path=model_path)
+        bandgap_model = _get_bandgap_model(
+            version=version, model_path=bandgap_model_path
+        )
+
         super().__init__(
-            model_path,
+            model,
             additional_outputs={},
             check_consistency=check_consistency,
             device=device,
         )
-        n_points = np.ceil((ENERGY_UPPER_BOUND - ENERGY_LOWER_BOUND) / ENERGY_INTERVAL)
-        self.energy_grid = torch.arange(n_points) * ENERGY_INTERVAL + ENERGY_LOWER_BOUND
-        
-        bandgap_model = CNN1D()
-        bandgap_model.load_state_dict(torch.load(bandgap_model_path, weights_only=False, map_location='cpu'))
-        bandgap_model.to(device)
         self._bandgap_model = bandgap_model
 
-    def _calculate_dos(self, atoms: Atoms | List[Atoms], per_atom: bool = False) -> torch.Tensor:
+        n_points = np.ceil((ENERGY_UPPER_BOUND - ENERGY_LOWER_BOUND) / ENERGY_INTERVAL)
+        self.energy_grid = torch.arange(n_points) * ENERGY_INTERVAL + ENERGY_LOWER_BOUND
+
+    def calculate_bandgap(self, atoms: Atoms | List[Atoms]) -> torch.Tensor:
+        """
+        Calculate the bandgap for a given ase.Atoms object,
+        or a list of ase.Atoms objects.
+
+        :param atoms: ASE atoms object or a list of ASE atoms objects
+        :return: bandgap values for each atoms object.
+        """
+        if isinstance(atoms, Atoms):
+            atoms = [atoms]
+        _, dos = self.calculate_dos(atoms, per_atom=False)
+        num_atoms = torch.tensor([len(item) for item in atoms], device=dos.device)
+        dos = dos / num_atoms.unsqueeze(1)
+        bandgap = self._bandgap_model(
+            dos.unsqueeze(1)
+        ).detach()  # Need to make the inputs [n_predictions, 1, 4806]
+        bandgap = torch.nn.functional.relu(bandgap).squeeze()
+        return bandgap
+
+    def calculate_dos(
+        self, atoms: Atoms | List[Atoms], per_atom: bool = False
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        """
+        Calculate the density of states for a given ase.Atoms object,
+        or a list of ase.Atoms objects.
+
+        :param atoms: ASE atoms object or a list of ASE atoms objects
+        :param per_atom: Whether to return the density of states per atom.
+        :return: Energy grid and corresponding DOS values in torch.Tensor format.
+        """
         results = self.run_model(
             atoms, outputs={"mtt::dos": ModelOutput(per_atom=per_atom)}
         )
         dos = results["mtt::dos"].block().values
-        return dos
-    
-    def calculate_bandgap(self, atoms: Atoms | List[Atoms]) -> torch.Tensor:
-        _, dos = self.calculate_dos(atoms, per_atom=False)
-        bandgap = self._bandgap_model(dos.unsqueeze(1)).detach() # Need to make the inputs [n_predictions, 1, 4806]
-        bandgap = torch.nn.functional.relu(bandgap).squeeze()
-        return bandgap
-    
-    def calculate_dos(
-        self, atoms: Atoms, per_atom: bool = False
-    ) -> Tuple[torch.Tensor, torch.Tensor]:
-        """
-        Calculate the density of states for a given atoms object.
-
-        :param atoms: ASE atoms object.
-        :param per_atom: Whether to return the density of states per atom.
-        :return: Energy grid and corresponding DOS values in torch.Tensor format.
-        """
-        dos = self._calculate_dos(atoms, per_atom=per_atom)
-        dos = torch.nn.functional.relu(dos)
         return self.energy_grid, dos
 
     def calculate_efermi(self, atoms: Atoms | List[Atoms]) -> float:
         """
-        Get the Fermi energy for a given atoms object based on a predicted
+        Get the Fermi energy for a given ase.Atoms object,
+        or a list of ase.Atoms objects, based on a predicted
         density of states.
 
-        :param atoms: ASE atoms object.
+        :param atoms: ASE atoms object or a list of ASE atoms objects
         :return: Fermi energy.
         """
-        dos = self._calculate_dos(atoms, per_atom=False)
+        _, dos = self.calculate_dos(atoms, per_atom=False)
         cdos = torch.cumulative_trapezoid(dos, dx=ENERGY_INTERVAL)
         num_electrons = get_num_electrons(atoms)
         num_electrons.to(dos.device)
-        efermi_indices = torch.argmax((cdos > num_electrons.unsqueeze(1)).float(), dim=1)
+        efermi_indices = torch.argmax(
+            (cdos > num_electrons.unsqueeze(1)).float(), dim=1
+        )
         efermi = self.energy_grid[efermi_indices]
         return efermi
