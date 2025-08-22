@@ -1,0 +1,40 @@
+name: Tests dev
+
+on:
+  schedule:
+    # check once a week on mondays
+    - cron: '0 10 * * 1'
+
+jobs:
+  tests-dev:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.9", "3.13"]
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Install Zsh
+      if: startsWith(matrix.os, 'ubuntu')
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y zsh libfftw3-dev
+        touch ~/.zshrc
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install tests dependencies
+      run: python -m pip install tox
+
+    - name: run Python tests
+      run: |
+        tox -e tests-dev
+      env:
+        # Use the CPU only version of torch when building/running the code
+        PIP_EXTRA_INDEX_URL: https://download.pytorch.org/whl/cpu
