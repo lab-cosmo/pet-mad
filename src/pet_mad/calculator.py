@@ -177,26 +177,6 @@ class PETMADDOSCalculator(MetatomicCalculator):
             torch.arange(n_points) * ENERGY_INTERVAL + ENERGY_LOWER_BOUND
         )
 
-    def calculate_bandgap(self, atoms: Union[Atoms, List[Atoms]]) -> torch.Tensor:
-        """
-        Calculate the bandgap for a given ase.Atoms object,
-        or a list of ase.Atoms objects.
-
-        :param atoms: ASE atoms object or a list of ASE atoms objects
-        :return: bandgap values for each ase.Atoms object object stored in a
-        torch.Tensor format.
-        """
-        if isinstance(atoms, Atoms):
-            atoms = [atoms]
-        _, dos = self.calculate_dos(atoms, per_atom=False)
-        num_atoms = torch.tensor([len(item) for item in atoms], device=dos.device)
-        dos = dos / num_atoms.unsqueeze(1)
-        bandgap = self._bandgap_model(
-            dos.unsqueeze(1)
-        ).detach()  # Need to make the inputs [n_predictions, 1, 4806]
-        bandgap = torch.nn.functional.relu(bandgap).squeeze()
-        return bandgap
-
     def calculate_dos(
         self, atoms: Union[Atoms, List[Atoms]], per_atom: bool = False
     ) -> Tuple[torch.Tensor, torch.Tensor]:
@@ -214,17 +194,65 @@ class PETMADDOSCalculator(MetatomicCalculator):
         dos = results["mtt::dos"].block().values
         return self._energy_grid.clone(), dos
 
-    def calculate_efermi(self, atoms: Union[Atoms, List[Atoms]]) -> float:
+
+    def calculate_bandgap(self, atoms: Union[Atoms, List[Atoms]], dos: Optional[torch.Tensor] = None) -> torch.Tensor:
         """
-        Get the Fermi energy for a given ase.Atoms object,
-        or a list of ase.Atoms objects, based on a predicted
-        density of states.
+        Calculate the bandgap for a given ase.Atoms object,or a list of ase.Atoms
+        objects. By default, the density of states is first calculated using the
+        `calculate_dos` method, and the the bandgap is derived from the DOS by a
+        BandgapModel. Alternatively, the density of states can be provided as an
+        input parameter to avoid re-calculating the DOS.
 
         :param atoms: ASE atoms object or a list of ASE atoms objects
+        :param dos: Density of states for the given atoms. If not provided, the
+            density of states is calculated using the `calculate_dos` method.
+        :return: bandgap values for each ase.Atoms object object stored in a
+            torch.Tensor format.
+        """
+        if isinstance(atoms, Atoms):
+            atoms = [atoms]
+        if dos is None:
+            _, dos = self.calculate_dos(atoms, per_atom=False)
+        if dos.shape[0] != len(atoms):
+            raise ValueError(
+                f"The provided DOS is inconsistent with the provided `atoms` "
+                f"parameter: {len(atoms)} != {dos.shape[0]}. Please either set "
+                "`dos = None` or provide a consistent DOS, computed with "
+                "`per_atom = False`."
+            )
+        num_atoms = torch.tensor([len(item) for item in atoms], device=dos.device)
+        dos = dos / num_atoms.unsqueeze(1)
+        bandgap = self._bandgap_model(
+            dos.unsqueeze(1)
+        ).detach()  # Need to make the inputs [n_predictions, 1, 4806]
+        bandgap = torch.nn.functional.relu(bandgap).squeeze()
+        return bandgap
+
+    def calculate_efermi(self, atoms: Union[Atoms, List[Atoms]], dos: Optional[torch.Tensor] = None) -> torch.Tensor:
+        """ 
+        Get the Fermi energy for a given ase.Atoms object, or a list of ase.Atoms
+        objects, based on a predicted density of states. By default, the density
+        of states is first calculated using the `calculate_dos` method. 
+        Alternatively, the density of states can be provided as an input parameter
+        to avoid re-calculating the DOS.
+
+        :param atoms: ASE atoms object or a list of ASE atoms objects
+        :param dos: Density of states for the given atoms. If not provided, the
+            density of states is calculated using the `calculate_dos` method.
         :return: Fermi energy for each ase.Atoms object stored in a torch.Tensor
         format.
         """
-        _, dos = self.calculate_dos(atoms, per_atom=False)
+        if isinstance(atoms, Atoms):
+            atoms = [atoms]
+        if dos is None:
+            _, dos = self.calculate_dos(atoms, per_atom=False)
+        if dos.shape[0] != len(atoms):
+            raise ValueError(
+                f"The provided DOS is inconsistent with the provided `atoms` "
+                f"parameter: {len(atoms)} != {dos.shape[0]}. Please either set "
+                "`dos = None` or provide a consistent DOS, computed with "
+                "`per_atom = False`."
+            )
         cdos = torch.cumulative_trapezoid(dos, dx=ENERGY_INTERVAL)
         num_electrons = get_num_electrons(atoms)
         num_electrons.to(dos.device)
