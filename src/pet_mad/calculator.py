@@ -194,8 +194,9 @@ class PETMADDOSCalculator(MetatomicCalculator):
         dos = results["mtt::dos"].block().values
         return self._energy_grid.clone(), dos
 
-
-    def calculate_bandgap(self, atoms: Union[Atoms, List[Atoms]], dos: Optional[torch.Tensor] = None) -> torch.Tensor:
+    def calculate_bandgap(
+        self, atoms: Union[Atoms, List[Atoms]], dos: Optional[torch.Tensor] = None
+    ) -> torch.Tensor:
         """
         Calculate the bandgap for a given ase.Atoms object,or a list of ase.Atoms
         objects. By default, the density of states is first calculated using the
@@ -228,11 +229,13 @@ class PETMADDOSCalculator(MetatomicCalculator):
         bandgap = torch.nn.functional.relu(bandgap).squeeze()
         return bandgap
 
-    def calculate_efermi(self, atoms: Union[Atoms, List[Atoms]], dos: Optional[torch.Tensor] = None) -> torch.Tensor:
-        """ 
+    def calculate_efermi(
+        self, atoms: Union[Atoms, List[Atoms]], dos: Optional[torch.Tensor] = None
+    ) -> torch.Tensor:
+        """
         Get the Fermi energy for a given ase.Atoms object, or a list of ase.Atoms
         objects, based on a predicted density of states. By default, the density
-        of states is first calculated using the `calculate_dos` method. 
+        of states is first calculated using the `calculate_dos` method.
         Alternatively, the density of states can be provided as an input parameter
         to avoid re-calculating the DOS.
 
