@@ -19,14 +19,14 @@ the density of states of materials, as well as their Fermi levels and bandgaps.
 
 ## Key Features
 
-- **Universality**: PET-MAD contains generally-applicable model that can be used for
+- **Universality**: PET-MAD models are generally-applicable, and can be used for
   predicting energies and forces, as well as the density of states, Fermi levels,
   and bandgaps for a wide range of materials and molecules.
-- **Accuracy**: PET-MAD achieves high accuracy in various types of atomistic
+- **Accuracy**: PET-MAD models achieve high accuracy in various types of atomistic
   simulations of organic and inorganic systems, comparable with system-specific
   models, while being fast and efficient.
-- **Efficiency**: PET-MAD achieves high computational efficiency and low memory
-  usage, making it suitable for large-scale simulations.
+- **Efficiency**: PET-MAD models are highly computationally efficient and have low 
+  memory usage, what makes them suitable for large-scale simulations.
 - **Infrastructure**: Various MD engines are available for diverse research and
   application needs.
 - **HPC Compatibility**: Efficient in HPC environments for extensive simulations.
