@@ -12,7 +12,7 @@ from ase import Atoms
 from packaging.version import Version
 
 from ._models import get_pet_mad, get_pet_mad_dos, _get_bandgap_model
-from .utils import get_num_electrons
+from .utils import get_num_electrons, fermi_dirac_distribution
 from ._version import (
     PET_MAD_LATEST_STABLE_VERSION,
     PET_MAD_UQ_AVAILABILITY_VERSION,
@@ -135,9 +135,18 @@ class PETMADCalculator(MetatomicCalculator):
         return self._get_uq_output("energy_ensemble")
 
 
-ENERGY_LOWER_BOUND = -159.6456
-ENERGY_UPPER_BOUND = 79.1528 + 1.5
-ENERGY_INTERVAL = 0.05
+ENERGY_LOWER_BOUND = -159.6456  # Lower bound of the energy grid for DOS
+ENERGY_UPPER_BOUND = 79.1528 + 1.5  # Upper bound of the energy grid for DOS
+ENERGY_INTERVAL = 0.05  # Interval of the energy grid for DOS
+
+# If we want to calculate the Fermi level at a given temperature, we need to search
+# it around the Fermi level at 0 K. To do this, we first set a certain energy window
+# with a certain number of grid points to calculate the integrated DOS. Next, we
+# interpolate the integrated DOS to a finer grid and find the Fermi level that
+# gives the correct number of electrons.
+ENERGY_WINDOW = 0.5
+ENERGY_GRID_NUM_POINTS_COARSE = 1000
+ENERGY_GRID_NUM_POINTS_FINE = 10000
 
 
 class PETMADDOSCalculator(MetatomicCalculator):
@@ -230,18 +239,22 @@ class PETMADDOSCalculator(MetatomicCalculator):
         return bandgap
 
     def calculate_efermi(
-        self, atoms: Union[Atoms, List[Atoms]], dos: Optional[torch.Tensor] = None
+        self,
+        atoms: Union[Atoms, List[Atoms]],
+        dos: Optional[torch.Tensor] = None,
+        temperature: float = 0.0,
     ) -> torch.Tensor:
         """
         Get the Fermi energy for a given ase.Atoms object, or a list of ase.Atoms
-        objects, based on a predicted density of states. By default, the density
-        of states is first calculated using the `calculate_dos` method.
-        Alternatively, the density of states can be provided as an input parameter
-        to avoid re-calculating the DOS.
+        objects, based on a predicted density of states at a given temperature.
+        By default, the density of states is first calculated using the `calculate_dos`
+        method, and the Fermi level is calculated at T=0 K. Alternatively, the density
+        of states can be provided as an input parameter to avoid re-calculating the DOS.
 
         :param atoms: ASE atoms object or a list of ASE atoms objects
         :param dos: Density of states for the given atoms. If not provided, the
             density of states is calculated using the `calculate_dos` method.
+        :param temperature: Temperature (K). Defaults to 0 K.
         :return: Fermi energy for each ase.Atoms object stored in a torch.Tensor
         format.
         """
@@ -263,4 +276,32 @@ class PETMADDOSCalculator(MetatomicCalculator):
             (cdos > num_electrons.unsqueeze(1)).float(), dim=1
         )
         efermi = self._energy_grid[efermi_indices]
+        if temperature > 0.0:
+            efermi_grid_trial = torch.linspace(
+                efermi.min() - ENERGY_WINDOW,
+                efermi.max() + ENERGY_WINDOW,
+                ENERGY_GRID_NUM_POINTS_COARSE,
+            )
+            occupancies = fermi_dirac_distribution(
+                self._energy_grid.unsqueeze(0),
+                efermi_grid_trial.unsqueeze(1),
+                temperature,
+            )
+            idos = torch.trapezoid(dos.unsqueeze(1) * occupancies, self._energy_grid)
+            idos_interp = torch.nn.functional.interpolate(
+                idos.unsqueeze(0),
+                size=ENERGY_GRID_NUM_POINTS_FINE,
+                mode="linear",
+                align_corners=True,
+            )[0]
+            efermi_grid_interp = torch.linspace(
+                efermi_grid_trial.min(),
+                efermi_grid_trial.max(),
+                ENERGY_GRID_NUM_POINTS_FINE,
+            )
+            efermi_indices = torch.argmax(
+                (idos_interp > num_electrons.unsqueeze(1)).float(), dim=1
+            )
+            efermi = efermi_grid_interp[efermi_indices]
         return efermi
+

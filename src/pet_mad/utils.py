@@ -1,5 +1,6 @@
 from metatomic.torch import ModelMetadata
 from ase import Atoms
+from ase.units import kB
 from typing import List, Union, Optional
 import torch
 from pathlib import Path
@@ -148,7 +149,29 @@ def get_pet_mad_dos_metadata(version: str):
     )
 
 
+def fermi_dirac_distribution(
+    energies: torch.Tensor, mu: torch.Tensor, T: float
+) -> torch.Tensor:
+    """
+    Fermi-Dirac distribution function.
+
+    :param energies: Energy grid.
+    :param mu: Fermi level.
+    :param T: Temperature.
+    :return: Fermi-Dirac distribution function.
+    """
+    return 1 / (1 + torch.exp((energies - mu) / (kB * T)))
+
+
 def get_num_electrons(atoms: Union[Atoms, List[Atoms]]) -> torch.Tensor:
+    """
+    Get the number of electrons for a given ase.Atoms object, or a list of ase.Atoms
+    objects.
+
+    :param atoms: ASE atoms object or a list of ASE atoms objects
+    :return: Number of electrons for each ase.Atoms object stored in a torch.Tensor
+    format.
+    """
     num_electrons = []
     if isinstance(atoms, Atoms):
         atoms = [atoms]
