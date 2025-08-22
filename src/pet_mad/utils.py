@@ -186,13 +186,6 @@ def hf_hub_download_url(
         subfolder, filename = parts
     else:
         subfolder = None
-    print("Subfolder: ", subfolder)
-    print("Filename: ", filename)
-    print("Revision: ", revision)
-    print("Endpoint: ", endpoint)
-    print("Repo ID: ", repo_id)
-    print("HF Token: ", hf_token)
-    print("Cache Dir: ", cache_dir)
     return hf_hub_download(
         repo_id=repo_id,
         filename=filename,
