@@ -163,6 +163,18 @@ class PETMADDOSCalculator(MetatomicCalculator):
         check_consistency: bool = False,
         device: Optional[str] = None,
     ):
+        """
+        :param version: PET-MAD-DOS version to use. Defaults to the latest stable version.
+        :param model_path: path to a Torch-Scripted model file to load the model from. If
+            provided, the `version` parameter is ignored.
+        :param bandgap_model_path: path to a PyTorch checkpoint file with the bandgap model.
+            If provided, the `version` parameter is ignored.
+        :param check_consistency: should we check the model for consistency when
+            running, defaults to False.
+        :param device: torch device to use for the calculation. If `None`, we will try
+            the options in the model's `supported_device` in order.
+
+        """
         if version == "latest":
             version = Version(PET_MAD_DOS_LATEST_STABLE_VERSION)
         if not isinstance(version, Version):
