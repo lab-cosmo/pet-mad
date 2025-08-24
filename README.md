@@ -5,23 +5,28 @@
   </picture>
 </div>
 
-# PET-MAD: A Universal Interatomic Potential for Advanced Materials Modeling
+# PET-MAD: Universal Models for Advanced Atomistic Simulations
 
 This repository contains **PET-MAD** - a universal interatomic potential for
 advanced materials modeling across the periodic table. This model is based on
-the **Point Edge Transformer (PET)** model trained on the **Massive Atomic
-Diversity (MAD) Dataset** and is capable of predicting energies and forces in
-complex atomistic simulations.
+the **Point Edge Transformer (PET)** model trained on the **Massive Atomic Diversity (MAD) Dataset** 
+and is capable of predicting energies and forces in complex atomistic simulations.
+
+In addition, it contains **PET-MAD-DOS** - a universal model for predicting
+the density of states (DOS) of materials, as well as their Fermi levels and bandgaps.
+**PET-MAD-DOS** is using a slightly modified **PET** architecture, and the same
+**MAD** dataset. 
 
 ## Key Features
 
-- **Universality**: PET-MAD is a generally-applicable model that can be used for
-  a wide range of materials and molecules.
-- **Accuracy**: PET-MAD achieves high accuracy in various types of atomistic
+- **Universality**: PET-MAD models are generally-applicable, and can be used for
+  predicting energies and forces, as well as the density of states, Fermi levels,
+  and bandgaps for a wide range of materials and molecules.
+- **Accuracy**: PET-MAD models achieve high accuracy in various types of atomistic
   simulations of organic and inorganic systems, comparable with system-specific
   models, while being fast and efficient.
-- **Efficiency**: PET-MAD achieves high computational efficiency and low memory
-  usage, making it suitable for large-scale simulations.
+- **Efficiency**: PET-MAD models are highly computationally efficient and have low 
+  memory usage, what makes them suitable for large-scale simulations.
 - **Infrastructure**: Various MD engines are available for diverse research and
   application needs.
 - **HPC Compatibility**: Efficient in HPC environments for extensive simulations.
@@ -38,6 +43,7 @@ complex atomistic simulations.
     - [Running PET-MAD with LAMMPS](#running-pet-mad-with-lammps)
     - [Uncertainty Quantification](#uncertainty-quantification)
     - [Running PET-MAD with empirical dispersion corrections](#running-pet-mad-with-empirical-dispersion-corrections)
+    - [Calculating the DOS, Fermi levels, and bandgaps](#calculating-the-dos-fermi-levels-and-bandgaps)
     - [Dataset visualization with the PET-MAD featurizer](#dataset-visualization-with-the-pet-mad-featurizer)
 5. [Examples](#examples)
 6. [Fine-tuning](#fine-tuning)
@@ -130,6 +136,7 @@ forces = atoms.get_forces()
 These ASE methods are ideal for single-structure evaluations, but they are
 inefficient for the evaluation on a large number of pre-defined structures. To
 perform efficient evaluation in that case, read [here](docs/README_BATCHED.md).
+
 
 #### Non-conservative (direct) forces and stresses prediction
 
@@ -413,6 +420,60 @@ combined_calc = SumCalculator([calc_MAD, dft_d3])
 atoms.calc = combined_calc
 
 ```
+
+
+## Calculating the DOS, Fermi levels, and bandgaps
+
+PET-MAD packages also allows the use of the **PET-MAD-DOS** model to predict 
+electronic density of states of materials, as well as their Fermi levels and
+bandgaps. Similarly to the  **PET-MAD** model, the **PET-MAD-DOS** model is
+also available in the **ASE** interface.
+
+```python
+from pet_mad.calculator import PETMADDOSCalculator
+
+atoms = bulk("Si", cubic=True, a=5.43, crystalstructure="diamond")
+pet_mad_dos_calculator = PETMADDOSCalculator(version="latest", device="cpu")
+
+energies, dos = pet_mad_dos_calculator.calculate_dos(atoms)
+```
+
+Predicting the densities of states for every atom in the crystal,
+or a list of atoms, is also possible:
+
+```python
+# Calculating the DOS for every atom in the crystal
+energies, dos_per_atom = pet_mad_dos_calculator.calculate_dos(atoms, per_atom=True)
+
+# Calculating the DOS for a list of atoms
+atoms_1 = bulk("Si", cubic=True, a=5.43, crystalstructure="diamond")
+atoms_2 = bulk("C", cubic=True, a=3.55, crystalstructure="diamond")
+
+energies, dos = pet_mad_dos_calculator.calculate_dos([atoms_1, atoms_2], per_atom=False)
+```
+
+Finally, you can use the `calculate_bandgap` and `calculate_efermi` methods to
+predict the bandgap and Fermi level for the crystal:
+
+```python
+bandgap = pet_mad_dos_calculator.calculate_bandgap(atoms)
+fermi_level = pet_mad_dos_calculator.calculate_efermi(atoms)
+```
+
+You can also re-use the DOS calculated earlier:
+
+```python
+bandgap = pet_mad_dos_calculator.calculate_bandgap(atoms, dos=dos)
+fermi_level = pet_mad_dos_calculator.calculate_efermi(atoms, dos=dos)
+```
+
+This option is also available for a list of `ase.Atoms` objects:
+
+```python
+bandgaps = pet_mad_dos_calculator.calculate_bandgap([atoms_1, atoms_2], dos=dos)
+fermi_levels = pet_mad_dos_calculator.calculate_efermi([atoms_1, atoms_2], dos=dos)
+```
+
 
 ## Dataset visualization with the PET-MAD featurizer
  
