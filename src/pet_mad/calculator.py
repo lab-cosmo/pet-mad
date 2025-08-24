@@ -306,13 +306,16 @@ class PETMADDOSCalculator(MetatomicCalculator):
                 mode="linear",
                 align_corners=True,
             )[0]
-            efermi_grid_interp = torch.linspace(
-                efermi_grid_trial.min(),
-                efermi_grid_trial.max(),
-                ENERGY_GRID_NUM_POINTS_FINE,
-            )
-            efermi_indices = torch.argmax(
-                (idos_interp > num_electrons.unsqueeze(1)).float(), dim=1
-            )
-            efermi = efermi_grid_interp[efermi_indices]
+            efermi_grid_interp = torch.nn.functional.interpolate(
+                efermi_grid_trial.unsqueeze(0).unsqueeze(0),
+                size=ENERGY_GRID_NUM_POINTS_FINE,
+                mode="linear",
+                align_corners=True,
+            )[0][0]
+            # Soft approximation of argmax using temperature scaling
+            residue = idos_interp - num_electrons.unsqueeze(1)
+            # Use softmax with a sharp temperature to approximate argmax
+            tau = 0.0001  # Small temperature for sharp approximation
+            weights = torch.softmax(-torch.abs(residue) / tau, dim=1)
+            efermi = torch.sum(weights * efermi_grid_interp.unsqueeze(0), dim=1)
         return efermi
