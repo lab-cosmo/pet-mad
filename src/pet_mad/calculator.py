@@ -316,4 +316,3 @@ class PETMADDOSCalculator(MetatomicCalculator):
             )
             efermi = efermi_grid_interp[efermi_indices]
         return efermi
-

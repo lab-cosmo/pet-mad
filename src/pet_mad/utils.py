@@ -148,6 +148,7 @@ def get_pet_mad_dos_metadata(version: str):
         },
     )
 
+
 def fermi_dirac_distribution(
     energies: torch.Tensor, mu: torch.Tensor, T: torch.Tensor
 ) -> torch.Tensor:
