@@ -12,8 +12,8 @@ advanced materials modeling across the periodic table. This model is based on
 the **Point Edge Transformer (PET)** model trained on the **Massive Atomic Diversity (MAD) Dataset** 
 and is capable of predicting energies and forces in complex atomistic simulations.
 
-In addition, it contains the **PET-MAD-DOS** - a universal model for predicting
-the density of states of materials, as well as their Fermi levels and bandgaps.
+In addition, it contains **PET-MAD-DOS** - a universal model for predicting
+the density of states (DOS) of materials, as well as their Fermi levels and bandgaps.
 **PET-MAD-DOS** is using a slightly modified **PET** architecture, and the same
 **MAD** dataset. 
 
@@ -424,9 +424,10 @@ atoms.calc = combined_calc
 
 ## Calculating the DOS, Fermi levels, and bandgaps
 
-PET-MAD packages also allows to use the **PET-MAD-DOS** model to predict the density of
-states of materials, as well as their Fermi levels and bandgaps. Similarly to the 
-**PET-MAD** model, the **PET-MAD-DOS** model is also available in the **ASE** interface.
+PET-MAD packages also allows the use of the **PET-MAD-DOS** model to predict 
+electronic density of states of materials, as well as their Fermi levels and
+bandgaps. Similarly to the  **PET-MAD** model, the **PET-MAD-DOS** model is
+also available in the **ASE** interface.
 
 ```python
 from pet_mad.calculator import PETMADDOSCalculator
@@ -459,7 +460,7 @@ bandgap = pet_mad_dos_calculator.calculate_bandgap(atoms)
 fermi_level = pet_mad_dos_calculator.calculate_efermi(atoms)
 ```
 
-You can also re-use the DOS calculated for earlier to avoid re-calculating the DOS:
+You can also re-use the DOS calculated earlier:
 
 ```python
 bandgap = pet_mad_dos_calculator.calculate_bandgap(atoms, dos=dos)
