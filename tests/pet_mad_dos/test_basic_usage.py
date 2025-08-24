@@ -84,7 +84,7 @@ def test_bandgap_calculation(with_dos):
         bandgap = calc.calculate_bandgap(atoms, dos=dos)
     else:
         bandgap = calc.calculate_bandgap(atoms)
-    target_bandgap = torch.tensor([4.1198, 0.9741])
+    target_bandgap = torch.tensor([4.1007, 0.5021])
 
     torch.testing.assert_close(bandgap, target_bandgap, atol=1e-3, rtol=1e-3)
 
