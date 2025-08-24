@@ -148,9 +148,8 @@ def get_pet_mad_dos_metadata(version: str):
         },
     )
 
-
 def fermi_dirac_distribution(
-    energies: torch.Tensor, mu: torch.Tensor, T: float
+    energies: torch.Tensor, mu: torch.Tensor, T: torch.Tensor
 ) -> torch.Tensor:
     """
     Fermi-Dirac distribution function.
@@ -160,7 +159,8 @@ def fermi_dirac_distribution(
     :param T: Temperature.
     :return: Fermi-Dirac distribution function.
     """
-    return 1 / (1 + torch.exp((energies - mu) / (kB * T)))
+    x = -(energies - mu) / (kB * T)  # Note the negative sign
+    return torch.sigmoid(x)
 
 
 def get_num_electrons(atoms: Union[Atoms, List[Atoms]]) -> torch.Tensor:
