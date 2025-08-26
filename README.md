@@ -527,9 +527,9 @@ Additional documentation can be found in the
 - [LAMMPS interface](https://docs.metatensor.org/metatomic/latest/engines/lammps.html)
 - [i-PI interface](https://docs.metatensor.org/metatomic/latest/engines/ipi.html)
 
-## Citing PET-MAD
+## Citing PET-MAD Models
 
-If you use PET-MAD in your research, please cite:
+If you use any of the PET-MAD models in your research, please cite the corresponding articles:
 
 ```bibtex
 @misc{PET-MAD-2025,
@@ -540,4 +540,13 @@ If you use PET-MAD in your research, please cite:
       archivePrefix={arXiv},
       primaryClass={cond-mat.mtrl-sci},
       url={https://arxiv.org/abs/2503.14118}
+}
+@misc{PET-MAD-DOS-2025,
+      title={A universal machine learning model for the electronic density of states}, 
+      author={Wei Bin How and Pol Febrer and Sanggyu Chong and Arslan Mazitov and Filippo Bigi and Matthias Kellner and Sergey Pozdnyakov and Michele Ceriotti},
+      year={2025},
+      eprint={2508.17418},
+      archivePrefix={arXiv},
+      primaryClass={physics.chem-ph},
+      url={https://arxiv.org/abs/2508.17418}, 
 }
