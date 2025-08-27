@@ -1,13 +1,14 @@
 import logging
 import os
 from typing import Optional, Tuple, List, Union
-
+import numpy as np
 from metatomic.torch import ModelOutput
 from metatomic.torch.ase_calculator import MetatomicCalculator
 from platformdirs import user_cache_dir
 import torch
-import numpy as np
+
 from ase import Atoms
+from ase.units import kB
 
 from packaging.version import Version
 
@@ -148,6 +149,15 @@ ENERGY_WINDOW = 0.5
 ENERGY_GRID_NUM_POINTS_COARSE = 1000
 ENERGY_GRID_NUM_POINTS_FINE = 10000
 
+STR_TO_DTYPE = {
+    "float32": torch.float32,
+    "float64": torch.float64,
+}
+DTYPE_TO_STR = {
+    torch.float32: "float32",
+    torch.float64: "float64",
+}
+
 
 class PETMADDOSCalculator(MetatomicCalculator):
     """
@@ -159,6 +169,7 @@ class PETMADDOSCalculator(MetatomicCalculator):
         version: str = "latest",
         model_path: Optional[str] = None,
         bandgap_model_path: Optional[str] = None,
+        dtype: Optional[torch.dtype] = None,
         *,
         check_consistency: bool = False,
         device: Optional[str] = None,
@@ -169,6 +180,8 @@ class PETMADDOSCalculator(MetatomicCalculator):
             provided, the `version` parameter is ignored.
         :param bandgap_model_path: path to a PyTorch checkpoint file with the bandgap model.
             If provided, the `version` parameter is ignored.
+        :param dtype: dtype to use for the calculations. If `None`, we will use the
+            default dtype.
         :param check_consistency: should we check the model for consistency when
             running, defaults to False.
         :param device: torch device to use for the calculation. If `None`, we will try
@@ -184,6 +197,17 @@ class PETMADDOSCalculator(MetatomicCalculator):
         bandgap_model = _get_bandgap_model(
             version=version, model_path=bandgap_model_path
         )
+        n_points = np.ceil((ENERGY_UPPER_BOUND - ENERGY_LOWER_BOUND) / ENERGY_INTERVAL)
+        energy_grid = torch.arange(n_points) * ENERGY_INTERVAL + ENERGY_LOWER_BOUND
+
+        if dtype is not None:
+            if isinstance(dtype, str):
+                assert dtype in STR_TO_DTYPE, f"Invalid dtype: {dtype}"
+                dtype = STR_TO_DTYPE[dtype]
+            model._capabilities.dtype = DTYPE_TO_STR[dtype]
+            energy_grid = energy_grid.to(dtype=dtype, device=device)
+            model = model.to(dtype=dtype, device=device)
+            bandgap_model = bandgap_model.to(dtype=dtype, device=device)
 
         super().__init__(
             model,
@@ -191,12 +215,9 @@ class PETMADDOSCalculator(MetatomicCalculator):
             check_consistency=check_consistency,
             device=device,
         )
+        
+        self._energy_grid = energy_grid
         self._bandgap_model = bandgap_model
-
-        n_points = np.ceil((ENERGY_UPPER_BOUND - ENERGY_LOWER_BOUND) / ENERGY_INTERVAL)
-        self._energy_grid = (
-            torch.arange(n_points) * ENERGY_INTERVAL + ENERGY_LOWER_BOUND
-        )
 
     def calculate_dos(
         self, atoms: Union[Atoms, List[Atoms]], per_atom: bool = False
@@ -281,25 +302,27 @@ class PETMADDOSCalculator(MetatomicCalculator):
                 "`dos = None` or provide a consistent DOS, computed with "
                 "`per_atom = False`."
             )
+        energy_grid = self._energy_grid
         cdos = torch.cumulative_trapezoid(dos, dx=ENERGY_INTERVAL)
-        num_electrons = get_num_electrons(atoms)
-        num_electrons.to(dos.device)
+        num_electrons = get_num_electrons(atoms).to(dos.device, dtype=dos.dtype)
         efermi_indices = torch.argmax(
             (cdos > num_electrons.unsqueeze(1)).float(), dim=1
         )
-        efermi = self._energy_grid[efermi_indices]
+        efermi = energy_grid[efermi_indices]
         if temperature > 0.0:
             efermi_grid_trial = torch.linspace(
                 efermi.min() - ENERGY_WINDOW,
                 efermi.max() + ENERGY_WINDOW,
                 ENERGY_GRID_NUM_POINTS_COARSE,
+                device=dos.device,
+                dtype=dos.dtype
             )
             occupancies = fermi_dirac_distribution(
-                self._energy_grid.unsqueeze(0),
+                energy_grid.unsqueeze(0),
                 efermi_grid_trial.unsqueeze(1),
                 temperature,
             )
-            idos = torch.trapezoid(dos.unsqueeze(1) * occupancies, self._energy_grid)
+            idos = torch.trapezoid(dos.unsqueeze(1) * occupancies, energy_grid)
             idos_interp = torch.nn.functional.interpolate(
                 idos.unsqueeze(0),
                 size=ENERGY_GRID_NUM_POINTS_FINE,
@@ -319,3 +342,32 @@ class PETMADDOSCalculator(MetatomicCalculator):
             weights = torch.softmax(-torch.abs(residue) / tau, dim=1)
             efermi = torch.sum(weights * efermi_grid_interp.unsqueeze(0), dim=1)
         return efermi
+    
+    def calculate_heat_capacity(self, atoms: Union[Atoms, List[Atoms]], dos: Optional[torch.Tensor] = None, temperature: float = 0.0) -> torch.Tensor:
+        """
+        Calculate the heat capacity for a given ase.Atoms object, or a list of ase.Atoms
+        objects, based on a predicted density of states at a given temperature.
+        By default, the density of states is first calculated using the `calculate_dos`
+        method, and the heat capacity is calculated at T=0 K. Alternatively, the density
+        of states can be provided as an input parameter to avoid re-calculating the DOS.
+        """
+        if isinstance(atoms, Atoms):
+            atoms = [atoms]
+        if dos is None:
+            _, dos = self.calculate_dos(atoms, per_atom=False)
+        if dos.shape[0] != len(atoms):
+            raise ValueError(
+                f"The provided DOS is inconsistent with the provided `atoms` "
+                f"parameter: {len(atoms)} != {dos.shape[0]}. Please either set "
+                "`dos = None` or provide a consistent DOS, computed with "
+                "`per_atom = False`."
+            )
+        efermi = self.calculate_efermi(atoms, dos=dos, temperature=temperature)
+        temperature = torch.tensor(float(temperature), requires_grad=True, device=dos.device)
+        shifted_energy_grid = self._energy_grid.unsqueeze(0) - efermi.unsqueeze(1)
+        occupancies = fermi_dirac_distribution(self._energy_grid.unsqueeze(0), efermi.unsqueeze(1), temperature)
+        U = torch.trapezoid(shifted_energy_grid * dos * occupancies, self._energy_grid)
+        heat_capacity = torch.stack(
+            [torch.autograd.grad(U_i, temperature, grad_outputs=torch.ones_like(U_i), retain_graph=True)[0] for U_i in U]
+        ) / kB
+        return heat_capacity
