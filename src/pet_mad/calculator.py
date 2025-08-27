@@ -215,7 +215,7 @@ class PETMADDOSCalculator(MetatomicCalculator):
             check_consistency=check_consistency,
             device=device,
         )
-        
+
         self._energy_grid = energy_grid
         self._bandgap_model = bandgap_model
 
@@ -315,7 +315,7 @@ class PETMADDOSCalculator(MetatomicCalculator):
                 efermi.max() + ENERGY_WINDOW,
                 ENERGY_GRID_NUM_POINTS_COARSE,
                 device=dos.device,
-                dtype=dos.dtype
+                dtype=dos.dtype,
             )
             occupancies = fermi_dirac_distribution(
                 energy_grid.unsqueeze(0),
@@ -342,8 +342,13 @@ class PETMADDOSCalculator(MetatomicCalculator):
             weights = torch.softmax(-torch.abs(residue) / tau, dim=1)
             efermi = torch.sum(weights * efermi_grid_interp.unsqueeze(0), dim=1)
         return efermi
-    
-    def calculate_heat_capacity(self, atoms: Union[Atoms, List[Atoms]], dos: Optional[torch.Tensor] = None, temperature: float = 0.0) -> torch.Tensor:
+
+    def calculate_heat_capacity(
+        self,
+        atoms: Union[Atoms, List[Atoms]],
+        dos: Optional[torch.Tensor] = None,
+        temperature: float = 0.0,
+    ) -> torch.Tensor:
         """
         Calculate the heat capacity for a given ase.Atoms object, or a list of ase.Atoms
         objects, based on a predicted density of states at a given temperature.
@@ -363,11 +368,26 @@ class PETMADDOSCalculator(MetatomicCalculator):
                 "`per_atom = False`."
             )
         efermi = self.calculate_efermi(atoms, dos=dos, temperature=temperature)
-        temperature = torch.tensor(float(temperature), requires_grad=True, device=dos.device)
+        temperature = torch.tensor(
+            float(temperature), requires_grad=True, device=dos.device
+        )
         shifted_energy_grid = self._energy_grid.unsqueeze(0) - efermi.unsqueeze(1)
-        occupancies = fermi_dirac_distribution(self._energy_grid.unsqueeze(0), efermi.unsqueeze(1), temperature)
+        occupancies = fermi_dirac_distribution(
+            self._energy_grid.unsqueeze(0), efermi.unsqueeze(1), temperature
+        )
         U = torch.trapezoid(shifted_energy_grid * dos * occupancies, self._energy_grid)
-        heat_capacity = torch.stack(
-            [torch.autograd.grad(U_i, temperature, grad_outputs=torch.ones_like(U_i), retain_graph=True)[0] for U_i in U]
-        ) / kB
+        heat_capacity = (
+            torch.stack(
+                [
+                    torch.autograd.grad(
+                        U_i,
+                        temperature,
+                        grad_outputs=torch.ones_like(U_i),
+                        retain_graph=True,
+                    )[0]
+                    for U_i in U
+                ]
+            )
+            / kB
+        )
         return heat_capacity
