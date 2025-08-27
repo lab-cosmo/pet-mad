@@ -367,6 +367,11 @@ class PETMADDOSCalculator(MetatomicCalculator):
                 "`dos = None` or provide a consistent DOS, computed with "
                 "`per_atom = False`."
             )
+        if self._dtype != torch.float64:
+            raise RuntimeError(
+                "Heat capacity calculation requires float64 dtype. "
+                f"Please initialize the {self.__class__.__name__} with `dtype=torch.float64`."
+            )
         efermi = self.calculate_efermi(atoms, dos=dos, temperature=temperature)
         temperature = torch.tensor(
             float(temperature), requires_grad=True, device=dos.device
