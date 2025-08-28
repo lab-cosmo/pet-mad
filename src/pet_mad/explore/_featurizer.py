@@ -120,7 +120,7 @@ class PETMADFeaturizer:
             supported_devices=["cpu", "cuda"],
             dtype=dtype_to_str(self.dtype),
             interaction_range=0.0,
-            atomic_types=explorer.pet.atomic_types,
+            atomic_types=explorer.pet.capabilities.atomic_types,
         )
 
         self.mad_explorer = mta.AtomisticModel(explorer.eval(), METADATA, capabilities)
