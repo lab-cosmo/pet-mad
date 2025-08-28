@@ -106,7 +106,7 @@ class PETMADFeaturizer:
             cache_dir=cache_dir,
         )
 
-        petmad = get_pet_mad(version="latest", checkpoint_path=pet_checkpoint_path)
+        petmad = get_pet_mad(version="1.1.0", checkpoint_path=pet_checkpoint_path)
 
         explorer = MADExplorer(petmad.module, device=device)
         explorer.load_checkpoint(petmad_explorer_path)
@@ -120,7 +120,7 @@ class PETMADFeaturizer:
             supported_devices=["cpu", "cuda"],
             dtype=dtype_to_str(self.dtype),
             interaction_range=0.0,
-            atomic_types=explorer.pet.capabilities.atomic_types,
+            atomic_types=explorer.pet.atomic_types,
         )
 
         self.mad_explorer = mta.AtomisticModel(explorer.eval(), METADATA, capabilities)
