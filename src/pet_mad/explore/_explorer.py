@@ -16,8 +16,8 @@ class MADExplorer(torch.nn.Module):
     Metatomic model projecting the last-layer features from PET-MAD into a
     low-dimensional space.
 
-    The model is intended for exploratory analysis and visualization of the learned
-    representations.
+    The model can either return raw PET-MAD features or project them into a
+    low-dimensional space for exploratory analysis and visualization.
 
     :param model: path to a saved PET-MAD checkpoint or an in-memory instance
     :param input_dim: dimensionality of the input PET-MAD features for projector
@@ -25,6 +25,8 @@ class MADExplorer(torch.nn.Module):
     :param device: cpu or cuda
     :param features_output: key to access the PET-MAD feature output.
         mtt::aux::energy_last_layer_features is used by default
+    :param project: whether to apply dimensionality reduction (True) or return
+        raw features (False). Defaults to True.
     """
 
     def __init__(
@@ -34,11 +36,13 @@ class MADExplorer(torch.nn.Module):
         output_dim: int = 3,
         device: Optional[Union[str, torch.device]] = "cpu",
         features_output: str = "mtt::aux::energy_last_layer_features",
+        project: bool = True,
     ):
         super().__init__()
 
         self.device = device
         self.features_output = features_output
+        self.project = project
 
         if isinstance(model, (str, Path)):
             self.pet = load_metatrain_model(model)
@@ -48,9 +52,12 @@ class MADExplorer(torch.nn.Module):
         self.pet = self.pet.to(self.device)
         self.dtype = next(self.pet.parameters()).dtype
 
-        self.projector = MLPProjector(input_dim, output_dim).to(self.device)
-        self.feature_scaler = TorchStandardScaler().to(device)
-        self.projection_scaler = TorchStandardScaler().to(device)
+        if self.project:
+            self.projector = MLPProjector(input_dim, output_dim).to(self.device)
+            self.feature_scaler = TorchStandardScaler().to(device)
+            self.projection_scaler = TorchStandardScaler().to(device)
+        else:
+            self.input_dim = input_dim
 
     def forward(
         self,
@@ -76,34 +83,46 @@ class MADExplorer(torch.nn.Module):
 
         features = self._get_features(systems, pet_requested_outputs, selected_atoms)
 
-        if self.feature_scaler.mean is not None and self.feature_scaler.std is not None:
-            features = self.feature_scaler.transform(features)
+        if self.project:
+            # apply dimensionality reduction
+            if (
+                self.feature_scaler.mean is not None
+                and self.feature_scaler.std is not None
+            ):
+                features = self.feature_scaler.transform(features)
 
-        with torch.no_grad():
-            projections = self.projector(features)
+            with torch.no_grad():
+                projections = self.projector(features)
 
-        if (
-            self.projection_scaler.mean is not None
-            and self.projection_scaler.std is not None
-        ):
-            projections = self.projection_scaler.inverse_transform(projections)
+            if (
+                self.projection_scaler.mean is not None
+                and self.projection_scaler.std is not None
+            ):
+                projections = self.projection_scaler.inverse_transform(projections)
 
-        num_atoms = projections.size(0)
-        num_projections = projections.size(1)
+            output_values = projections
+            property_name = "projection"
+        else:
+            # return raw features
+            output_values = features
+            property_name = "feature"
+
+        num_atoms = output_values.size(0)
+        num_features = output_values.size(1)
 
         sample_labels = mts.Labels(
             "system", torch.arange(num_atoms, device=self.device).reshape(-1, 1)
         )
         prop_labels = mts.Labels(
-            "projection",
-            torch.arange(num_projections, device=self.device).reshape(-1, 1),
+            property_name,
+            torch.arange(num_features, device=self.device).reshape(-1, 1),
         )
 
-        if projections.dtype != self.dtype:
-            projections = projections.type(self.dtype)
+        if output_values.dtype != self.dtype:
+            output_values = output_values.type(self.dtype)
 
         block = mts.TensorBlock(
-            values=projections,
+            values=output_values,
             samples=sample_labels,
             components=[],
             properties=prop_labels,
@@ -146,19 +165,21 @@ class MADExplorer(torch.nn.Module):
         else:
             descriptors = features.block().values
 
-        if descriptors.shape[1] != self.projector.input_dim:
+        # validate dimensionality only if projecting
+        if self.project and descriptors.shape[1] != self.projector.input_dim:
             raise ValueError(
                 f"Expected input dim for projector: {self.projector.input_dim}, "
-                "got: {descriptors.shape[1]}"
+                f"got: {descriptors.shape[1]}"
             )
 
         return descriptors.detach()
 
     def load_checkpoint(self, path: Union[str, Path]):
         checkpoint = torch.load(path, map_location=self.device, weights_only=False)
-        self.projector.load_state_dict(checkpoint["projector_state_dict"])
 
-        self.feature_scaler.mean = checkpoint["feature_scaler_mean"]
-        self.feature_scaler.std = checkpoint["feature_scaler_std"]
-        self.projection_scaler.mean = checkpoint["projection_scaler_mean"]
-        self.projection_scaler.std = checkpoint["projection_scaler_std"]
+        if self.project:
+            self.projector.load_state_dict(checkpoint["projector_state_dict"])
+            self.feature_scaler.mean = checkpoint["feature_scaler_mean"]
+            self.feature_scaler.std = checkpoint["feature_scaler_std"]
+            self.projection_scaler.mean = checkpoint["projection_scaler_mean"]
+            self.projection_scaler.std = checkpoint["projection_scaler_std"]

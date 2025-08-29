@@ -48,7 +48,7 @@ METADATA = mta.ModelMetadata(
 class PETMADFeaturizer:
     """
     Converts structures into low-dimensional projections using PET-MAD features,
-    with dimensionality reduction based on sketch-map.
+    with dimensionality reduction based on sketch-map or obtrain raw features.
 
     Usage example:
         >>> import ase.io
@@ -63,6 +63,9 @@ class PETMADFeaturizer:
         ...     frames,
         ...     featurize=PETMADFeaturizer(version="latest")
         ... )
+
+        >>> # Get raw features without projection
+        >>> raw_features = PETMADFeaturizer(version="latest", project=False)(frames, None)
     """
 
     def __init__(
@@ -71,6 +74,7 @@ class PETMADFeaturizer:
         checkpoint_path: Optional[str] = None,
         pet_checkpoint_path: Optional[str] = None,
         *,
+        project: bool = True,
         check_consistency=False,
         device=None,
         length_unit="Angstrom",
@@ -85,6 +89,8 @@ class PETMADFeaturizer:
         :param pet_checkpoint_path: path to a petmad checkpoint file to use for the
             model from. If not provided, the latest checkpoint is fetched from
             HuggingFace.
+        :param project: whether to apply dimensionality reduction (True) or return
+            raw features (False). Defaults to True.
         :param check_consistency: should we check the model for consistency when
             running, defaults to False.
         :param device: torch device to use for the calculation. If `None`, we will try
@@ -108,7 +114,7 @@ class PETMADFeaturizer:
 
         petmad = get_pet_mad(version="1.1.0", checkpoint_path=pet_checkpoint_path)
 
-        explorer = MADExplorer(petmad.module, device=device)
+        explorer = MADExplorer(petmad.module, device=device, project=project)
         explorer.load_checkpoint(petmad_explorer_path)
 
         outputs = {"features": mta.ModelOutput(per_atom=True)}
