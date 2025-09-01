@@ -4,6 +4,12 @@
 
 - Nothing yet.
 
+## 1.4.1
+
+### Fixed
+
+- Fixed `PetMadFeaturizer` after the release of `PETMADCalculator` with uncertainty quantification
+
 ## 1.4.0
 
 ### Added
