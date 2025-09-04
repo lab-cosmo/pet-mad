@@ -343,7 +343,7 @@ atom_style atomic/kk
 
 read_data silicon.data
 
-pair_style metatensor/kk pet-mad-latest.pt # This will use the same device as the kokkos simulation
+pair_style metatomic/kk pet-mad-latest.pt # This will use the same device as the kokkos simulation
 pair_coeff * * 14
 
 neighbor 2.0 bin
