@@ -48,7 +48,7 @@ class PETMADCalculator(MetatomicCalculator):
         checkpoint_path: Optional[str] = None,
         calculate_uncertainty: bool = False,
         calculate_ensemble: bool = False,
-        rot_average_order: Optional[int] = None,
+        rotational_average_order: Optional[int] = None,
         dtype: Optional[torch.dtype] = None,
         *,
         check_consistency: bool = False,
@@ -65,7 +65,7 @@ class PETMADCalculator(MetatomicCalculator):
             Defaults to False. Only available for PET-MAD version 1.0.2.
         :param check_consistency: should we check the model for consistency when
             running, defaults to False.
-        :param rot_average_order: order of the Lebedev-Laikov grid used for averaging
+        :param rotational_average_order: order of the Lebedev-Laikov grid used for averaging
             the prediction over rotations.
         :param dtype: dtype to use for the calculations. If `None`, we will use the
             default dtype.
@@ -105,13 +105,13 @@ class PETMADCalculator(MetatomicCalculator):
                     additional_outputs["energy_ensemble"] = ModelOutput(
                         quantity="energy", unit="eV", per_atom=False
                     )
-        if rot_average_order is not None:
-            if rot_average_order not in AVAILABLE_LEBEDEV_GRID_ORDERS:
+        if rotational_average_order is not None:
+            if rotational_average_order not in AVAILABLE_LEBEDEV_GRID_ORDERS:
                 raise ValueError(
-                    f"Lebedev-Laikov grid order {rot_average_order} is not available. "
+                    f"Lebedev-Laikov grid order {rotational_average_order} is not available. "
                     f"Please use one of the following orders: {AVAILABLE_LEBEDEV_GRID_ORDERS}."
                 )
-        self._rot_average_order = rot_average_order
+        self._rotational_average_order = rotational_average_order
 
         model = get_pet_mad(version=version, checkpoint_path=checkpoint_path)
 
@@ -162,10 +162,10 @@ class PETMADCalculator(MetatomicCalculator):
         If the `rot_average_order` parameter is set during initialization, the prediction
         will be averaged over unique rotations in the Lebedev-Laikov grid of a chosen order.
         """
-        if self._rot_average_order is None:
+        if self._rotational_average_order is None:
             super().calculate(atoms, properties, system_changes)
         else:
-            lebedev_grid = lebedev_rule(self._rot_average_order)[0].T
+            lebedev_grid = lebedev_rule(self._rotational_average_order)[0].T
             rotated_atoms_list = rotate_atoms(atoms, lebedev_grid)
             compute_forces_and_stresses = (
                 True
