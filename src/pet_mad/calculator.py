@@ -1,9 +1,13 @@
 import logging
 import os
-from typing import Optional, Tuple, List, Union
+from typing import List, Optional, Tuple, Union
 
+import numpy as np
+import torch
+from ase import Atoms
 from metatomic.torch import ModelOutput
 from metatomic.torch.ase_calculator import MetatomicCalculator
+from packaging.version import Version
 from platformdirs import user_cache_dir
 import torch
 import numpy as np
@@ -14,10 +18,17 @@ from packaging.version import Version
 from ._models import get_pet_mad, get_pet_mad_dos, _get_bandgap_model
 from .utils import get_num_electrons, fermi_dirac_distribution
 from ._version import (
-    PET_MAD_LATEST_STABLE_VERSION,
-    PET_MAD_UQ_AVAILABILITY_VERSION,
-    PET_MAD_NC_AVAILABILITY_VERSION,
     PET_MAD_DOS_LATEST_STABLE_VERSION,
+    PET_MAD_LATEST_STABLE_VERSION,
+    PET_MAD_NC_AVAILABILITY_VERSION,
+    PET_MAD_UQ_AVAILABILITY_VERSION,
+)
+from .utils import (
+    AVAILABLE_LEBEDEV_GRID_ORDERS,
+    compute_rotational_average,
+    fermi_dirac_distribution,
+    get_num_electrons,
+    rotate_atoms,
 )
 
 
@@ -62,17 +73,19 @@ class PETMADCalculator(MetatomicCalculator):
 
         if non_conservative and version < Version(PET_MAD_NC_AVAILABILITY_VERSION):
             raise NotImplementedError(
-                f"Non-conservative forces and stresses are not available for version {version}. "
-                f"Please use PET-MAD version {PET_MAD_NC_AVAILABILITY_VERSION} or higher."
+                f"Non-conservative forces and stresses are not available for version "
+                f"{version}. Please use PET-MAD version "
+                f"{PET_MAD_NC_AVAILABILITY_VERSION} or higher."
             )
 
         additional_outputs = {}
         if calculate_uncertainty or calculate_ensemble:
             if version < Version(PET_MAD_UQ_AVAILABILITY_VERSION):
                 raise NotImplementedError(
-                    f"Energy uncertainty and ensemble are not available for version {version}. "
-                    f"Please use PET-MAD version {PET_MAD_UQ_AVAILABILITY_VERSION} or higher, "
-                    f"or disable the calculation of energy uncertainty and energy ensemble."
+                    f"Energy uncertainty and ensemble are not available for version "
+                    f"{version}. Please use PET-MAD version "
+                    f"{PET_MAD_UQ_AVAILABILITY_VERSION} or higher, or disable "
+                    "the calculation of energy uncertainty and energy ensemble."
                 )
             else:
                 if calculate_uncertainty:
@@ -116,9 +129,10 @@ class PETMADCalculator(MetatomicCalculator):
         if output_name not in self.additional_outputs:
             quantity = output_name.split("_")[1]
             raise ValueError(
-                f"Energy {quantity} is not available. Please make sure that you have initialized the "
-                f"calculator with `calculate_{quantity}=True` and performed evaluation. "
-                f"This option is only available for PET-MAD version {PET_MAD_UQ_AVAILABILITY_VERSION} or higher."
+                f"Energy {quantity} is not available. Please make sure that you have "
+                f"initialized the calculator with `calculate_{quantity}=True` and "
+                f"performed evaluation. This option is only available for PET-MAD "
+                f"version {PET_MAD_UQ_AVAILABILITY_VERSION} or higher."
             )
         return (
             self.additional_outputs[output_name]
@@ -164,11 +178,12 @@ class PETMADDOSCalculator(MetatomicCalculator):
         device: Optional[str] = None,
     ):
         """
-        :param version: PET-MAD-DOS version to use. Defaults to the latest stable version.
-        :param model_path: path to a Torch-Scripted model file to load the model from. If
-            provided, the `version` parameter is ignored.
-        :param bandgap_model_path: path to a PyTorch checkpoint file with the bandgap model.
+        :param version: PET-MAD-DOS version to use. Defaults to the latest stable
+            version.
+        :param model_path: path to a Torch-Scripted model file to load the model from.
             If provided, the `version` parameter is ignored.
+        :param bandgap_model_path: path to a PyTorch checkpoint file with the bandgap
+            model. If provided, the `version` parameter is ignored.
         :param check_consistency: should we check the model for consistency when
             running, defaults to False.
         :param device: torch device to use for the calculation. If `None`, we will try
@@ -268,7 +283,7 @@ class PETMADDOSCalculator(MetatomicCalculator):
             density of states is calculated using the `calculate_dos` method.
         :param temperature: Temperature (K). Defaults to 0 K.
         :return: Fermi energy for each ase.Atoms object stored in a torch.Tensor
-        format.
+            format.
         """
         if isinstance(atoms, Atoms):
             atoms = [atoms]

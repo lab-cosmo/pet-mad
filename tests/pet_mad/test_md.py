@@ -3,6 +3,7 @@ from ase.build import bulk
 from ase.md.langevin import Langevin
 import ase.units
 
+
 def test_basic_usage():
     atoms = bulk("Si", cubic=True, a=5.43, crystalstructure="diamond")
     atoms.calc = PETMADCalculator(version="latest")

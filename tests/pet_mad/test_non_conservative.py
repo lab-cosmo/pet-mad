@@ -4,8 +4,9 @@ import numpy as np
 from pet_mad._version import PET_MAD_NC_AVAILABILITY_VERSION
 import pytest
 from packaging.version import Version
-    
+
 VERSIONS = ("1.1.0", "1.0.2", "1.0.1")
+
 
 @pytest.mark.parametrize(
     "version",
