@@ -9,27 +9,15 @@ from metatomic.torch import ModelOutput
 from metatomic.torch.ase_calculator import MetatomicCalculator
 from packaging.version import Version
 from platformdirs import user_cache_dir
-import torch
-import numpy as np
-from ase import Atoms
 
-from packaging.version import Version
-
-from ._models import get_pet_mad, get_pet_mad_dos, _get_bandgap_model
-from .utils import get_num_electrons, fermi_dirac_distribution
+from ._models import _get_bandgap_model, get_pet_mad, get_pet_mad_dos
 from ._version import (
     PET_MAD_DOS_LATEST_STABLE_VERSION,
     PET_MAD_LATEST_STABLE_VERSION,
     PET_MAD_NC_AVAILABILITY_VERSION,
     PET_MAD_UQ_AVAILABILITY_VERSION,
 )
-from .utils import (
-    AVAILABLE_LEBEDEV_GRID_ORDERS,
-    compute_rotational_average,
-    fermi_dirac_distribution,
-    get_num_electrons,
-    rotate_atoms,
-)
+from .utils import fermi_dirac_distribution, get_num_electrons
 
 
 class PETMADCalculator(MetatomicCalculator):

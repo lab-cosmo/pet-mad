@@ -1,18 +1,12 @@
 import re
 from pathlib import Path
-from typing import Dict, List, Optional, Union
+from typing import List, Optional, Union
 from urllib.parse import unquote
 
-import numpy as np
 import torch
 from ase import Atoms
 from ase.units import kB
-from typing import List, Union, Optional
-import torch
-from pathlib import Path
-from urllib.parse import unquote
 from huggingface_hub import hf_hub_download
-import re
 
 
 hf_pattern = re.compile(
