@@ -153,7 +153,7 @@ def rotate_atoms(atoms: Atoms, grid: np.ndarray) -> List[Atoms]:
 
 
 def compute_rotational_average(
-    results: Dict[str, Union[float, np.ndarray]], grid: np.ndarray
+    results: Dict[str, np.ndarray], grid: np.ndarray
 ) -> Dict[str, np.ndarray]:
     new_results = {}
     rotations = [
