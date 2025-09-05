@@ -13,7 +13,13 @@ from ase import Atoms
 from packaging.version import Version
 
 from ._models import get_pet_mad, get_pet_mad_dos, _get_bandgap_model
-from .utils import get_num_electrons, fermi_dirac_distribution, rotate_atoms, compute_rotational_average, AVAILABLE_LEBEDEV_GRID_ORDERS
+from .utils import (
+    get_num_electrons,
+    fermi_dirac_distribution,
+    rotate_atoms,
+    compute_rotational_average,
+    AVAILABLE_LEBEDEV_GRID_ORDERS,
+)
 from ._version import (
     PET_MAD_LATEST_STABLE_VERSION,
     PET_MAD_UQ_AVAILABILITY_VERSION,
@@ -29,6 +35,7 @@ DTYPE_TO_STR = {
     torch.float32: "float32",
     torch.float64: "float64",
 }
+
 
 class PETMADCalculator(MetatomicCalculator):
     """
@@ -140,8 +147,10 @@ class PETMADCalculator(MetatomicCalculator):
             device=device,
             non_conservative=non_conservative,
         )
-    
-    def calculate(self, atoms: Atoms, properties: List[str], system_changes: List[str]) -> None:
+
+    def calculate(
+        self, atoms: Atoms, properties: List[str], system_changes: List[str]
+    ) -> None:
         """
         Compute some ``properties`` with this calculator, and return them in the format
         expected by ASE.
@@ -153,17 +162,27 @@ class PETMADCalculator(MetatomicCalculator):
         If the `rot_average_order` parameter is set during initialization, the prediction
         will be averaged over unique rotations in the Lebedev-Laikov grid of a chosen order.
         """
-        if self._rot_average_order is None:  
+        if self._rot_average_order is None:
             super().calculate(atoms, properties, system_changes)
         else:
             lebedev_grid = lebedev_rule(self._rot_average_order)[0].T
             rotated_atoms_list = rotate_atoms(atoms, lebedev_grid)
-            compute_forces_and_stresses = True if any(
-                p in properties for p in [
-                    "forces", "stress", "non_conservative_forces", "non_conservative_stress"
+            compute_forces_and_stresses = (
+                True
+                if any(
+                    p in properties
+                    for p in [
+                        "forces",
+                        "stress",
+                        "non_conservative_forces",
+                        "non_conservative_stress",
                     ]
-                ) else False
-            results = self.compute_energy(rotated_atoms_list, compute_forces_and_stresses)
+                )
+                else False
+            )
+            results = self.compute_energy(
+                rotated_atoms_list, compute_forces_and_stresses
+            )
             results = compute_rotational_average(results, lebedev_grid)
             self.results.update(results)
 
