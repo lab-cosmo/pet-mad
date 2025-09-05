@@ -28,7 +28,7 @@ dependencies = [
     "packaging",
     "platformdirs",
     "tqdm",
-    "scipy",
+    "scipy>=1.15.0",
 ]
 
 keywords = ["machine learning", "molecular modeling"]
