@@ -1,7 +1,7 @@
 [project]
 name = "pet-mad"
 dynamic = ["version"]
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 
 readme = "README.md"
 license = "BSD-3-Clause"
