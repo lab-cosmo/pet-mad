@@ -5,6 +5,7 @@ from typing import Optional, Tuple, List, Union
 from metatomic.torch import ModelOutput
 from metatomic.torch.ase_calculator import MetatomicCalculator
 from platformdirs import user_cache_dir
+from scipy.integrate import lebedev_rule
 import torch
 import numpy as np
 from ase import Atoms
@@ -12,7 +13,7 @@ from ase import Atoms
 from packaging.version import Version
 
 from ._models import get_pet_mad, get_pet_mad_dos, _get_bandgap_model
-from .utils import get_num_electrons, fermi_dirac_distribution
+from .utils import get_num_electrons, fermi_dirac_distribution, rotate_atoms, compute_rotational_average, AVAILABLE_LEBEDEV_GRID_ORDERS
 from ._version import (
     PET_MAD_LATEST_STABLE_VERSION,
     PET_MAD_UQ_AVAILABILITY_VERSION,
@@ -20,6 +21,14 @@ from ._version import (
     PET_MAD_DOS_LATEST_STABLE_VERSION,
 )
 
+STR_TO_DTYPE = {
+    "float32": torch.float32,
+    "float64": torch.float64,
+}
+DTYPE_TO_STR = {
+    torch.float32: "float32",
+    torch.float64: "float64",
+}
 
 class PETMADCalculator(MetatomicCalculator):
     """
@@ -32,6 +41,8 @@ class PETMADCalculator(MetatomicCalculator):
         checkpoint_path: Optional[str] = None,
         calculate_uncertainty: bool = False,
         calculate_ensemble: bool = False,
+        rot_average_order: Optional[int] = None,
+        dtype: Optional[torch.dtype] = None,
         *,
         check_consistency: bool = False,
         device: Optional[str] = None,
@@ -47,6 +58,10 @@ class PETMADCalculator(MetatomicCalculator):
             Defaults to False. Only available for PET-MAD version 1.0.2.
         :param check_consistency: should we check the model for consistency when
             running, defaults to False.
+        :param rot_average_order: order of the Lebedev-Laikov grid used for averaging
+            the prediction over rotations.
+        :param dtype: dtype to use for the calculations. If `None`, we will use the
+            default dtype.
         :param device: torch device to use for the calculation. If `None`, we will try
             the options in the model's `supported_device` in order.
         :param non_conservative: whether to use the non-conservative regime of forces
@@ -83,8 +98,22 @@ class PETMADCalculator(MetatomicCalculator):
                     additional_outputs["energy_ensemble"] = ModelOutput(
                         quantity="energy", unit="eV", per_atom=False
                     )
+        if rot_average_order is not None:
+            if rot_average_order not in AVAILABLE_LEBEDEV_GRID_ORDERS:
+                raise ValueError(
+                    f"Lebedev-Laikov grid order {rot_average_order} is not available. "
+                    f"Please use one of the following orders: {AVAILABLE_LEBEDEV_GRID_ORDERS}."
+                )
+        self._rot_average_order = rot_average_order
 
         model = get_pet_mad(version=version, checkpoint_path=checkpoint_path)
+
+        if dtype is not None:
+            if isinstance(dtype, str):
+                assert dtype in STR_TO_DTYPE, f"Invalid dtype: {dtype}"
+                dtype = STR_TO_DTYPE[dtype]
+            model._capabilities.dtype = DTYPE_TO_STR[dtype]
+            model = model.to(dtype=dtype, device=device)
 
         cache_dir = user_cache_dir("pet-mad", "metatensor")
         os.makedirs(cache_dir, exist_ok=True)
@@ -111,6 +140,32 @@ class PETMADCalculator(MetatomicCalculator):
             device=device,
             non_conservative=non_conservative,
         )
+    
+    def calculate(self, atoms: Atoms, properties: List[str], system_changes: List[str]) -> None:
+        """
+        Compute some ``properties`` with this calculator, and return them in the format
+        expected by ASE.
+
+        This is not intended to be called directly by users, but to be an implementation
+        detail of ``atoms.get_energy()`` and related functions. See
+        :py:meth:`ase.calculators.calculator.Calculator.calculate` for more information.
+
+        If the `rot_average_order` parameter is set during initialization, the prediction
+        will be averaged over unique rotations in the Lebedev-Laikov grid of a chosen order.
+        """
+        if self._rot_average_order is None:  
+            super().calculate(atoms, properties, system_changes)
+        else:
+            lebedev_grid = lebedev_rule(self._rot_average_order)[0].T
+            rotated_atoms_list = rotate_atoms(atoms, lebedev_grid)
+            compute_forces_and_stresses = True if any(
+                p in properties for p in [
+                    "forces", "stress", "non_conservative_forces", "non_conservative_stress"
+                    ]
+                ) else False
+            results = self.compute_energy(rotated_atoms_list, compute_forces_and_stresses)
+            results = compute_rotational_average(results, lebedev_grid)
+            self.results.update(results)
 
     def _get_uq_output(self, output_name: str):
         if output_name not in self.additional_outputs:
