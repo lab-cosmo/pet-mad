@@ -7,18 +7,12 @@ import numpy as np
 import torch
 from ase import Atoms
 from ase.units import kB
-<<<<<<< HEAD
 from typing import List, Union, Optional
 import torch
 from pathlib import Path
 from urllib.parse import unquote
 from huggingface_hub import hf_hub_download
 import re
-=======
-from huggingface_hub import hf_hub_download
-from metatomic.torch import ModelMetadata
-from scipy.spatial.transform import Rotation
->>>>>>> eb89c74 (Initial commit for the docs build)
 
 
 hf_pattern = re.compile(
@@ -117,73 +111,6 @@ NUM_ELECTRONS_PER_ELEMENT = {
     "Cu": 11.0,
 }
 
-<<<<<<< HEAD
-=======
-AVAILABLE_LEBEDEV_GRID_ORDERS = [
-    3,
-    5,
-    7,
-    9,
-    11,
-    13,
-    15,
-    17,
-    19,
-    21,
-    23,
-    25,
-    27,
-    29,
-    31,
-    35,
-    41,
-    47,
-    53,
-    59,
-    65,
-    71,
-    77,
-    83,
-    89,
-    95,
-    101,
-    107,
-    113,
-    119,
-    125,
-    131,
-]
-
-
-def rotate_atoms(atoms: Atoms, grid: np.ndarray) -> List[Atoms]:
-    rotated_atoms_list = []
-    for rot_vec in grid:
-        new_atoms = atoms.copy()
-        new_atoms.rotate([1, 0, 0], rot_vec, rotate_cell=True)
-        rotated_atoms_list.append(new_atoms)
-    return rotated_atoms_list
-
-
-def compute_rotational_average(
-    results: Dict[str, np.ndarray], grid: np.ndarray
-) -> Dict[str, np.ndarray]:
-    new_results = {}
-    rotations = [
-        Rotation.align_vectors(rot_vector, [1, 0, 0])[0].inv() for rot_vector in grid
-    ]
-    for key, value in results.items():
-        if "energy" in key:
-            new_results[key] = np.mean(value)
-            new_results[key + "_rot_std"] = np.std(value)
-        else:
-            rotated_back_values = np.array(
-                [rot.apply(val) for rot, val in zip(rotations, value, strict=False)]
-            )
-            new_results[key] = rotated_back_values.mean(axis=0)
-            new_results[key + "_rot_std"] = rotated_back_values.std(axis=0)
-    return new_results
-
->>>>>>> eb89c74 (Initial commit for the docs build)
 
 def get_pet_mad_metadata(version: str):
     return ModelMetadata(
