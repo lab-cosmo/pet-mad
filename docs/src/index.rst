@@ -1,11 +1,6 @@
 PET-MAD: Universal Models for Advanced Atomistic Simulations
 =============================================================
 
-.. image:: ../static/pet-mad-logo-with-text.svg
-   :width: 400
-   :align: center
-   :alt: PET-MAD Logo
-
 PET-MAD is a universal interatomic potential for advanced materials modeling across the periodic table. This model is based on the **Point Edge Transformer (PET)** model trained on the **Massive Atomic Diversity (MAD) Dataset** and is capable of predicting energies and forces in complex atomistic simulations.
 
 In addition, it contains **PET-MAD-DOS** - a universal model for predicting the density of states (DOS) of materials, as well as their Fermi levels and bandgaps. **PET-MAD-DOS** uses a slightly modified **PET** architecture, and the same **MAD** dataset.

@@ -49,13 +49,14 @@ exclude_patterns: list[str] = []
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
-html_theme = "sphinx_rtd_theme"
-html_static_path = ["_static"]
+html_theme = "furo"
+html_static_path = ["static"]
 
-# Logo
-html_logo = "../static/pet-mad-logo-with-text.svg"
+# Logo configuration for light and dark modes
 html_theme_options = {
-    "logo_only": True,
+    "sidebar_hide_name": True,
+    "light_logo": "pet-mad-logo-with-text.svg",
+    "dark_logo": "pet-mad-logo-with-text-dark.svg",
 }
 
 # -- Extension configuration -------------------------------------------------
