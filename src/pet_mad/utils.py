@@ -7,6 +7,7 @@ import torch
 from ase import Atoms
 from ase.units import kB
 from huggingface_hub import hf_hub_download
+from metatomic.torch import ModelMetadata
 
 
 hf_pattern = re.compile(
