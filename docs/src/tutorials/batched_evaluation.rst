@@ -1,27 +1,37 @@
-Batched Evaluation Tutorial
-============================
+#############################
+ Batched Evaluation Tutorial
+#############################
 
-This tutorial covers efficient batched evaluation of PET-MAD for high-throughput calculations.
+This tutorial covers efficient batched evaluation of PET-MAD for
+high-throughput calculations.
 
-Introduction
-------------
+**************
+ Introduction
+**************
 
-While the standard ASE calculator methods are ideal for single-point calculations and simulations, they are inefficient when evaluating the model on many pre-determined structures. For high-throughput screening, database evaluation, or benchmarking, PET-MAD provides optimized batched evaluation methods that can be orders of magnitude faster.
+While the standard ASE calculator methods are ideal for single-point
+calculations and simulations, they are inefficient when evaluating the
+model on many pre-determined structures. For high-throughput screening,
+database evaluation, or benchmarking, PET-MAD provides optimized batched
+evaluation methods that can be orders of magnitude faster.
 
 Key advantages of batched evaluation:
 
-- **Performance**: 5-10x faster than sequential single-structure calculations
-- **Memory efficiency**: Better GPU memory utilization
-- **Scalability**: Handles thousands of structures efficiently
-- **Flexibility**: Works with mixed chemical compositions and structure sizes
+-  **Performance**: 5-10x faster than sequential single-structure
+   calculations
+-  **Memory efficiency**: Better GPU memory utilization
+-  **Scalability**: Handles thousands of structures efficiently
+-  **Flexibility**: Works with mixed chemical compositions and structure
+   sizes
 
-Basic Batched Evaluation
-------------------------
+**************************
+ Basic Batched Evaluation
+**************************
 
 Simple Batch Processing
-~~~~~~~~~~~~~~~~~~~~~~~
+=======================
 
-.. code-block:: python
+.. code:: python
 
    import torch
    from pet_mad.calculator import PETMADCalculator
@@ -48,7 +58,7 @@ Simple Batch Processing
    all_forces = []
 
    for i in range(0, len(structures), batch_size):
-       batch = structures[i:i+batch_size]
+       batch = structures[i : i + batch_size]
 
        # Compute energies and forces for the batch
        results = calculator.compute_energy(batch, compute_forces_and_stresses=True)
@@ -62,11 +72,12 @@ Simple Batch Processing
    print(f"Energy range: {min(all_energies):.3f} to {max(all_energies):.3f} eV")
 
 Performance Comparison
-~~~~~~~~~~~~~~~~~~~~~~
+======================
 
-.. code-block:: python
+.. code:: python
 
    import time
+
 
    def time_sequential_evaluation(structures, calculator):
        """Time sequential single-structure evaluation"""
@@ -81,18 +92,20 @@ Performance Comparison
        elapsed = time.time() - start_time
        return energies, elapsed
 
+
    def time_batched_evaluation(structures, calculator, batch_size=10):
        """Time batched evaluation"""
        start_time = time.time()
 
        all_energies = []
        for i in range(0, len(structures), batch_size):
-           batch = structures[i:i+batch_size]
+           batch = structures[i : i + batch_size]
            results = calculator.compute_energy(batch)
            all_energies.extend(results["energy"])
 
        elapsed = time.time() - start_time
        return all_energies, elapsed
+
 
    # Compare performance with a smaller dataset
    test_structures = structures[:50]
@@ -101,21 +114,26 @@ Performance Comparison
    seq_energies, seq_time = time_sequential_evaluation(test_structures, calculator)
 
    # Batched evaluation
-   batch_energies, batch_time = time_batched_evaluation(test_structures, calculator, batch_size=10)
+   batch_energies, batch_time = time_batched_evaluation(
+       test_structures, calculator, batch_size=10
+   )
 
    print(f"Performance Comparison:")
    print(f"  Sequential: {seq_time:.2f} seconds")
    print(f"  Batched:    {batch_time:.2f} seconds")
    print(f"  Speedup:    {seq_time/batch_time:.1f}x")
-   print(f"  Energy difference (max): {max(abs(e1-e2) for e1, e2 in zip(seq_energies, batch_energies)):.6f} eV")
+   print(
+       f"  Energy difference (max): {max(abs(e1-e2) for e1, e2 in zip(seq_energies, batch_energies)):.6f} eV"
+   )
 
-Advanced Batching Strategies
-----------------------------
+******************************
+ Advanced Batching Strategies
+******************************
 
 Optimal Batch Size Selection
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+============================
 
-.. code-block:: python
+.. code:: python
 
    def find_optimal_batch_size(structures, calculator, max_batch_size=50):
        """Find optimal batch size for given hardware and structures"""
@@ -134,7 +152,7 @@ Optimal Batch Size Selection
                start_time = time.time()
 
                for i in range(0, len(test_structures), batch_size):
-                   batch = test_structures[i:i+batch_size]
+                   batch = test_structures[i : i + batch_size]
                    results = calculator.compute_energy(batch)
 
                elapsed = time.time() - start_time
@@ -158,13 +176,14 @@ Optimal Batch Size Selection
        else:
            return 1
 
+
    # Find optimal batch size
    optimal_batch_size = find_optimal_batch_size(structures, calculator)
 
 Memory-Aware Batching
-~~~~~~~~~~~~~~~~~~~~~
+=====================
 
-.. code-block:: python
+.. code:: python
 
    def adaptive_batching(structures, calculator, max_memory_gb=4):
        """Adaptive batching based on available memory"""
@@ -185,7 +204,7 @@ Memory-Aware Batching
            remaining = len(structures) - i
            batch_size = min(current_batch_size, remaining)
 
-           batch = structures[i:i+batch_size]
+           batch = structures[i : i + batch_size]
 
            try:
                results = calculator.compute_energy(batch)
@@ -205,7 +224,9 @@ Memory-Aware Batching
                    if torch.cuda.is_available():
                        torch.cuda.empty_cache()
 
-                   print(f"Reduced batch size to {current_batch_size} due to memory constraints")
+                   print(
+                       f"Reduced batch size to {current_batch_size} due to memory constraints"
+                   )
 
                    # Retry with smaller batch
                    continue
@@ -214,13 +235,14 @@ Memory-Aware Batching
 
        return all_energies
 
+
    # Use adaptive batching
    adaptive_energies = adaptive_batching(structures[:100], calculator)
 
 Mixed Structure Types
-~~~~~~~~~~~~~~~~~~~~~
+=====================
 
-.. code-block:: python
+.. code:: python
 
    def batch_mixed_structures():
        """Handle batches with different structure types and sizes"""
@@ -229,13 +251,14 @@ Mixed Structure Types
        mixed_structures = []
 
        # Bulk crystals
-       for element in ['Si', 'C', 'Ge']:
+       for element in ["Si", "C", "Ge"]:
            atoms = bulk(element, cubic=True, crystalstructure="diamond")
            mixed_structures.append(atoms)
 
        # Molecules
        from ase.build import molecule
-       for mol in ['H2O', 'CO2', 'CH4', 'NH3']:
+
+       for mol in ["H2O", "CO2", "CH4", "NH3"]:
            atoms = molecule(mol)
            mixed_structures.append(atoms)
 
@@ -250,39 +273,43 @@ Mixed Structure Types
        all_results = []
 
        for i in range(0, len(mixed_structures), batch_size):
-           batch = mixed_structures[i:i+batch_size]
+           batch = mixed_structures[i : i + batch_size]
 
            results = calculator.compute_energy(batch, compute_forces_and_stresses=True)
 
            # Store results with metadata
            for j, atoms in enumerate(batch):
                result = {
-                   'formula': atoms.get_chemical_formula(),
-                   'n_atoms': len(atoms),
-                   'energy': results["energy"][j],
-                   'energy_per_atom': results["energy"][j] / len(atoms),
-                   'forces': results["forces"][j],
-                   'max_force': np.max(np.linalg.norm(results["forces"][j], axis=1))
+                   "formula": atoms.get_chemical_formula(),
+                   "n_atoms": len(atoms),
+                   "energy": results["energy"][j],
+                   "energy_per_atom": results["energy"][j] / len(atoms),
+                   "forces": results["forces"][j],
+                   "max_force": np.max(np.linalg.norm(results["forces"][j], axis=1)),
                }
                all_results.append(result)
 
        return all_results
+
 
    mixed_results = batch_mixed_structures()
 
    # Display results
    print("Mixed Structure Results:")
    for result in mixed_results:
-       print(f"  {result['formula']}: {result['energy_per_atom']:.3f} eV/atom, "
-             f"max_force: {result['max_force']:.3f} eV/Å")
+       print(
+           f"  {result['formula']}: {result['energy_per_atom']:.3f} eV/atom, "
+           f"max_force: {result['max_force']:.3f} eV/Å"
+       )
 
-High-Throughput Applications
-----------------------------
+******************************
+ High-Throughput Applications
+******************************
 
 Database Evaluation
-~~~~~~~~~~~~~~~~~~~
+===================
 
-.. code-block:: python
+.. code:: python
 
    def evaluate_structure_database(database_file, calculator, output_file):
        """Evaluate structures from a database file"""
@@ -290,6 +317,7 @@ Database Evaluation
        # Load structures (example with XYZ file)
        try:
            import ase.io
+
            structures = ase.io.read(database_file, ":")
            print(f"Loaded {len(structures)} structures from {database_file}")
        except:
@@ -309,20 +337,26 @@ Database Evaluation
        total_time = time.time()
 
        for i in range(0, len(structures), optimal_batch):
-           batch = structures[i:i+optimal_batch]
+           batch = structures[i : i + optimal_batch]
 
            batch_start = time.time()
-           batch_results = calculator.compute_energy(batch, compute_forces_and_stresses=True)
+           batch_results = calculator.compute_energy(
+               batch, compute_forces_and_stresses=True
+           )
            batch_time = time.time() - batch_start
 
            # Store results
            for j, atoms in enumerate(batch):
                result = {
-                   'index': i + j,
-                   'formula': atoms.get_chemical_formula(),
-                   'energy': batch_results["energy"][j],
-                   'forces': batch_results["forces"][j].tolist(),
-                   'stress': batch_results["stress"][j].tolist() if "stress" in batch_results else None
+                   "index": i + j,
+                   "formula": atoms.get_chemical_formula(),
+                   "energy": batch_results["energy"][j],
+                   "forces": batch_results["forces"][j].tolist(),
+                   "stress": (
+                       batch_results["stress"][j].tolist()
+                       if "stress" in batch_results
+                       else None
+                   ),
                }
                results.append(result)
 
@@ -335,7 +369,8 @@ Database Evaluation
 
        # Save results
        import json
-       with open(output_file, 'w') as f:
+
+       with open(output_file, "w") as f:
            json.dump(results, f, indent=2)
 
        print(f"Completed evaluation in {total_time:.1f} seconds")
@@ -344,18 +379,19 @@ Database Evaluation
 
        return results
 
+
    # Example usage
    # results = evaluate_structure_database("structures.xyz", calculator, "results.json")
 
 Parameter Screening
-~~~~~~~~~~~~~~~~~~~
+===================
 
-.. code-block:: python
+.. code:: python
 
    def screen_lattice_parameters():
        """Screen across lattice parameters"""
 
-       elements = ['Si', 'C', 'Ge']
+       elements = ["Si", "C", "Ge"]
        lattice_params = np.linspace(3.0, 6.5, 50)
 
        screening_results = []
@@ -378,20 +414,23 @@ Parameter Screening
            element_energies = []
 
            for i in range(0, len(element_structures), batch_size):
-               batch = element_structures[i:i+batch_size]
+               batch = element_structures[i : i + batch_size]
                results = calculator.compute_energy(batch)
                element_energies.extend(results["energy"])
 
            # Store results
-           for a, energy in zip(lattice_params[:len(element_energies)], element_energies):
-               screening_results.append({
-                   'element': element,
-                   'lattice_param': a,
-                   'energy': energy,
-                   'energy_per_atom': energy / 8  # Diamond structure has 8 atoms
-               })
+           for a, energy in zip(lattice_params[: len(element_energies)], element_energies):
+               screening_results.append(
+                   {
+                       "element": element,
+                       "lattice_param": a,
+                       "energy": energy,
+                       "energy_per_atom": energy / 8,  # Diamond structure has 8 atoms
+                   }
+               )
 
        return screening_results
+
 
    screening_data = screen_lattice_parameters()
 
@@ -400,41 +439,51 @@ Parameter Screening
 
    fig, axes = plt.subplots(1, 2, figsize=(12, 5))
 
-   elements = ['Si', 'C', 'Ge']
-   colors = ['blue', 'black', 'green']
+   elements = ["Si", "C", "Ge"]
+   colors = ["blue", "black", "green"]
 
    for element, color in zip(elements, colors):
-       element_data = [d for d in screening_data if d['element'] == element]
+       element_data = [d for d in screening_data if d["element"] == element]
        if element_data:
-           lattice_params = [d['lattice_param'] for d in element_data]
-           energies = [d['energy'] for d in element_data]
-           energies_per_atom = [d['energy_per_atom'] for d in element_data]
+           lattice_params = [d["lattice_param"] for d in element_data]
+           energies = [d["energy"] for d in element_data]
+           energies_per_atom = [d["energy_per_atom"] for d in element_data]
 
-           axes[0].plot(lattice_params, energies, 'o-', color=color, label=element, alpha=0.7)
-           axes[1].plot(lattice_params, energies_per_atom, 'o-', color=color, label=element, alpha=0.7)
+           axes[0].plot(
+               lattice_params, energies, "o-", color=color, label=element, alpha=0.7
+           )
+           axes[1].plot(
+               lattice_params,
+               energies_per_atom,
+               "o-",
+               color=color,
+               label=element,
+               alpha=0.7,
+           )
 
-   axes[0].set_xlabel('Lattice Parameter (Å)')
-   axes[0].set_ylabel('Total Energy (eV)')
-   axes[0].set_title('Total Energy vs Lattice Parameter')
+   axes[0].set_xlabel("Lattice Parameter (Å)")
+   axes[0].set_ylabel("Total Energy (eV)")
+   axes[0].set_title("Total Energy vs Lattice Parameter")
    axes[0].legend()
    axes[0].grid(True, alpha=0.3)
 
-   axes[1].set_xlabel('Lattice Parameter (Å)')
-   axes[1].set_ylabel('Energy per Atom (eV)')
-   axes[1].set_title('Energy per Atom vs Lattice Parameter')
+   axes[1].set_xlabel("Lattice Parameter (Å)")
+   axes[1].set_ylabel("Energy per Atom (eV)")
+   axes[1].set_title("Energy per Atom vs Lattice Parameter")
    axes[1].legend()
    axes[1].grid(True, alpha=0.3)
 
    plt.tight_layout()
    plt.show()
 
-Specialized Evaluation Methods
-------------------------------
+********************************
+ Specialized Evaluation Methods
+********************************
 
 Forces and Stresses
-~~~~~~~~~~~~~~~~~~~
+===================
 
-.. code-block:: python
+.. code:: python
 
    # Evaluate forces and stresses efficiently
    def batch_forces_and_stresses(structures, calculator):
@@ -444,13 +493,10 @@ Forces and Stresses
        all_results = []
 
        for i in range(0, len(structures), batch_size):
-           batch = structures[i:i+batch_size]
+           batch = structures[i : i + batch_size]
 
            # Compute all properties at once
-           results = calculator.compute_energy(
-               batch,
-               compute_forces_and_stresses=True
-           )
+           results = calculator.compute_energy(batch, compute_forces_and_stresses=True)
 
            # Analyze force characteristics
            for j, atoms in enumerate(batch):
@@ -460,28 +506,31 @@ Forces and Stresses
                force_magnitudes = np.linalg.norm(forces, axis=1)
 
                result = {
-                   'formula': atoms.get_chemical_formula(),
-                   'energy': results["energy"][j],
-                   'max_force': np.max(force_magnitudes),
-                   'rms_force': np.sqrt(np.mean(force_magnitudes**2)),
-                   'stress_trace': np.trace(stress) if stress is not None else None
+                   "formula": atoms.get_chemical_formula(),
+                   "energy": results["energy"][j],
+                   "max_force": np.max(force_magnitudes),
+                   "rms_force": np.sqrt(np.mean(force_magnitudes**2)),
+                   "stress_trace": np.trace(stress) if stress is not None else None,
                }
                all_results.append(result)
 
        return all_results
+
 
    # Example usage
    force_results = batch_forces_and_stresses(structures[:30], calculator)
 
    print("Force Analysis Results:")
    for result in force_results[:5]:  # Show first 5
-       print(f"  {result['formula']}: max_force = {result['max_force']:.3f} eV/Å, "
-             f"rms_force = {result['rms_force']:.3f} eV/Å")
+       print(
+           f"  {result['formula']}: max_force = {result['max_force']:.3f} eV/Å, "
+           f"rms_force = {result['rms_force']:.3f} eV/Å"
+       )
 
 Uncertainty Quantification in Batches
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+=====================================
 
-.. code-block:: python
+.. code:: python
 
    # Batch uncertainty quantification (requires v1.0.2)
    def batch_with_uncertainty():
@@ -491,7 +540,7 @@ Uncertainty Quantification in Batches
            version="v1.0.2",
            device=device,
            calculate_uncertainty=True,
-           calculate_ensemble=True
+           calculate_ensemble=True,
        )
 
        # Smaller batch size due to additional computation
@@ -501,7 +550,7 @@ Uncertainty Quantification in Batches
        results_with_uncertainty = []
 
        for i in range(0, len(test_structures), batch_size):
-           batch = test_structures[i:i+batch_size]
+           batch = test_structures[i : i + batch_size]
 
            # Process each structure in batch individually for uncertainty
            for atoms in batch:
@@ -511,15 +560,16 @@ Uncertainty Quantification in Batches
                ensemble = atoms.calc.get_energy_ensemble()
 
                result = {
-                   'formula': atoms.get_chemical_formula(),
-                   'energy': energy,
-                   'uncertainty': uncertainty,
-                   'ensemble_std': np.std(ensemble),
-                   'relative_uncertainty': uncertainty / abs(energy) * 100
+                   "formula": atoms.get_chemical_formula(),
+                   "energy": energy,
+                   "uncertainty": uncertainty,
+                   "ensemble_std": np.std(ensemble),
+                   "relative_uncertainty": uncertainty / abs(energy) * 100,
                }
                results_with_uncertainty.append(result)
 
        return results_with_uncertainty
+
 
    # Example usage (requires v1.0.2)
    try:
@@ -527,84 +577,94 @@ Uncertainty Quantification in Batches
 
        print("Uncertainty Analysis:")
        for result in uncertainty_results[:5]:
-           print(f"  {result['formula']}: {result['energy']:.3f} ± {result['uncertainty']:.3f} eV "
-                 f"({result['relative_uncertainty']:.2f}%)")
+           print(
+               f"  {result['formula']}: {result['energy']:.3f} ± {result['uncertainty']:.3f} eV "
+               f"({result['relative_uncertainty']:.2f}%)"
+           )
    except:
        print("Uncertainty quantification not available (requires v1.0.2)")
 
-Data Management and Export
---------------------------
+****************************
+ Data Management and Export
+****************************
 
 Efficient Data Storage
-~~~~~~~~~~~~~~~~~~~~~~~
+======================
 
-.. code-block:: python
+.. code:: python
 
    import h5py
    import json
 
+
    def save_batch_results_hdf5(results, filename):
        """Save batch results in HDF5 format for efficiency"""
 
-       with h5py.File(filename, 'w') as f:
+       with h5py.File(filename, "w") as f:
            # Create datasets
            n_structures = len(results)
 
            # Basic properties
-           energies = f.create_dataset('energies', (n_structures,), dtype='f8')
-           formulas = f.create_dataset('formulas', (n_structures,), dtype=h5py.string_dtype())
+           energies = f.create_dataset("energies", (n_structures,), dtype="f8")
+           formulas = f.create_dataset(
+               "formulas", (n_structures,), dtype=h5py.string_dtype()
+           )
 
            # Variable length data (forces)
-           forces_group = f.create_group('forces')
+           forces_group = f.create_group("forces")
 
            for i, result in enumerate(results):
-               energies[i] = result['energy']
-               formulas[i] = result['formula']
+               energies[i] = result["energy"]
+               formulas[i] = result["formula"]
 
-               if 'forces' in result:
-                   forces_group.create_dataset(f'structure_{i}', data=result['forces'])
+               if "forces" in result:
+                   forces_group.create_dataset(f"structure_{i}", data=result["forces"])
 
        print(f"Saved {n_structures} results to {filename}")
+
 
    def load_batch_results_hdf5(filename):
        """Load batch results from HDF5 format"""
 
        results = []
 
-       with h5py.File(filename, 'r') as f:
-           energies = f['energies'][:]
-           formulas = f['formulas'][:]
+       with h5py.File(filename, "r") as f:
+           energies = f["energies"][:]
+           formulas = f["formulas"][:]
 
            for i in range(len(energies)):
                result = {
-                   'energy': float(energies[i]),
-                   'formula': formulas[i].decode('utf-8')
+                   "energy": float(energies[i]),
+                   "formula": formulas[i].decode("utf-8"),
                }
 
                # Load forces if available
-               if f'structure_{i}' in f['forces']:
-                   result['forces'] = f['forces'][f'structure_{i}'][:]
+               if f"structure_{i}" in f["forces"]:
+                   result["forces"] = f["forces"][f"structure_{i}"][:]
 
                results.append(result)
 
        return results
+
 
    # Example usage
    # save_batch_results_hdf5(mixed_results, "batch_results.h5")
    # loaded_results = load_batch_results_hdf5("batch_results.h5")
 
 Results Analysis and Visualization
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+==================================
 
-.. code-block:: python
+.. code:: python
 
    def analyze_batch_results(results):
        """Comprehensive analysis of batch results"""
 
        # Extract data
-       energies = [r['energy'] for r in results]
-       formulas = [r['formula'] for r in results]
-       energies_per_atom = [r['energy_per_atom'] for r in results if 'energy_per_atom' in r]
+       energies = [r["energy"] for r in results]
+       formulas = [r["formula"] for r in results]
+       energies_per_atom = [
+           r["energy_per_atom"] for r in results if "energy_per_atom" in r
+       ]
 
        # Basic statistics
        print("Batch Results Analysis:")
@@ -614,7 +674,9 @@ Results Analysis and Visualization
        print(f"  Energy std: {np.std(energies):.3f} eV")
 
        if energies_per_atom:
-           print(f"  Energy per atom range: {min(energies_per_atom):.3f} to {max(energies_per_atom):.3f} eV/atom")
+           print(
+               f"  Energy per atom range: {min(energies_per_atom):.3f} to {max(energies_per_atom):.3f} eV/atom"
+           )
 
        # Composition analysis
        unique_formulas = list(set(formulas))
@@ -625,61 +687,66 @@ Results Analysis and Visualization
 
        plt.subplot(1, 3, 1)
        plt.hist(energies, bins=20, alpha=0.7)
-       plt.xlabel('Energy (eV)')
-       plt.ylabel('Count')
-       plt.title('Energy Distribution')
+       plt.xlabel("Energy (eV)")
+       plt.ylabel("Count")
+       plt.title("Energy Distribution")
        plt.grid(True, alpha=0.3)
 
        if energies_per_atom:
            plt.subplot(1, 3, 2)
            plt.hist(energies_per_atom, bins=20, alpha=0.7)
-           plt.xlabel('Energy per Atom (eV)')
-           plt.ylabel('Count')
-           plt.title('Energy per Atom Distribution')
+           plt.xlabel("Energy per Atom (eV)")
+           plt.ylabel("Count")
+           plt.title("Energy per Atom Distribution")
            plt.grid(True, alpha=0.3)
 
        plt.subplot(1, 3, 3)
        formula_counts = {f: formulas.count(f) for f in unique_formulas}
        plt.bar(range(len(unique_formulas)), list(formula_counts.values()))
        plt.xticks(range(len(unique_formulas)), unique_formulas, rotation=45)
-       plt.xlabel('Formula')
-       plt.ylabel('Count')
-       plt.title('Composition Distribution')
+       plt.xlabel("Formula")
+       plt.ylabel("Count")
+       plt.title("Composition Distribution")
        plt.grid(True, alpha=0.3)
 
        plt.tight_layout()
        plt.show()
 
        return {
-           'n_structures': len(results),
-           'energy_stats': {
-               'mean': np.mean(energies),
-               'std': np.std(energies),
-               'min': min(energies),
-               'max': max(energies)
+           "n_structures": len(results),
+           "energy_stats": {
+               "mean": np.mean(energies),
+               "std": np.std(energies),
+               "min": min(energies),
+               "max": max(energies),
            },
-           'compositions': unique_formulas
+           "compositions": unique_formulas,
        }
 
+
    # Analyze results
-   if 'mixed_results' in locals():
+   if "mixed_results" in locals():
        analysis = analyze_batch_results(mixed_results)
 
-Best Practices
---------------
+****************
+ Best Practices
+****************
 
 Performance Optimization
-~~~~~~~~~~~~~~~~~~~~~~~~
+========================
 
-1. **Batch Size**: Start with 10-20 structures and adjust based on memory and performance
-2. **GPU Memory**: Monitor GPU memory usage and adjust batch size accordingly
-3. **Mixed Precision**: Use ``dtype=torch.float32`` for memory-constrained systems
-4. **Progress Tracking**: Use progress bars for long-running evaluations
+#. **Batch Size**: Start with 10-20 structures and adjust based on
+   memory and performance
+#. **GPU Memory**: Monitor GPU memory usage and adjust batch size
+   accordingly
+#. **Mixed Precision**: Use ``dtype=torch.float32`` for
+   memory-constrained systems
+#. **Progress Tracking**: Use progress bars for long-running evaluations
 
 Error Handling
-~~~~~~~~~~~~~~
+==============
 
-.. code-block:: python
+.. code:: python
 
    def robust_batch_evaluation(structures, calculator, batch_size=10):
        """Robust batch evaluation with error handling"""
@@ -688,8 +755,8 @@ Error Handling
        failed_indices = []
 
        for i in range(0, len(structures), batch_size):
-           batch = structures[i:i+batch_size]
-           batch_indices = list(range(i, min(i+batch_size, len(structures))))
+           batch = structures[i : i + batch_size]
+           batch_indices = list(range(i, min(i + batch_size, len(structures))))
 
            try:
                results = calculator.compute_energy(batch)
@@ -697,9 +764,9 @@ Error Handling
                # Store successful results
                for j, idx in enumerate(batch_indices):
                    result = {
-                       'index': idx,
-                       'formula': batch[j].get_chemical_formula(),
-                       'energy': results["energy"][j]
+                       "index": idx,
+                       "formula": batch[j].get_chemical_formula(),
+                       "energy": results["energy"][j],
                    }
                    successful_results.append(result)
 
@@ -713,9 +780,9 @@ Error Handling
                        energy = atoms.get_potential_energy()
 
                        result = {
-                           'index': idx,
-                           'formula': atoms.get_chemical_formula(),
-                           'energy': energy
+                           "index": idx,
+                           "formula": atoms.get_chemical_formula(),
+                           "energy": energy,
                        }
                        successful_results.append(result)
 
@@ -728,13 +795,14 @@ Error Handling
 
        return successful_results, failed_indices
 
+
    # Example usage
    # robust_results, failed_idx = robust_batch_evaluation(structures[:50], calculator)
 
 Quality Control
-~~~~~~~~~~~~~~~
+===============
 
-.. code-block:: python
+.. code:: python
 
    def validate_batch_results(results, structures):
        """Validate batch evaluation results"""
@@ -746,7 +814,7 @@ Quality Control
            print(f"Warning: Expected {len(structures)} results, got {len(results)}")
 
        # Check for unreasonable energies
-       energies = [r['energy'] if isinstance(r, dict) else r for r in results]
+       energies = [r["energy"] if isinstance(r, dict) else r for r in results]
 
        # Basic energy checks
        if any(np.isnan(e) or np.isinf(e) for e in energies):
@@ -756,17 +824,23 @@ Quality Control
        mean_energy = np.mean(energies)
        std_energy = np.std(energies)
 
-       outliers = [i for i, e in enumerate(energies)
-                  if abs(e - mean_energy) > 3 * std_energy]
+       outliers = [
+           i for i, e in enumerate(energies) if abs(e - mean_energy) > 3 * std_energy
+       ]
 
        if outliers:
            print(f"Warning: {len(outliers)} potential outliers detected")
            for idx in outliers[:5]:  # Show first 5
-               formula = structures[idx].get_chemical_formula() if idx < len(structures) else "Unknown"
+               formula = (
+                   structures[idx].get_chemical_formula()
+                   if idx < len(structures)
+                   else "Unknown"
+               )
                print(f"  Structure {idx} ({formula}): {energies[idx]:.3f} eV")
 
        print("Validation completed")
 
+
    # Validate results
-   if 'all_energies' in locals():
+   if "all_energies" in locals():
        validate_batch_results(all_energies, structures)

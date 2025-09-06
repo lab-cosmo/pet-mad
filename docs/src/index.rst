@@ -1,42 +1,66 @@
-PET-MAD: Universal Models for Advanced Atomistic Simulations
-=============================================================
+##############################################################
+ PET-MAD: Universal Models for Advanced Atomistic Simulations
+##############################################################
 
-PET-MAD is a universal interatomic potential for advanced materials modeling across the periodic table. This model is based on the **Point Edge Transformer (PET)** model trained on the **Massive Atomic Diversity (MAD) Dataset** and is capable of predicting energies and forces in complex atomistic simulations.
+PET-MAD is a universal interatomic potential for advanced materials
+modeling across the periodic table. This model is based on the **Point
+Edge Transformer (PET)** model trained on the **Massive Atomic Diversity
+(MAD) Dataset** and is capable of predicting energies and forces in
+complex atomistic simulations.
 
-In addition, it contains **PET-MAD-DOS** - a universal model for predicting the density of states (DOS) of materials, as well as their Fermi levels and bandgaps. **PET-MAD-DOS** uses a slightly modified **PET** architecture, and the same **MAD** dataset.
+In addition, it contains **PET-MAD-DOS** - a universal model for
+predicting the density of states (DOS) of materials, as well as their
+Fermi levels and bandgaps. **PET-MAD-DOS** uses a slightly modified
+**PET** architecture, and the same **MAD** dataset.
 
-Key Features
-------------
+**************
+ Key Features
+**************
 
-- **Universality**: PET-MAD models are generally-applicable, and can be used for predicting energies and forces, as well as the density of states, Fermi levels, and bandgaps for a wide range of materials and molecules.
-- **Accuracy**: PET-MAD models achieve high accuracy in various types of atomistic simulations of organic and inorganic systems, comparable with system-specific models, while being fast and efficient.
-- **Efficiency**: PET-MAD models are highly computationally efficient and have low memory usage, making them suitable for large-scale simulations.
-- **Infrastructure**: Various MD engines are available for diverse research and application needs.
-- **HPC Compatibility**: Efficient in HPC environments for extensive simulations.
+-  **Universality**: PET-MAD models are generally-applicable, and can be
+   used for predicting energies and forces, as well as the density of
+   states, Fermi levels, and bandgaps for a wide range of materials and
+   molecules.
 
-Supported Simulation Engines
------------------------------
+-  **Accuracy**: PET-MAD models achieve high accuracy in various types
+   of atomistic simulations of organic and inorganic systems, comparable
+   with system-specific models, while being fast and efficient.
+
+-  **Efficiency**: PET-MAD models are highly computationally efficient
+   and have low memory usage, making them suitable for large-scale
+   simulations.
+
+-  **Infrastructure**: Various MD engines are available for diverse
+   research and application needs.
+
+-  **HPC Compatibility**: Efficient in HPC environments for extensive
+   simulations.
+
+******************************
+ Supported Simulation Engines
+******************************
 
 PET-MAD integrates with the following atomistic simulation engines:
 
-- **Atomic Simulation Environment (ASE)**
-- **LAMMPS** (including KOKKOS support)
-- **i-PI**
-- **OpenMM** (coming soon)
-- **GROMACS** (coming soon)
+-  **Atomic Simulation Environment (ASE)**
+-  **LAMMPS** (including KOKKOS support)
+-  **i-PI**
+-  **OpenMM** (coming soon)
+-  **GROMACS** (coming soon)
 
-Quick Start
------------
+*************
+ Quick Start
+*************
 
 Install PET-MAD using pip:
 
-.. code-block:: bash
+.. code:: bash
 
    pip install pet-mad
 
 Use PET-MAD with ASE:
 
-.. code-block:: python
+.. code:: python
 
    from pet_mad.calculator import PETMADCalculator
    from ase.build import bulk
@@ -48,8 +72,9 @@ Use PET-MAD with ASE:
    energy = atoms.get_potential_energy()
    forces = atoms.get_forces()
 
-Documentation Contents
-----------------------
+************************
+ Documentation Contents
+************************
 
 .. toctree::
    :maxdepth: 2
@@ -86,9 +111,10 @@ Documentation Contents
    citation
    changelog
 
-Indices and tables
-==================
+####################
+ Indices and tables
+####################
 
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+-  :ref:`genindex`
+-  :ref:`modindex`
+-  :ref:`search`

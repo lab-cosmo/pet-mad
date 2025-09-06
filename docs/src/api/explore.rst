@@ -1,18 +1,22 @@
-Explore Module
-==============
+################
+ Explore Module
+################
 
-The explore module provides tools for dataset visualization and feature extraction using PET-MAD.
+The explore module provides tools for dataset visualization and feature
+extraction using PET-MAD.
 
-PETMADFeaturizer
-----------------
+******************
+ PETMADFeaturizer
+******************
 
 .. autoclass:: pet_mad.explore.PETMADFeaturizer
    :members:
    :undoc-members:
    :show-inheritance:
 
-MADExplorer
------------
+*************
+ MADExplorer
+*************
 
 .. autoclass:: pet_mad.explore._explorer.MADExplorer
    :members:

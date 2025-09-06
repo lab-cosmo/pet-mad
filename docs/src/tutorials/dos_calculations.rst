@@ -1,25 +1,32 @@
-Density of States Calculations
-==============================
+################################
+ Density of States Calculations
+################################
 
-This tutorial covers how to use PET-MAD-DOS for calculating electronic density of states, Fermi levels, and bandgaps.
+This tutorial covers how to use PET-MAD-DOS for calculating electronic
+density of states, Fermi levels, and bandgaps.
 
-Introduction
-------------
+**************
+ Introduction
+**************
 
-PET-MAD-DOS is a universal model for predicting the electronic density of states (DOS) of materials. It uses a slightly modified PET architecture trained on the same MAD dataset as PET-MAD. The model can predict:
+PET-MAD-DOS is a universal model for predicting the electronic density
+of states (DOS) of materials. It uses a slightly modified PET
+architecture trained on the same MAD dataset as PET-MAD. The model can
+predict:
 
-- Electronic density of states
-- Fermi levels
-- Bandgaps
-- Per-atom contributions to DOS
+-  Electronic density of states
+-  Fermi levels
+-  Bandgaps
+-  Per-atom contributions to DOS
 
-Basic Usage
------------
+*************
+ Basic Usage
+*************
 
 Setting up the Calculator
-~~~~~~~~~~~~~~~~~~~~~~~~~
+=========================
 
-.. code-block:: python
+.. code:: python
 
    from pet_mad.calculator import PETMADDOSCalculator
    from ase.build import bulk
@@ -32,9 +39,9 @@ Setting up the Calculator
    dos_calculator = PETMADDOSCalculator(version="latest", device=device)
 
 Simple DOS Calculation
-~~~~~~~~~~~~~~~~~~~~~~
+======================
 
-.. code-block:: python
+.. code:: python
 
    # Create a silicon crystal
    atoms = bulk("Si", cubic=True, a=5.43, crystalstructure="diamond")
@@ -47,9 +54,9 @@ Simple DOS Calculation
    print(f"Total DOS integral: {np.trapz(dos, energies):.2f}")
 
 Electronic Properties
-~~~~~~~~~~~~~~~~~~~~~
+=====================
 
-.. code-block:: python
+.. code:: python
 
    # Calculate bandgap and Fermi level
    bandgap = dos_calculator.calculate_bandgap(atoms)
@@ -58,13 +65,14 @@ Electronic Properties
    print(f"Bandgap: {bandgap:.3f} eV")
    print(f"Fermi level: {fermi_level:.3f} eV")
 
-Visualization
--------------
+***************
+ Visualization
+***************
 
 Basic DOS Plot
-~~~~~~~~~~~~~~
+==============
 
-.. code-block:: python
+.. code:: python
 
    import matplotlib.pyplot as plt
    import numpy as np
@@ -76,27 +84,27 @@ Basic DOS Plot
 
    # Create plot
    plt.figure(figsize=(10, 6))
-   plt.plot(energies, dos, 'b-', linewidth=2, label='DOS')
-   plt.axvline(fermi_level, color='red', linestyle='--', linewidth=2, label='Fermi level')
-   plt.axhline(0, color='gray', linestyle='-', alpha=0.3)
+   plt.plot(energies, dos, "b-", linewidth=2, label="DOS")
+   plt.axvline(fermi_level, color="red", linestyle="--", linewidth=2, label="Fermi level")
+   plt.axhline(0, color="gray", linestyle="-", alpha=0.3)
 
-   plt.xlabel('Energy (eV)')
-   plt.ylabel('DOS (states/eV)')
-   plt.title('Silicon Density of States')
+   plt.xlabel("Energy (eV)")
+   plt.ylabel("DOS (states/eV)")
+   plt.title("Silicon Density of States")
    plt.legend()
    plt.grid(True, alpha=0.3)
    plt.show()
 
 Comparing Materials
-~~~~~~~~~~~~~~~~~~~
+===================
 
-.. code-block:: python
+.. code:: python
 
    # Compare DOS of different materials
    materials = {
-       'Silicon': bulk("Si", cubic=True, a=5.43, crystalstructure="diamond"),
-       'Carbon': bulk("C", cubic=True, a=3.55, crystalstructure="diamond"),
-       'Germanium': bulk("Ge", cubic=True, a=5.66, crystalstructure="diamond")
+       "Silicon": bulk("Si", cubic=True, a=5.43, crystalstructure="diamond"),
+       "Carbon": bulk("C", cubic=True, a=3.55, crystalstructure="diamond"),
+       "Germanium": bulk("Ge", cubic=True, a=5.66, crystalstructure="diamond"),
    }
 
    plt.figure(figsize=(12, 8))
@@ -109,24 +117,25 @@ Comparing Materials
        # Normalize DOS for comparison
        dos_normalized = dos / np.max(dos)
 
-       plt.subplot(2, 2, i+1)
-       plt.plot(energies, dos_normalized, 'b-', linewidth=2)
-       plt.axvline(fermi_level, color='red', linestyle='--', linewidth=2)
-       plt.xlabel('Energy (eV)')
-       plt.ylabel('Normalized DOS')
-       plt.title(f'{name}\nBandgap: {bandgap:.2f} eV, E_F: {fermi_level:.2f} eV')
+       plt.subplot(2, 2, i + 1)
+       plt.plot(energies, dos_normalized, "b-", linewidth=2)
+       plt.axvline(fermi_level, color="red", linestyle="--", linewidth=2)
+       plt.xlabel("Energy (eV)")
+       plt.ylabel("Normalized DOS")
+       plt.title(f"{name}\nBandgap: {bandgap:.2f} eV, E_F: {fermi_level:.2f} eV")
        plt.grid(True, alpha=0.3)
 
    plt.tight_layout()
    plt.show()
 
-Advanced Features
------------------
+*******************
+ Advanced Features
+*******************
 
 Per-Atom DOS
-~~~~~~~~~~~~
+============
 
-.. code-block:: python
+.. code:: python
 
    # Calculate DOS for each atom
    atoms = bulk("Si", cubic=True, a=5.43, crystalstructure="diamond")
@@ -139,25 +148,25 @@ Per-Atom DOS
    # Plot DOS for first few atoms
    plt.figure(figsize=(10, 6))
    for i in range(min(4, len(atoms))):
-       plt.plot(energies, dos_per_atom[i], label=f'Atom {i+1}', alpha=0.7)
+       plt.plot(energies, dos_per_atom[i], label=f"Atom {i+1}", alpha=0.7)
 
-   plt.xlabel('Energy (eV)')
-   plt.ylabel('DOS (states/eV)')
-   plt.title('Per-Atom DOS')
+   plt.xlabel("Energy (eV)")
+   plt.ylabel("DOS (states/eV)")
+   plt.title("Per-Atom DOS")
    plt.legend()
    plt.grid(True, alpha=0.3)
    plt.show()
 
 Batch Processing
-~~~~~~~~~~~~~~~~
+================
 
-.. code-block:: python
+.. code:: python
 
    # Process multiple structures at once
    structures = [
        bulk("Si", cubic=True, a=5.43, crystalstructure="diamond"),
        bulk("C", cubic=True, a=3.55, crystalstructure="diamond"),
-       bulk("Ge", cubic=True, a=5.66, crystalstructure="diamond")
+       bulk("Ge", cubic=True, a=5.66, crystalstructure="diamond"),
    ]
 
    # Calculate DOS for all structures
@@ -168,14 +177,14 @@ Batch Processing
    fermi_levels = dos_calculator.calculate_efermi(structures)
 
    # Print results
-   materials = ['Silicon', 'Carbon', 'Germanium']
+   materials = ["Silicon", "Carbon", "Germanium"]
    for i, name in enumerate(materials):
        print(f"{name}: Bandgap = {bandgaps[i]:.3f} eV, E_F = {fermi_levels[i]:.3f} eV")
 
 Reusing DOS Data
-~~~~~~~~~~~~~~~~
+================
 
-.. code-block:: python
+.. code:: python
 
    # Calculate DOS once and reuse for properties
    atoms = bulk("Si", cubic=True, a=5.43, crystalstructure="diamond")
@@ -188,15 +197,17 @@ Reusing DOS Data
    print(f"Bandgap: {bandgap:.3f} eV")
    print(f"Fermi level: {fermi_level:.3f} eV")
 
-Material Analysis Examples
---------------------------
+****************************
+ Material Analysis Examples
+****************************
 
 Semiconductor Analysis
-~~~~~~~~~~~~~~~~~~~~~~
+======================
 
-.. code-block:: python
+.. code:: python
 
    import numpy as np
+
 
    def analyze_semiconductor(atoms, name="Material"):
        """Comprehensive semiconductor analysis"""
@@ -237,18 +248,19 @@ Semiconductor Analysis
        print(f"  Classification: {classification}")
 
        return {
-           'energies': energies,
-           'dos': dos,
-           'bandgap': bandgap,
-           'fermi_level': fermi_level,
-           'classification': classification
+           "energies": energies,
+           "dos": dos,
+           "bandgap": bandgap,
+           "fermi_level": fermi_level,
+           "classification": classification,
        }
+
 
    # Analyze different materials
    materials = {
-       'Silicon': bulk("Si", cubic=True, a=5.43, crystalstructure="diamond"),
-       'Diamond': bulk("C", cubic=True, a=3.55, crystalstructure="diamond"),
-       'Germanium': bulk("Ge", cubic=True, a=5.66, crystalstructure="diamond")
+       "Silicon": bulk("Si", cubic=True, a=5.43, crystalstructure="diamond"),
+       "Diamond": bulk("C", cubic=True, a=3.55, crystalstructure="diamond"),
+       "Germanium": bulk("Ge", cubic=True, a=5.66, crystalstructure="diamond"),
    }
 
    results = {}
@@ -256,9 +268,9 @@ Semiconductor Analysis
        results[name] = analyze_semiconductor(atoms, name)
 
 Surface and Interface Studies
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+=============================
 
-.. code-block:: python
+.. code:: python
 
    from ase.build import surface
 
@@ -277,23 +289,24 @@ Surface and Interface Studies
    dos_bulk_norm = dos_bulk / len(bulk_si)
 
    plt.figure(figsize=(10, 6))
-   plt.plot(energies_bulk, dos_bulk_norm, 'b-', linewidth=2, label='Bulk Si')
-   plt.plot(energies, dos_surface_norm, 'r-', linewidth=2, label='Si(100) Surface')
+   plt.plot(energies_bulk, dos_bulk_norm, "b-", linewidth=2, label="Bulk Si")
+   plt.plot(energies, dos_surface_norm, "r-", linewidth=2, label="Si(100) Surface")
 
-   plt.xlabel('Energy (eV)')
-   plt.ylabel('DOS per atom (states/eV)')
-   plt.title('Bulk vs Surface DOS')
+   plt.xlabel("Energy (eV)")
+   plt.ylabel("DOS per atom (states/eV)")
+   plt.title("Bulk vs Surface DOS")
    plt.legend()
    plt.grid(True, alpha=0.3)
    plt.show()
 
 Alloy Analysis
-~~~~~~~~~~~~~~
+==============
 
-.. code-block:: python
+.. code:: python
 
    from ase import Atoms
    import numpy as np
+
 
    def create_random_alloy(element1, element2, size, concentration):
        """Create random binary alloy"""
@@ -311,6 +324,7 @@ Alloy Analysis
        alloy.set_chemical_symbols(symbols)
 
        return alloy
+
 
    # Create Cu-Ni alloys with different concentrations
    concentrations = [0.0, 0.25, 0.5, 0.75, 1.0]
@@ -334,11 +348,11 @@ Alloy Analysis
        # Normalize DOS
        dos_norm = dos / np.max(dos)
 
-       plt.subplot(2, 3, i+1)
-       plt.plot(energies, dos_norm, 'b-', linewidth=2)
-       plt.axvline(fermi_level, color='red', linestyle='--', linewidth=1)
-       plt.xlabel('Energy (eV)')
-       plt.ylabel('Normalized DOS')
+       plt.subplot(2, 3, i + 1)
+       plt.plot(energies, dos_norm, "b-", linewidth=2)
+       plt.axvline(fermi_level, color="red", linestyle="--", linewidth=1)
+       plt.xlabel("Energy (eV)")
+       plt.ylabel("Normalized DOS")
        plt.title(label)
        plt.grid(True, alpha=0.3)
 
@@ -346,14 +360,15 @@ Alloy Analysis
    plt.show()
 
 Temperature Effects (Approximate)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+=================================
 
-.. code-block:: python
+.. code:: python
 
    def fermi_dirac(energies, fermi_level, temperature):
        """Fermi-Dirac distribution"""
        kT = temperature * 8.617e-5  # Convert K to eV
        return 1.0 / (1.0 + np.exp((energies - fermi_level) / kT))
+
 
    def occupied_dos(energies, dos, fermi_level, temperature=0):
        """Calculate occupied DOS at given temperature"""
@@ -362,6 +377,7 @@ Temperature Effects (Approximate)
        else:
            fd = fermi_dirac(energies, fermi_level, temperature)
            return dos * fd
+
 
    # Calculate for silicon at different temperatures
    atoms = bulk("Si", cubic=True, a=5.43, crystalstructure="diamond")
@@ -375,27 +391,28 @@ Temperature Effects (Approximate)
    for i, temp in enumerate(temperatures):
        occupied = occupied_dos(energies, dos, fermi_level, temp)
 
-       plt.subplot(2, 2, i+1)
-       plt.plot(energies, dos, 'b-', linewidth=2, alpha=0.5, label='Total DOS')
-       plt.fill_between(energies, occupied, alpha=0.7, label='Occupied')
-       plt.axvline(fermi_level, color='red', linestyle='--', linewidth=1)
+       plt.subplot(2, 2, i + 1)
+       plt.plot(energies, dos, "b-", linewidth=2, alpha=0.5, label="Total DOS")
+       plt.fill_between(energies, occupied, alpha=0.7, label="Occupied")
+       plt.axvline(fermi_level, color="red", linestyle="--", linewidth=1)
 
-       plt.xlabel('Energy (eV)')
-       plt.ylabel('DOS (states/eV)')
-       plt.title(f'T = {temp} K')
+       plt.xlabel("Energy (eV)")
+       plt.ylabel("DOS (states/eV)")
+       plt.title(f"T = {temp} K")
        plt.legend()
        plt.grid(True, alpha=0.3)
 
    plt.tight_layout()
    plt.show()
 
-Performance Optimization
-------------------------
+**************************
+ Performance Optimization
+**************************
 
 Batch Processing
-~~~~~~~~~~~~~~~~
+================
 
-.. code-block:: python
+.. code:: python
 
    # For many structures, use batch processing
    structures = [create_structure(i) for i in range(100)]
@@ -406,7 +423,7 @@ Batch Processing
    all_fermi_levels = []
 
    for i in range(0, len(structures), batch_size):
-       batch = structures[i:i+batch_size]
+       batch = structures[i : i + batch_size]
 
        # Calculate properties for batch
        bandgaps = dos_calculator.calculate_bandgap(batch)
@@ -416,29 +433,28 @@ Batch Processing
        all_fermi_levels.extend(fermi_levels)
 
 Memory Management
-~~~~~~~~~~~~~~~~~
+=================
 
-.. code-block:: python
+.. code:: python
 
    import torch
 
    # For large systems, use float32 to save memory
    dos_calculator = PETMADDOSCalculator(
-       version="latest",
-       device="cuda",
-       dtype=torch.float32
+       version="latest", device="cuda", dtype=torch.float32
    )
 
    # Clear GPU cache when needed
    torch.cuda.empty_cache()
 
-Integration with Other Tools
-----------------------------
+******************************
+ Integration with Other Tools
+******************************
 
 With Pymatgen
-~~~~~~~~~~~~~
+=============
 
-.. code-block:: python
+.. code:: python
 
    from pymatgen.core import Structure
    from pymatgen.io.ase import AseAtomsAdaptor
@@ -452,9 +468,9 @@ With Pymatgen
    # energies, dos = dos_calculator.calculate_dos(atoms)
 
 With Materials Project
-~~~~~~~~~~~~~~~~~~~~~~
+======================
 
-.. code-block:: python
+.. code:: python
 
    # Example workflow for Materials Project data
    # from pymatgen.ext.matproj import MPRester
@@ -469,13 +485,14 @@ With Materials Project
    #
    #         return bandgap
 
-Export and Data Handling
--------------------------
+**************************
+ Export and Data Handling
+**************************
 
 Saving DOS Data
-~~~~~~~~~~~~~~~
+===============
 
-.. code-block:: python
+.. code:: python
 
    import numpy as np
 
@@ -484,25 +501,28 @@ Saving DOS Data
    energies, dos = dos_calculator.calculate_dos(atoms)
 
    # Save to file
-   np.savetxt("silicon_dos.dat",
-              np.column_stack([energies, dos]),
-              header="Energy(eV) DOS(states/eV)",
-              fmt="%.6f")
+   np.savetxt(
+       "silicon_dos.dat",
+       np.column_stack([energies, dos]),
+       header="Energy(eV) DOS(states/eV)",
+       fmt="%.6f",
+   )
 
    # Save properties
    properties = {
-       'bandgap': dos_calculator.calculate_bandgap(atoms, dos=dos),
-       'fermi_level': dos_calculator.calculate_efermi(atoms, dos=dos)
+       "bandgap": dos_calculator.calculate_bandgap(atoms, dos=dos),
+       "fermi_level": dos_calculator.calculate_efermi(atoms, dos=dos),
    }
 
    import json
+
    with open("silicon_properties.json", "w") as f:
        json.dump(properties, f, indent=2)
 
 Loading and Comparing
-~~~~~~~~~~~~~~~~~~~~~
+=====================
 
-.. code-block:: python
+.. code:: python
 
    # Load experimental or reference data for comparison
    # exp_data = np.loadtxt("experimental_dos.dat")
@@ -513,20 +533,22 @@ Loading and Comparing
    # plt.plot(energies, dos, 'b--', label='PET-MAD-DOS')
    # plt.legend()
 
-Troubleshooting
----------------
+*****************
+ Troubleshooting
+*****************
 
 Common Issues
-~~~~~~~~~~~~~
+=============
 
-1. **Memory errors**: Use smaller batch sizes or float32 precision
-2. **Unexpected results**: Check if the structure is reasonable and contains supported elements
-3. **Performance issues**: Use GPU acceleration and batch processing
+#. **Memory errors**: Use smaller batch sizes or float32 precision
+#. **Unexpected results**: Check if the structure is reasonable and
+   contains supported elements
+#. **Performance issues**: Use GPU acceleration and batch processing
 
 Validation
-~~~~~~~~~~
+==========
 
-.. code-block:: python
+.. code:: python
 
    # Basic validation checks
    def validate_dos(energies, dos):
@@ -545,6 +567,7 @@ Validation
        print(f"DOS range: {dos.min():.6f} to {dos.max():.6f} states/eV")
 
        return True
+
 
    # Validate results
    energies, dos = dos_calculator.calculate_dos(atoms)

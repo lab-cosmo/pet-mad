@@ -1,10 +1,12 @@
-Models Module
-=============
+###############
+ Models Module
+###############
 
 The models module provides functions to load and access PET-MAD models.
 
-Model Loading Functions
------------------------
+*************************
+ Model Loading Functions
+*************************
 
 .. autofunction:: pet_mad.get_pet_mad
 
@@ -12,8 +14,9 @@ Model Loading Functions
 
 .. autofunction:: pet_mad.save_pet_mad
 
-Bandgap Model
--------------
+***************
+ Bandgap Model
+***************
 
 .. autoclass:: pet_mad.modules.BandgapModel
    :members:

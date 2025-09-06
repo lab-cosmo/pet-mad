@@ -1,30 +1,38 @@
-Uncertainty Quantification
-===========================
+############################
+ Uncertainty Quantification
+############################
 
-This tutorial covers how to use PET-MAD's uncertainty quantification features to assess the reliability of predictions.
+This tutorial covers how to use PET-MAD's uncertainty quantification
+features to assess the reliability of predictions.
 
-Introduction
-------------
+**************
+ Introduction
+**************
 
-PET-MAD provides uncertainty estimation capabilities that help assess the reliability of energy predictions. This is particularly important when:
+PET-MAD provides uncertainty estimation capabilities that help assess
+the reliability of energy predictions. This is particularly important
+when:
 
-- Exploring new chemical spaces far from training data
-- Making decisions based on model predictions
-- Propagating uncertainties to derived properties
-- Identifying when additional training data might be needed
+-  Exploring new chemical spaces far from training data
+-  Making decisions based on model predictions
+-  Propagating uncertainties to derived properties
+-  Identifying when additional training data might be needed
 
 The uncertainty quantification in PET-MAD uses two main approaches:
 
-1. **Energy Uncertainty**: Direct uncertainty estimation of energy predictions
-2. **Ensemble Methods**: Shallow ensemble of the last layers for energy predictions
+#. **Energy Uncertainty**: Direct uncertainty estimation of energy
+   predictions
+#. **Ensemble Methods**: Shallow ensemble of the last layers for energy
+   predictions
 
-Basic Usage
------------
+*************
+ Basic Usage
+*************
 
 Enabling Uncertainty Quantification
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+===================================
 
-.. code-block:: python
+.. code:: python
 
    from pet_mad.calculator import PETMADCalculator
    from ase.build import bulk, molecule
@@ -32,16 +40,13 @@ Enabling Uncertainty Quantification
 
    # Enable uncertainty quantification (requires v1.0.2)
    calculator = PETMADCalculator(
-       version="v1.0.2",
-       device="cpu",
-       calculate_uncertainty=True,
-       calculate_ensemble=True
+       version="v1.0.2", device="cpu", calculate_uncertainty=True, calculate_ensemble=True
    )
 
 Basic Uncertainty Calculation
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+=============================
 
-.. code-block:: python
+.. code:: python
 
    # Create a simple system
    atoms = bulk("Si", cubic=True, a=5.43, crystalstructure="diamond")
@@ -58,15 +63,17 @@ Basic Uncertainty Calculation
    print(f"Ensemble size: {len(energy_ensemble)}")
    print(f"Ensemble std: {np.std(energy_ensemble):.3f} eV")
 
-Understanding the Output
-------------------------
+**************************
+ Understanding the Output
+**************************
 
 Energy Uncertainty
-~~~~~~~~~~~~~~~~~~
+==================
 
-The energy uncertainty represents the model's confidence in its prediction:
+The energy uncertainty represents the model's confidence in its
+prediction:
 
-.. code-block:: python
+.. code:: python
 
    # Low uncertainty example (training-like data)
    si_bulk = bulk("Si", cubic=True, a=5.43, crystalstructure="diamond")
@@ -79,11 +86,12 @@ The energy uncertainty represents the model's confidence in its prediction:
    print(f"Relative uncertainty: {uncertainty/abs(energy)*100:.2f}%")
 
 Ensemble Predictions
-~~~~~~~~~~~~~~~~~~~~
+====================
 
-The ensemble provides multiple predictions from slightly different model variations:
+The ensemble provides multiple predictions from slightly different model
+variations:
 
-.. code-block:: python
+.. code:: python
 
    energy_ensemble = atoms.calc.get_energy_ensemble()
 
@@ -93,18 +101,19 @@ The ensemble provides multiple predictions from slightly different model variati
    print(f"  Min:  {np.min(energy_ensemble):.3f} eV")
    print(f"  Max:  {np.max(energy_ensemble):.3f} eV")
 
-Practical Applications
-----------------------
+************************
+ Practical Applications
+************************
 
 Screening Chemical Space
-~~~~~~~~~~~~~~~~~~~~~~~~
+========================
 
-.. code-block:: python
+.. code:: python
 
    import matplotlib.pyplot as plt
    from ase.build import molecule
 
-   molecules = ['H2O', 'CO2', 'CH4', 'NH3', 'H2S']
+   molecules = ["H2O", "CO2", "CH4", "NH3", "H2S"]
    energies = []
    uncertainties = []
 
@@ -122,18 +131,19 @@ Screening Chemical Space
 
    # Visualize uncertainty vs energy
    plt.figure(figsize=(10, 6))
-   plt.errorbar(range(len(molecules)), energies, yerr=uncertainties,
-                fmt='o', capsize=5, capthick=2)
+   plt.errorbar(
+       range(len(molecules)), energies, yerr=uncertainties, fmt="o", capsize=5, capthick=2
+   )
    plt.xticks(range(len(molecules)), molecules)
-   plt.ylabel('Energy (eV)')
-   plt.title('Molecular Energies with Uncertainties')
+   plt.ylabel("Energy (eV)")
+   plt.title("Molecular Energies with Uncertainties")
    plt.grid(True, alpha=0.3)
    plt.show()
 
 Geometry Optimization with Uncertainty
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+======================================
 
-.. code-block:: python
+.. code:: python
 
    from ase.optimize import BFGS
    from ase.build import molecule
@@ -150,12 +160,14 @@ Geometry Optimization with Uncertainty
    uncertainties = []
    energies = []
 
+
    def track_uncertainty():
        energy = water.get_potential_energy()
        uncertainty = water.calc.get_energy_uncertainty()
        energies.append(energy)
        uncertainties.append(uncertainty)
        print(f"Step {len(energies)}: E = {energy:.3f} ± {uncertainty:.3f} eV")
+
 
    # Initial uncertainty
    track_uncertainty()
@@ -174,26 +186,26 @@ Geometry Optimization with Uncertainty
    plt.figure(figsize=(12, 4))
 
    plt.subplot(1, 2, 1)
-   plt.plot(energies, 'b-o')
-   plt.xlabel('Optimization Step')
-   plt.ylabel('Energy (eV)')
-   plt.title('Energy Convergence')
+   plt.plot(energies, "b-o")
+   plt.xlabel("Optimization Step")
+   plt.ylabel("Energy (eV)")
+   plt.title("Energy Convergence")
    plt.grid(True, alpha=0.3)
 
    plt.subplot(1, 2, 2)
-   plt.plot(uncertainties, 'r-o')
-   plt.xlabel('Optimization Step')
-   plt.ylabel('Uncertainty (eV)')
-   plt.title('Uncertainty Evolution')
+   plt.plot(uncertainties, "r-o")
+   plt.xlabel("Optimization Step")
+   plt.ylabel("Uncertainty (eV)")
+   plt.title("Uncertainty Evolution")
    plt.grid(True, alpha=0.3)
 
    plt.tight_layout()
    plt.show()
 
 Uncertainty in Molecular Dynamics
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+=================================
 
-.. code-block:: python
+.. code:: python
 
    from ase.md.velocitydistribution import MaxwellBoltzmannDistribution
    from ase.md.verlet import VelocityVerlet
@@ -206,7 +218,7 @@ Uncertainty in Molecular Dynamics
 
    # Set up MD
    MaxwellBoltzmannDistribution(atoms, temperature_K=300)
-   md = VelocityVerlet(atoms, timestep=1.0*units.fs)
+   md = VelocityVerlet(atoms, timestep=1.0 * units.fs)
 
    # Track uncertainties during MD
    md_uncertainties = []
@@ -230,29 +242,30 @@ Uncertainty in Molecular Dynamics
    plt.figure(figsize=(12, 4))
 
    plt.subplot(1, 2, 1)
-   plt.plot(times, md_energies, 'b-')
-   plt.xlabel('Time (fs)')
-   plt.ylabel('Energy (eV)')
-   plt.title('MD Energy Trajectory')
+   plt.plot(times, md_energies, "b-")
+   plt.xlabel("Time (fs)")
+   plt.ylabel("Energy (eV)")
+   plt.title("MD Energy Trajectory")
    plt.grid(True, alpha=0.3)
 
    plt.subplot(1, 2, 2)
-   plt.plot(times, md_uncertainties, 'r-')
-   plt.xlabel('Time (fs)')
-   plt.ylabel('Uncertainty (eV)')
-   plt.title('Uncertainty During MD')
+   plt.plot(times, md_uncertainties, "r-")
+   plt.xlabel("Time (fs)")
+   plt.ylabel("Uncertainty (eV)")
+   plt.title("Uncertainty During MD")
    plt.grid(True, alpha=0.3)
 
    plt.tight_layout()
    plt.show()
 
-Advanced Analysis
------------------
+*******************
+ Advanced Analysis
+*******************
 
 Uncertainty vs Distance from Training Data
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+==========================================
 
-.. code-block:: python
+.. code:: python
 
    # Create structures at different lattice parameters
    lattice_params = np.linspace(5.0, 6.0, 11)  # Around Si equilibrium
@@ -272,26 +285,26 @@ Uncertainty vs Distance from Training Data
    plt.figure(figsize=(12, 4))
 
    plt.subplot(1, 2, 1)
-   plt.plot(lattice_params, si_energies, 'b-o')
-   plt.xlabel('Lattice Parameter (Å)')
-   plt.ylabel('Energy (eV)')
-   plt.title('Energy vs Lattice Parameter')
+   plt.plot(lattice_params, si_energies, "b-o")
+   plt.xlabel("Lattice Parameter (Å)")
+   plt.ylabel("Energy (eV)")
+   plt.title("Energy vs Lattice Parameter")
    plt.grid(True, alpha=0.3)
 
    plt.subplot(1, 2, 2)
-   plt.plot(lattice_params, si_uncertainties, 'r-o')
-   plt.xlabel('Lattice Parameter (Å)')
-   plt.ylabel('Uncertainty (eV)')
-   plt.title('Uncertainty vs Lattice Parameter')
+   plt.plot(lattice_params, si_uncertainties, "r-o")
+   plt.xlabel("Lattice Parameter (Å)")
+   plt.ylabel("Uncertainty (eV)")
+   plt.title("Uncertainty vs Lattice Parameter")
    plt.grid(True, alpha=0.3)
 
    plt.tight_layout()
    plt.show()
 
 Ensemble Analysis
-~~~~~~~~~~~~~~~~~
+=================
 
-.. code-block:: python
+.. code:: python
 
    # Detailed ensemble analysis
    atoms = molecule("CH4")
@@ -316,22 +329,25 @@ Ensemble Analysis
    # Histogram of ensemble predictions
    plt.figure(figsize=(10, 6))
    plt.hist(ensemble, bins=20, alpha=0.7, density=True)
-   plt.axvline(energy, color='red', linestyle='--', linewidth=2, label='Main prediction')
-   plt.axvline(mean_energy, color='blue', linestyle='--', linewidth=2, label='Ensemble mean')
-   plt.xlabel('Energy (eV)')
-   plt.ylabel('Probability Density')
-   plt.title('Distribution of Ensemble Predictions')
+   plt.axvline(energy, color="red", linestyle="--", linewidth=2, label="Main prediction")
+   plt.axvline(
+       mean_energy, color="blue", linestyle="--", linewidth=2, label="Ensemble mean"
+   )
+   plt.xlabel("Energy (eV)")
+   plt.ylabel("Probability Density")
+   plt.title("Distribution of Ensemble Predictions")
    plt.legend()
    plt.grid(True, alpha=0.3)
    plt.show()
 
-Uncertainty Propagation
------------------------
+*************************
+ Uncertainty Propagation
+*************************
 
 Error Propagation in Derived Properties
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+=======================================
 
-.. code-block:: python
+.. code:: python
 
    # Calculate formation energy with uncertainty
    def formation_energy_with_uncertainty(compound_atoms, reference_atoms_dict):
@@ -360,39 +376,38 @@ Error Propagation in Derived Properties
 
        # Uncertainty propagation (simplified)
        total_uncertainty = np.sqrt(
-           compound_uncertainty**2 +
-           sum(u**2 for u in reference_uncertainties.values())
+           compound_uncertainty**2 + sum(u**2 for u in reference_uncertainties.values())
        )
 
        return formation_energy, total_uncertainty
 
+
    # Example usage (simplified)
    h2o = molecule("H2O")
-   references = {
-       'H': molecule("H2"),
-       'O': molecule("O2")
-   }
+   references = {"H": molecule("H2"), "O": molecule("O2")}
 
    # This is a simplified example - real formation energy calculation
    # would require proper stoichiometry and reference state handling
 
 Confidence Intervals
-~~~~~~~~~~~~~~~~~~~~
+====================
 
-.. code-block:: python
+.. code:: python
 
    from scipy import stats
+
 
    def calculate_confidence_interval(ensemble, confidence=0.95):
        """Calculate confidence interval from ensemble predictions"""
        alpha = 1 - confidence
-       lower_percentile = (alpha/2) * 100
-       upper_percentile = (1 - alpha/2) * 100
+       lower_percentile = (alpha / 2) * 100
+       upper_percentile = (1 - alpha / 2) * 100
 
        lower_bound = np.percentile(ensemble, lower_percentile)
        upper_bound = np.percentile(ensemble, upper_percentile)
 
        return lower_bound, upper_bound
+
 
    # Example with molecule
    atoms = molecule("NH3")
@@ -410,13 +425,14 @@ Confidence Intervals
    print(f"  68% CI: [{ci_68[0]:.3f}, {ci_68[1]:.3f}] eV")
    print(f"  95% CI: [{ci_95[0]:.3f}, {ci_95[1]:.3f}] eV")
 
-Quality Assessment
-------------------
+********************
+ Quality Assessment
+********************
 
 Uncertainty Calibration
-~~~~~~~~~~~~~~~~~~~~~~~
+=======================
 
-.. code-block:: python
+.. code:: python
 
    def assess_prediction_quality(structures, reference_energies=None):
        """Assess the quality of uncertainty estimates"""
@@ -458,20 +474,21 @@ Uncertainty Calibration
 
        return energies, uncertainties
 
+
    # Example assessment
    test_structures = [
        bulk("Si", cubic=True, a=5.43, crystalstructure="diamond"),
        bulk("C", cubic=True, a=3.55, crystalstructure="diamond"),
        molecule("H2O"),
-       molecule("CO2")
+       molecule("CO2"),
    ]
 
    energies, uncertainties = assess_prediction_quality(test_structures)
 
 Outlier Detection
-~~~~~~~~~~~~~~~~~
+=================
 
-.. code-block:: python
+.. code:: python
 
    def detect_high_uncertainty_structures(structures, threshold_percentile=95):
        """Identify structures with unusually high uncertainty"""
@@ -483,42 +500,51 @@ Outlier Detection
            energy = atoms.get_potential_energy()
            uncertainty = atoms.calc.get_energy_uncertainty()
 
-           results.append({
-               'index': i,
-               'formula': atoms.get_chemical_formula(),
-               'energy': energy,
-               'uncertainty': uncertainty,
-               'relative_uncertainty': uncertainty / abs(energy) * 100
-           })
+           results.append(
+               {
+                   "index": i,
+                   "formula": atoms.get_chemical_formula(),
+                   "energy": energy,
+                   "uncertainty": uncertainty,
+                   "relative_uncertainty": uncertainty / abs(energy) * 100,
+               }
+           )
 
        # Find high uncertainty structures
-       uncertainties = [r['uncertainty'] for r in results]
+       uncertainties = [r["uncertainty"] for r in results]
        threshold = np.percentile(uncertainties, threshold_percentile)
 
-       high_uncertainty = [r for r in results if r['uncertainty'] > threshold]
+       high_uncertainty = [r for r in results if r["uncertainty"] > threshold]
 
        print(f"High uncertainty structures (>{threshold_percentile}th percentile):")
        for result in high_uncertainty:
-           print(f"  {result['formula']}: {result['energy']:.3f} ± {result['uncertainty']:.3f} eV "
-                 f"({result['relative_uncertainty']:.2f}%)")
+           print(
+               f"  {result['formula']}: {result['energy']:.3f} ± {result['uncertainty']:.3f} eV "
+               f"({result['relative_uncertainty']:.2f}%)"
+           )
 
        return results, high_uncertainty
 
-Best Practices
---------------
+****************
+ Best Practices
+****************
 
 When to Use Uncertainty Quantification
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+======================================
 
-1. **New chemical spaces**: When exploring materials not well represented in training data
-2. **Critical decisions**: When model predictions inform important scientific or engineering decisions
-3. **Method validation**: When comparing with experimental data or other computational methods
-4. **Active learning**: When deciding which structures need additional training data
+#. **New chemical spaces**: When exploring materials not well
+   represented in training data
+#. **Critical decisions**: When model predictions inform important
+   scientific or engineering decisions
+#. **Method validation**: When comparing with experimental data or other
+   computational methods
+#. **Active learning**: When deciding which structures need additional
+   training data
 
 Interpreting Uncertainties
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+==========================
 
-.. code-block:: python
+.. code:: python
 
    def interpret_uncertainty(uncertainty, energy):
        """Provide interpretation guidelines for uncertainties"""
@@ -543,6 +569,7 @@ Interpreting Uncertainties
 
        return confidence, recommendation
 
+
    # Example usage
    atoms = molecule("H2O")
    atoms.calc = calculator
@@ -552,24 +579,32 @@ Interpreting Uncertainties
 
    interpret_uncertainty(uncertainty, energy)
 
-Limitations and Considerations
-------------------------------
+********************************
+ Limitations and Considerations
+********************************
 
 Important Notes
-~~~~~~~~~~~~~~~
+===============
 
-1. **Model-specific**: Uncertainties are specific to the PET-MAD model and training data
-2. **Not calibrated probabilities**: Uncertainties provide relative confidence, not absolute probabilities
-3. **Computational cost**: Uncertainty quantification adds computational overhead
-4. **Version dependency**: Only available for specific model versions (v1.0.2)
+#. **Model-specific**: Uncertainties are specific to the PET-MAD model
+   and training data
+#. **Not calibrated probabilities**: Uncertainties provide relative
+   confidence, not absolute probabilities
+#. **Computational cost**: Uncertainty quantification adds computational
+   overhead
+#. **Version dependency**: Only available for specific model versions
+   (v1.0.2)
 
 .. warning::
-   Uncertainty estimates should be used as guidance for assessing prediction reliability, not as absolute error bounds. Always validate critical predictions with additional methods when possible.
+
+   Uncertainty estimates should be used as guidance for assessing
+   prediction reliability, not as absolute error bounds. Always validate
+   critical predictions with additional methods when possible.
 
 Performance Considerations
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+==========================
 
-.. code-block:: python
+.. code:: python
 
    import time
 
@@ -586,10 +621,7 @@ Performance Considerations
 
    # With uncertainty
    calc_uq = PETMADCalculator(
-       version="v1.0.2",
-       device="cpu",
-       calculate_uncertainty=True,
-       calculate_ensemble=True
+       version="v1.0.2", device="cpu", calculate_uncertainty=True, calculate_ensemble=True
    )
    atoms.calc = calc_uq
 

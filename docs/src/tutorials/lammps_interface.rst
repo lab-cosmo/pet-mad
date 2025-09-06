@@ -1,24 +1,28 @@
-LAMMPS Interface Tutorial
-==========================
+###########################
+ LAMMPS Interface Tutorial
+###########################
 
-This tutorial covers how to use PET-MAD with LAMMPS for large-scale molecular dynamics simulations.
+This tutorial covers how to use PET-MAD with LAMMPS for large-scale
+molecular dynamics simulations.
 
-Prerequisites
--------------
+***************
+ Prerequisites
+***************
 
 Before using PET-MAD with LAMMPS, you need:
 
-1. LAMMPS compiled with metatomic support
-2. PET-MAD installed via conda (recommended)
-3. The PET-MAD model file in TorchScript format
+#. LAMMPS compiled with metatomic support
+#. PET-MAD installed via conda (recommended)
+#. The PET-MAD model file in TorchScript format
 
-Installation
-------------
+**************
+ Installation
+**************
 
 Install LAMMPS with Metatomic Support
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+=====================================
 
-.. code-block:: bash
+.. code:: bash
 
    # First install PET-MAD via conda
    conda create -n pet-mad
@@ -28,32 +32,36 @@ Install LAMMPS with Metatomic Support
    # Install LAMMPS with metatomic
    conda install -c conda-forge lammps
 
-Alternatively, follow the detailed instructions at the `metatomic documentation <https://docs.metatensor.org/metatomic/latest/engines/lammps.html>`_.
+Alternatively, follow the detailed instructions at the `metatomic
+documentation
+<https://docs.metatensor.org/metatomic/latest/engines/lammps.html>`_.
 
 Download PET-MAD Model
-~~~~~~~~~~~~~~~~~~~~~~
+======================
 
-.. code-block:: bash
+.. code:: bash
 
    # Download and convert model to TorchScript format
    mtt export https://huggingface.co/lab-cosmo/pet-mad/resolve/v1.0.2/models/pet-mad-v1.0.2.ckpt -o pet-mad-latest.pt
 
 Or from Python:
 
-.. code-block:: python
+.. code:: python
 
    import pet_mad
+
    pet_mad.save_pet_mad(version="latest", output="pet-mad-latest.pt")
 
-Basic LAMMPS Setup
-------------------
+********************
+ Basic LAMMPS Setup
+********************
 
 CPU Version
-~~~~~~~~~~~
+===========
 
 Create a LAMMPS input file (``lammps.in``):
 
-.. code-block:: text
+.. code:: text
 
    # Basic LAMMPS input for PET-MAD
    units metal
@@ -87,11 +95,11 @@ Create a LAMMPS input file (``lammps.in``):
    run 100
 
 GPU Version with KOKKOS
-~~~~~~~~~~~~~~~~~~~~~~~
+=======================
 
 For GPU acceleration, modify the input file:
 
-.. code-block:: text
+.. code:: text
 
    # Enable KOKKOS
    package kokkos newton on neigh half
@@ -121,15 +129,16 @@ For GPU acceleration, modify the input file:
    run_style verlet/kk
    run 100
 
-Creating LAMMPS Data Files
---------------------------
+****************************
+ Creating LAMMPS Data Files
+****************************
 
 Silicon Crystal Example
-~~~~~~~~~~~~~~~~~~~~~~~
+=======================
 
 Create ``silicon.data``:
 
-.. code-block:: text
+.. code:: text
 
    # LAMMPS data file for Silicon unit cell
    8 atoms
@@ -155,11 +164,11 @@ Create ``silicon.data``:
    8   1   4.0725  4.0725  1.3575
 
 Multi-element Systems
-~~~~~~~~~~~~~~~~~~~~~
+=====================
 
 For systems with multiple elements:
 
-.. code-block:: text
+.. code:: text
 
    # Example: SiC system
    pair_style metatomic pet-mad-latest.pt device cpu
@@ -170,13 +179,14 @@ For systems with multiple elements:
    pair_coeff 2 2 6     # Atom type 2 is Carbon
    pair_coeff 1 2 14 6  # Mixed interactions
 
-Running LAMMPS Simulations
----------------------------
+****************************
+ Running LAMMPS Simulations
+****************************
 
 Serial Execution
-~~~~~~~~~~~~~~~~
+================
 
-.. code-block:: bash
+.. code:: bash
 
    # CPU version
    lmp -in lammps.in
@@ -185,9 +195,9 @@ Serial Execution
    lmp -in lammps.in -k on g 1 -sf kk
 
 Parallel Execution
-~~~~~~~~~~~~~~~~~~
+==================
 
-.. code-block:: bash
+.. code:: bash
 
    # CPU parallel (use carefully - see performance notes)
    mpirun -np 4 lmp -in lammps.in
@@ -195,13 +205,14 @@ Parallel Execution
    # GPU parallel (one MPI rank per GPU)
    mpirun -np 2 lmp -in lammps.in -k on g 2 -sf kk
 
-Advanced Simulation Examples
-----------------------------
+******************************
+ Advanced Simulation Examples
+******************************
 
 Molecular Dynamics with Temperature Ramping
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+===========================================
 
-.. code-block:: text
+.. code:: text
 
    units metal
    atom_style atomic
@@ -231,9 +242,9 @@ Molecular Dynamics with Temperature Ramping
    run 50000  # Equilibrate for 50 ps
 
 Pressure Control (NPT)
-~~~~~~~~~~~~~~~~~~~~~~
+======================
 
-.. code-block:: text
+.. code:: text
 
    units metal
    atom_style atomic
@@ -258,9 +269,9 @@ Pressure Control (NPT)
    run 100000
 
 Deformation and Mechanical Properties
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+=====================================
 
-.. code-block:: text
+.. code:: text
 
    units metal
    atom_style atomic
@@ -291,9 +302,9 @@ Deformation and Mechanical Properties
    run 10000
 
 Surface and Interface Simulations
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+=================================
 
-.. code-block:: text
+.. code:: text
 
    units metal
    atom_style atomic
@@ -322,13 +333,14 @@ Surface and Interface Simulations
 
    run 100000
 
-Performance Optimization
-------------------------
+**************************
+ Performance Optimization
+**************************
 
 CPU Performance
-~~~~~~~~~~~~~~~
+===============
 
-.. code-block:: bash
+.. code:: bash
 
    # Set number of OpenMP threads
    export OMP_NUM_THREADS=4
@@ -337,12 +349,15 @@ CPU Performance
    lmp -in input.in
 
 .. note::
-   For CPU calculations, use a single MPI task unless simulating very large systems (30+ Å box size). Multi-threading via OpenMP is usually more efficient.
+
+   For CPU calculations, use a single MPI task unless simulating very
+   large systems (30+ Å box size). Multi-threading via OpenMP is usually
+   more efficient.
 
 GPU Performance
-~~~~~~~~~~~~~~~
+===============
 
-.. code-block:: bash
+.. code:: bash
 
    # One MPI task per GPU
    mpirun -np 2 lmp -in input.in -k on g 2 -sf kk
@@ -351,11 +366,11 @@ GPU Performance
    lmp -in input.in -k on g 1 -sf kk
 
 Memory Considerations
-~~~~~~~~~~~~~~~~~~~~~
+=====================
 
 For large systems:
 
-.. code-block:: text
+.. code:: text
 
    # Reduce neighbor list frequency
    neighbor 2.0 bin
@@ -364,20 +379,23 @@ For large systems:
    # Use smaller cutoffs if appropriate
    # (PET-MAD has learned cutoffs, so this should be done carefully)
 
-Troubleshooting
----------------
+*****************
+ Troubleshooting
+*****************
 
 Common Issues
-~~~~~~~~~~~~~
+=============
 
-1. **Model not found**: Ensure the ``.pt`` file is in the correct location
-2. **Element mapping errors**: Check that atomic numbers match your system
-3. **Performance issues**: See performance optimization section
+#. **Model not found**: Ensure the ``.pt`` file is in the correct
+   location
+#. **Element mapping errors**: Check that atomic numbers match your
+   system
+#. **Performance issues**: See performance optimization section
 
 Debug Mode
-~~~~~~~~~~
+==========
 
-.. code-block:: text
+.. code:: text
 
    # Add debug output
    log debug.log
@@ -386,21 +404,24 @@ Debug Mode
    pair_write 1 1 1000 r 0.5 10.0 table.txt Si_Si
 
 Error Messages
-~~~~~~~~~~~~~~
+==============
 
 Common error messages and solutions:
 
-- **"Cannot find metatomic pair style"**: LAMMPS not compiled with metatomic support
-- **"Model file not found"**: Check path to ``.pt`` file
-- **"Unsupported element"**: PET-MAD supports elements 1-86 except Astatine
+-  **"Cannot find metatomic pair style"**: LAMMPS not compiled with
+   metatomic support
+-  **"Model file not found"**: Check path to ``.pt`` file
+-  **"Unsupported element"**: PET-MAD supports elements 1-86 except
+   Astatine
 
-Integration with Analysis Tools
--------------------------------
+*********************************
+ Integration with Analysis Tools
+*********************************
 
 With OVITO
-~~~~~~~~~~
+==========
 
-.. code-block:: python
+.. code:: python
 
    from ovito.io import import_file
    from ovito.modifiers import *
@@ -416,9 +437,9 @@ With OVITO
    pipeline.compute()
 
 With MDAnalysis
-~~~~~~~~~~~~~~~
+===============
 
-.. code-block:: python
+.. code:: python
 
    import MDAnalysis as mda
 
@@ -430,13 +451,14 @@ With MDAnalysis
        # Perform analysis
        pass
 
-Post-Processing Examples
-------------------------
+**************************
+ Post-Processing Examples
+**************************
 
 Energy Analysis
-~~~~~~~~~~~~~~~
+===============
 
-.. code-block:: python
+.. code:: python
 
    import numpy as np
    import matplotlib.pyplot as plt
@@ -452,21 +474,21 @@ Energy Analysis
 
    plt.subplot(1, 2, 1)
    plt.plot(time, temp)
-   plt.xlabel('Time (ps)')
-   plt.ylabel('Temperature (K)')
+   plt.xlabel("Time (ps)")
+   plt.ylabel("Temperature (K)")
 
    plt.subplot(1, 2, 2)
    plt.plot(time, energy)
-   plt.xlabel('Time (ps)')
-   plt.ylabel('Total Energy (eV)')
+   plt.xlabel("Time (ps)")
+   plt.ylabel("Total Energy (eV)")
 
    plt.tight_layout()
    plt.show()
 
 Radial Distribution Function
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+============================
 
-.. code-block:: python
+.. code:: python
 
    from ase.io import read
    import numpy as np
@@ -474,31 +496,37 @@ Radial Distribution Function
    # Read trajectory
    frames = read("trajectory.xyz", ":")
 
+
    def rdf(frames, rmax=10.0, nbins=100):
        """Calculate radial distribution function"""
        # Implementation would go here
        pass
 
+
    r, g_r = rdf(frames)
 
    plt.plot(r, g_r)
-   plt.xlabel('Distance (Å)')
-   plt.ylabel('g(r)')
+   plt.xlabel("Distance (Å)")
+   plt.ylabel("g(r)")
    plt.show()
 
-Best Practices
---------------
+****************
+ Best Practices
+****************
 
-1. **Start Small**: Test with small systems first
-2. **Equilibration**: Always equilibrate your system before production runs
-3. **Timestep**: Use appropriate timesteps (typically 0.5-1.0 fs for PET-MAD)
-4. **Monitoring**: Monitor energy, temperature, and pressure during runs
-5. **Validation**: Compare results with known experimental or computational data
+#. **Start Small**: Test with small systems first
+#. **Equilibration**: Always equilibrate your system before production
+   runs
+#. **Timestep**: Use appropriate timesteps (typically 0.5-1.0 fs for
+   PET-MAD)
+#. **Monitoring**: Monitor energy, temperature, and pressure during runs
+#. **Validation**: Compare results with known experimental or
+   computational data
 
 Example Workflow
-~~~~~~~~~~~~~~~~
+================
 
-.. code-block:: bash
+.. code:: bash
 
    # 1. Prepare system
    python create_structure.py

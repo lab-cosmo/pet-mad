@@ -1,14 +1,16 @@
-Citation
-========
+##########
+ Citation
+##########
 
 If you use PET-MAD in your research, please cite the appropriate papers:
 
-PET-MAD Model
--------------
+***************
+ PET-MAD Model
+***************
 
 For the main PET-MAD interatomic potential:
 
-.. code-block:: bibtex
+.. code:: bibtex
 
    @misc{PET-MAD-2025,
          title={PET-MAD, a universal interatomic potential for advanced materials modeling},
@@ -20,12 +22,13 @@ For the main PET-MAD interatomic potential:
          url={https://arxiv.org/abs/2503.14118}
    }
 
-PET-MAD-DOS Model
------------------
+*******************
+ PET-MAD-DOS Model
+*******************
 
 For the density of states model:
 
-.. code-block:: bibtex
+.. code:: bibtex
 
    @misc{PET-MAD-DOS-2025,
          title={A universal machine learning model for the electronic density of states},
@@ -37,12 +40,14 @@ For the density of states model:
          url={https://arxiv.org/abs/2508.17418}
    }
 
-Related Work
-------------
+**************
+ Related Work
+**************
 
-If you use the uncertainty quantification features, please also consider citing:
+If you use the uncertainty quantification features, please also consider
+citing:
 
-.. code-block:: bibtex
+.. code:: bibtex
 
    @article{uncertainty_quantification,
          title={Uncertainty quantification in machine learning potentials},
@@ -60,7 +65,7 @@ If you use the uncertainty quantification features, please also consider citing:
 
 For non-conservative forces implementation:
 
-.. code-block:: bibtex
+.. code:: bibtex
 
    @misc{non_conservative_forces,
          title={Non-conservative forces in machine learning potentials},
@@ -69,14 +74,16 @@ For non-conservative forces implementation:
          archivePrefix={arXiv}
    }
 
-Software Dependencies
----------------------
+***********************
+ Software Dependencies
+***********************
 
-PET-MAD is built on several key software packages. If you use PET-MAD extensively, please consider citing:
+PET-MAD is built on several key software packages. If you use PET-MAD
+extensively, please consider citing:
 
 **Metatensor and Metatrain**:
 
-.. code-block:: bibtex
+.. code:: bibtex
 
    @software{metatensor,
          title={Metatensor: A library for sparse tensor operations},
@@ -85,7 +92,7 @@ PET-MAD is built on several key software packages. If you use PET-MAD extensivel
 
 **ASE (Atomic Simulation Environment)**:
 
-.. code-block:: bibtex
+.. code:: bibtex
 
    @article{ase,
          title={The atomic simulation environment—a Python library for working with atoms},
@@ -100,7 +107,7 @@ PET-MAD is built on several key software packages. If you use PET-MAD extensivel
 
 **PyTorch**:
 
-.. code-block:: bibtex
+.. code:: bibtex
 
    @incollection{pytorch,
          title = {PyTorch: An Imperative Style, High-Performance Deep Learning Library},
@@ -111,13 +118,16 @@ PET-MAD is built on several key software packages. If you use PET-MAD extensivel
          publisher = {Curran Associates, Inc.}
    }
 
-Acknowledgments
----------------
+*****************
+ Acknowledgments
+*****************
 
 The development of PET-MAD was supported by:
 
-- The European Research Council (ERC) under the European Union's Horizon 2020 research and innovation programme
-- The Swiss National Science Foundation (SNSF)
-- EPFL and the Laboratory of Computational Science and Modeling (COSMO)
+-  The European Research Council (ERC) under the European Union's
+   Horizon 2020 research and innovation programme
+-  The Swiss National Science Foundation (SNSF)
+-  EPFL and the Laboratory of Computational Science and Modeling (COSMO)
 
-We thank the broader scientific community for providing datasets, feedback, and computational resources that made this work possible.
+We thank the broader scientific community for providing datasets,
+feedback, and computational resources that made this work possible.

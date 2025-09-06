@@ -1,12 +1,15 @@
-Usage Examples
-==============
+################
+ Usage Examples
+################
 
-This page provides comprehensive examples of using PET-MAD for various applications.
+This page provides comprehensive examples of using PET-MAD for various
+applications.
 
-Basic Energy and Force Calculations
-------------------------------------
+*************************************
+ Basic Energy and Force Calculations
+*************************************
 
-.. code-block:: python
+.. code:: python
 
    from pet_mad.calculator import PETMADCalculator
    from ase.build import bulk, molecule
@@ -36,22 +39,20 @@ Basic Energy and Force Calculations
 
    print(f"Water molecule energy: {water_energy:.3f} eV")
 
-Non-Conservative Forces and Stresses
--------------------------------------
+**************************************
+ Non-Conservative Forces and Stresses
+**************************************
 
-For faster calculations, you can use non-conservative (direct) prediction of forces and stresses:
+For faster calculations, you can use non-conservative (direct)
+prediction of forces and stresses:
 
-.. code-block:: python
+.. code:: python
 
    from pet_mad.calculator import PETMADCalculator
    from ase.build import bulk
 
    # Enable non-conservative forces (requires v1.1.0 or higher)
-   calculator = PETMADCalculator(
-       version="v1.1.0",
-       device="cpu",
-       non_conservative=True
-   )
+   calculator = PETMADCalculator(version="v1.1.0", device="cpu", non_conservative=True)
 
    atoms = bulk("Si", cubic=True, a=5.43, crystalstructure="diamond")
    atoms.calc = calculator
@@ -62,24 +63,24 @@ For faster calculations, you can use non-conservative (direct) prediction of for
    stress = atoms.get_stress()
 
 .. note::
-   Non-conservative forces provide significant speedup but require additional care during MD simulations to avoid instabilities.
 
-Uncertainty Quantification
----------------------------
+   Non-conservative forces provide significant speedup but require
+   additional care during MD simulations to avoid instabilities.
+
+****************************
+ Uncertainty Quantification
+****************************
 
 PET-MAD can estimate the uncertainty of its predictions:
 
-.. code-block:: python
+.. code:: python
 
    from pet_mad.calculator import PETMADCalculator
    from ase.build import bulk
 
    # Enable uncertainty quantification (requires v1.0.2)
    calculator = PETMADCalculator(
-       version="v1.0.2",
-       device="cpu",
-       calculate_uncertainty=True,
-       calculate_ensemble=True
+       version="v1.0.2", device="cpu", calculate_uncertainty=True, calculate_ensemble=True
    )
 
    atoms = bulk("Si", cubic=True, a=5.43, crystalstructure="diamond")
@@ -94,21 +95,21 @@ PET-MAD can estimate the uncertainty of its predictions:
    print(f"Energy: {energy:.3f} ± {energy_uncertainty:.3f} eV")
    print(f"Ensemble size: {len(energy_ensemble)}")
 
-Rotational Averaging
----------------------
+**********************
+ Rotational Averaging
+**********************
 
-For systems with rotational symmetry, you can average predictions over rotations:
+For systems with rotational symmetry, you can average predictions over
+rotations:
 
-.. code-block:: python
+.. code:: python
 
    from pet_mad.calculator import PETMADCalculator
    from ase.build import molecule
 
    # Use Lebedev grid for rotational averaging
    calculator = PETMADCalculator(
-       version="latest",
-       device="cpu",
-       rotational_average_order=14  # Lebedev grid order
+       version="latest", device="cpu", rotational_average_order=14  # Lebedev grid order
    )
 
    # This is particularly useful for molecules
@@ -118,12 +119,13 @@ For systems with rotational symmetry, you can average predictions over rotations
    energy = methane.get_potential_energy()
    forces = methane.get_forces()
 
-Batched Evaluation
-------------------
+********************
+ Batched Evaluation
+********************
 
 For evaluating many structures efficiently:
 
-.. code-block:: python
+.. code:: python
 
    import torch
    from pet_mad.calculator import PETMADCalculator
@@ -138,7 +140,7 @@ For evaluating many structures efficiently:
 
    # Split into batches
    batch_size = 10
-   batches = [dataset[i:i+batch_size] for i in range(0, len(dataset), batch_size)]
+   batches = [dataset[i : i + batch_size] for i in range(0, len(dataset), batch_size)]
 
    all_energies = []
    all_forces = []
@@ -150,10 +152,11 @@ For evaluating many structures efficiently:
 
    print(f"Evaluated {len(all_energies)} structures")
 
-Density of States Calculations
--------------------------------
+********************************
+ Density of States Calculations
+********************************
 
-.. code-block:: python
+.. code:: python
 
    from pet_mad.calculator import PETMADDOSCalculator
    from ase.build import bulk
@@ -177,16 +180,17 @@ Density of States Calculations
    # Plot DOS
    plt.figure(figsize=(8, 6))
    plt.plot(energies, dos)
-   plt.axvline(fermi_level, color='red', linestyle='--', label='Fermi level')
-   plt.xlabel('Energy (eV)')
-   plt.ylabel('DOS')
+   plt.axvline(fermi_level, color="red", linestyle="--", label="Fermi level")
+   plt.xlabel("Energy (eV)")
+   plt.ylabel("DOS")
    plt.legend()
    plt.show()
 
-Per-atom DOS Calculations
--------------------------
+***************************
+ Per-atom DOS Calculations
+***************************
 
-.. code-block:: python
+.. code:: python
 
    from pet_mad.calculator import PETMADDOSCalculator
    from ase.build import bulk
@@ -206,10 +210,11 @@ Per-atom DOS Calculations
    bandgaps = dos_calculator.calculate_bandgap(atoms_list)
    fermi_levels = dos_calculator.calculate_efermi(atoms_list)
 
-Dataset Visualization and Exploration
---------------------------------------
+***************************************
+ Dataset Visualization and Exploration
+***************************************
 
-.. code-block:: python
+.. code:: python
 
    import ase.io
    from pet_mad.explore import PETMADFeaturizer
@@ -228,10 +233,11 @@ Dataset Visualization and Exploration
    # import chemiscope
    # chemiscope.explore(frames, featurize=featurizer)
 
-Combining with Dispersion Corrections
---------------------------------------
+***************************************
+ Combining with Dispersion Corrections
+***************************************
 
-.. code-block:: python
+.. code:: python
 
    import torch
    from torch_dftd.torch_dftd3_calculator import TorchDFTD3Calculator
@@ -257,10 +263,11 @@ Combining with Dispersion Corrections
    energy = atoms.get_potential_energy()
    forces = atoms.get_forces()
 
-Error Handling and Best Practices
-----------------------------------
+***********************************
+ Error Handling and Best Practices
+***********************************
 
-.. code-block:: python
+.. code:: python
 
    from pet_mad.calculator import PETMADCalculator
    from ase.build import Atoms
@@ -270,7 +277,7 @@ Error Handling and Best Practices
 
    try:
        # PET-MAD supports elements up to Z=86 (except Astatine)
-       atoms = Atoms('H2O', positions=[[0, 0, 0], [0.96, 0, 0], [0.24, 0.93, 0]])
+       atoms = Atoms("H2O", positions=[[0, 0, 0], [0.96, 0, 0], [0.24, 0.93, 0]])
        atoms.calc = calculator
 
        energy = atoms.get_potential_energy()
@@ -284,19 +291,18 @@ Error Handling and Best Practices
 
    print(f"Supported atomic numbers: {supported_elements}")
 
-Memory Management for Large Systems
-------------------------------------
+*************************************
+ Memory Management for Large Systems
+*************************************
 
-.. code-block:: python
+.. code:: python
 
    import torch
    from pet_mad.calculator import PETMADCalculator
 
    # For large systems, consider using mixed precision
    calculator = PETMADCalculator(
-       version="latest",
-       device="cuda",
-       dtype=torch.float32  # Use float32 to save memory
+       version="latest", device="cuda", dtype=torch.float32  # Use float32 to save memory
    )
 
    # Clear GPU cache if needed

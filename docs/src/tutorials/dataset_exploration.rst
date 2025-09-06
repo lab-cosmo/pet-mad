@@ -1,27 +1,34 @@
-Dataset Exploration with PET-MAD
-================================
+##################################
+ Dataset Exploration with PET-MAD
+##################################
 
-This tutorial covers how to use PET-MAD's featurizer for dataset visualization and exploration.
+This tutorial covers how to use PET-MAD's featurizer for dataset
+visualization and exploration.
 
-Introduction
-------------
+**************
+ Introduction
+**************
 
-PET-MAD includes tools for exploring and visualizing datasets using the learned representations from the model. The ``PETMADFeaturizer`` can:
+PET-MAD includes tools for exploring and visualizing datasets using the
+learned representations from the model. The ``PETMADFeaturizer`` can:
 
-- Extract high-dimensional features from atomic structures
-- Reduce dimensionality for visualization
-- Identify structural and chemical patterns
-- Create interactive visualizations with chemiscope
+-  Extract high-dimensional features from atomic structures
+-  Reduce dimensionality for visualization
+-  Identify structural and chemical patterns
+-  Create interactive visualizations with chemiscope
 
-The featurizer uses the last-layer features from PET-MAD combined with sketch-map dimensionality reduction to create meaningful 2D and 3D projections.
+The featurizer uses the last-layer features from PET-MAD combined with
+sketch-map dimensionality reduction to create meaningful 2D and 3D
+projections.
 
-Basic Usage
------------
+*************
+ Basic Usage
+*************
 
 Setting up the Featurizer
-~~~~~~~~~~~~~~~~~~~~~~~~~
+=========================
 
-.. code-block:: python
+.. code:: python
 
    from pet_mad.explore import PETMADFeaturizer
    import ase.io
@@ -39,13 +46,13 @@ Setting up the Featurizer
        bulk("Ge", cubic=True, a=5.66, crystalstructure="diamond"),
        molecule("H2O"),
        molecule("CO2"),
-       molecule("CH4")
+       molecule("CH4"),
    ]
 
 Basic Feature Extraction
-~~~~~~~~~~~~~~~~~~~~~~~~
+========================
 
-.. code-block:: python
+.. code:: python
 
    # Extract features
    features = featurizer(structures, None)
@@ -54,19 +61,21 @@ Basic Feature Extraction
    print(f"Number of structures: {len(structures)}")
    print(f"Feature dimensionality: {features.shape[1]}")
 
-Working with Trajectory Files
------------------------------
+*******************************
+ Working with Trajectory Files
+*******************************
 
 Loading Trajectory Data
-~~~~~~~~~~~~~~~~~~~~~~~
+=======================
 
-.. code-block:: python
+.. code:: python
 
    # Load structures from trajectory file
    # frames = ase.io.read("trajectory.xyz", ":")
 
    # For demonstration, create a synthetic trajectory
    import numpy as np
+
 
    def create_demo_trajectory():
        """Create a demonstration trajectory with different Si structures"""
@@ -83,6 +92,7 @@ Loading Trajectory Data
 
        return frames
 
+
    trajectory_frames = create_demo_trajectory()
 
    # Extract features from trajectory
@@ -90,9 +100,9 @@ Loading Trajectory Data
    print(f"Trajectory features shape: {trajectory_features.shape}")
 
 Batch Processing Large Datasets
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+===============================
 
-.. code-block:: python
+.. code:: python
 
    def process_large_dataset(structures, batch_size=100):
        """Process large datasets in batches"""
@@ -100,15 +110,18 @@ Batch Processing Large Datasets
        all_features = []
 
        for i in range(0, len(structures), batch_size):
-           batch = structures[i:i+batch_size]
+           batch = structures[i : i + batch_size]
            batch_features = featurizer(batch, None)
            all_features.append(batch_features)
 
-           print(f"Processed batch {i//batch_size + 1}/{(len(structures)-1)//batch_size + 1}")
+           print(
+               f"Processed batch {i//batch_size + 1}/{(len(structures)-1)//batch_size + 1}"
+           )
 
        # Combine all features
        combined_features = np.vstack(all_features)
        return combined_features
+
 
    # Example with larger dataset
    large_structures = []
@@ -120,13 +133,14 @@ Batch Processing Large Datasets
 
    large_features = process_large_dataset(large_structures, batch_size=10)
 
-Visualization and Analysis
---------------------------
+****************************
+ Visualization and Analysis
+****************************
 
 Basic Feature Analysis
-~~~~~~~~~~~~~~~~~~~~~~
+======================
 
-.. code-block:: python
+.. code:: python
 
    import matplotlib.pyplot as plt
    from sklearn.decomposition import PCA
@@ -144,10 +158,7 @@ Basic Feature Analysis
    features_tsne = tsne.fit_transform(features)
 
    # Create labels for visualization
-   labels = [
-       'Si diamond', 'C diamond', 'Ge diamond',
-       'H2O', 'CO2', 'CH4'
-   ]
+   labels = ["Si diamond", "C diamond", "Ge diamond", "H2O", "CO2", "CH4"]
 
    # Plot results
    fig, axes = plt.subplots(1, 3, figsize=(15, 5))
@@ -155,37 +166,49 @@ Basic Feature Analysis
    # PET-MAD features (already low-dimensional)
    axes[0].scatter(features[:, 0], features[:, 1], s=100, alpha=0.7)
    for i, label in enumerate(labels):
-       axes[0].annotate(label, (features[i, 0], features[i, 1]),
-                       xytext=(5, 5), textcoords='offset points')
-   axes[0].set_title('PET-MAD Features')
-   axes[0].set_xlabel('Feature 1')
-   axes[0].set_ylabel('Feature 2')
+       axes[0].annotate(
+           label,
+           (features[i, 0], features[i, 1]),
+           xytext=(5, 5),
+           textcoords="offset points",
+       )
+   axes[0].set_title("PET-MAD Features")
+   axes[0].set_xlabel("Feature 1")
+   axes[0].set_ylabel("Feature 2")
 
    # PCA
    axes[1].scatter(features_pca[:, 0], features_pca[:, 1], s=100, alpha=0.7)
    for i, label in enumerate(labels):
-       axes[1].annotate(label, (features_pca[i, 0], features_pca[i, 1]),
-                       xytext=(5, 5), textcoords='offset points')
-   axes[1].set_title('PCA')
-   axes[1].set_xlabel('PC1')
-   axes[1].set_ylabel('PC2')
+       axes[1].annotate(
+           label,
+           (features_pca[i, 0], features_pca[i, 1]),
+           xytext=(5, 5),
+           textcoords="offset points",
+       )
+   axes[1].set_title("PCA")
+   axes[1].set_xlabel("PC1")
+   axes[1].set_ylabel("PC2")
 
    # t-SNE
    axes[2].scatter(features_tsne[:, 0], features_tsne[:, 1], s=100, alpha=0.7)
    for i, label in enumerate(labels):
-       axes[2].annotate(label, (features_tsne[i, 0], features_tsne[i, 1]),
-                       xytext=(5, 5), textcoords='offset points')
-   axes[2].set_title('t-SNE')
-   axes[2].set_xlabel('t-SNE 1')
-   axes[2].set_ylabel('t-SNE 2')
+       axes[2].annotate(
+           label,
+           (features_tsne[i, 0], features_tsne[i, 1]),
+           xytext=(5, 5),
+           textcoords="offset points",
+       )
+   axes[2].set_title("t-SNE")
+   axes[2].set_xlabel("t-SNE 1")
+   axes[2].set_ylabel("t-SNE 2")
 
    plt.tight_layout()
    plt.show()
 
 Clustering Analysis
-~~~~~~~~~~~~~~~~~~~
+===================
 
-.. code-block:: python
+.. code:: python
 
    from sklearn.cluster import KMeans, DBSCAN
    from sklearn.metrics import silhouette_score
@@ -212,31 +235,34 @@ Clustering Analysis
    fig, axes = plt.subplots(1, 2, figsize=(12, 5))
 
    # K-means
-   scatter = axes[0].scatter(features[:, 0], features[:, 1],
-                            c=cluster_labels, s=100, alpha=0.7, cmap='viridis')
-   axes[0].set_title('K-means Clustering')
-   axes[0].set_xlabel('Feature 1')
-   axes[0].set_ylabel('Feature 2')
+   scatter = axes[0].scatter(
+       features[:, 0], features[:, 1], c=cluster_labels, s=100, alpha=0.7, cmap="viridis"
+   )
+   axes[0].set_title("K-means Clustering")
+   axes[0].set_xlabel("Feature 1")
+   axes[0].set_ylabel("Feature 2")
    plt.colorbar(scatter, ax=axes[0])
 
    # DBSCAN
-   scatter = axes[1].scatter(features[:, 0], features[:, 1],
-                            c=dbscan_labels, s=100, alpha=0.7, cmap='viridis')
-   axes[1].set_title('DBSCAN Clustering')
-   axes[1].set_xlabel('Feature 1')
-   axes[1].set_ylabel('Feature 2')
+   scatter = axes[1].scatter(
+       features[:, 0], features[:, 1], c=dbscan_labels, s=100, alpha=0.7, cmap="viridis"
+   )
+   axes[1].set_title("DBSCAN Clustering")
+   axes[1].set_xlabel("Feature 1")
+   axes[1].set_ylabel("Feature 2")
    plt.colorbar(scatter, ax=axes[1])
 
    plt.tight_layout()
    plt.show()
 
-Interactive Visualization with Chemiscope
------------------------------------------
+*******************************************
+ Interactive Visualization with Chemiscope
+*******************************************
 
 Basic Chemiscope Integration
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+============================
 
-.. code-block:: python
+.. code:: python
 
    # Note: This requires chemiscope to be installed
    # pip install chemiscope
@@ -246,19 +272,16 @@ Basic Chemiscope Integration
 
        # Create interactive visualization
        # This works best in Jupyter notebooks
-       chemiscope.explore(
-           structures,
-           featurize=featurizer
-       )
+       chemiscope.explore(structures, featurize=featurizer)
 
    except ImportError:
        print("Chemiscope not available. Install with: pip install chemiscope")
        print("Interactive visualization requires Jupyter notebook environment")
 
 Custom Properties for Visualization
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+===================================
 
-.. code-block:: python
+.. code:: python
 
    # Add custom properties for enhanced visualization
    def add_custom_properties(structures):
@@ -279,15 +302,16 @@ Custom Properties for Visualization
 
            # Store properties
            props = {
-               'n_atoms': n_atoms,
-               'volume': volume,
-               'density': density,
-               'n_elements': n_elements,
-               'formula': atoms.get_chemical_formula()
+               "n_atoms": n_atoms,
+               "volume": volume,
+               "density": density,
+               "n_elements": n_elements,
+               "formula": atoms.get_chemical_formula(),
            }
            properties.append(props)
 
        return properties
+
 
    # Add properties
    custom_props = add_custom_properties(structures)
@@ -296,13 +320,14 @@ Custom Properties for Visualization
    for i, (atoms, props) in enumerate(zip(structures, custom_props)):
        print(f"Structure {i+1}: {props}")
 
-Advanced Analysis Examples
---------------------------
+****************************
+ Advanced Analysis Examples
+****************************
 
 Chemical Space Exploration
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+==========================
 
-.. code-block:: python
+.. code:: python
 
    def explore_chemical_space():
        """Explore different chemical compositions"""
@@ -312,7 +337,7 @@ Chemical Space Exploration
        compositions = []
 
        # Binary compounds
-       binary_pairs = [('Si', 'C'), ('Si', 'Ge'), ('C', 'N'), ('B', 'N')]
+       binary_pairs = [("Si", "C"), ("Si", "Ge"), ("C", "N"), ("B", "N")]
 
        for elem1, elem2 in binary_pairs:
            # Create simple binary structure (simplified)
@@ -330,34 +355,41 @@ Chemical Space Exploration
 
        # Color by element type
        element_colors = {
-           'Si': 'blue', 'C': 'black', 'Ge': 'green',
-           'N': 'red', 'B': 'orange'
+           "Si": "blue",
+           "C": "black",
+           "Ge": "green",
+           "N": "red",
+           "B": "orange",
        }
 
-       colors = [element_colors.get(comp, 'gray') for comp in compositions]
+       colors = [element_colors.get(comp, "gray") for comp in compositions]
 
-       scatter = plt.scatter(features[:, 0], features[:, 1],
-                           c=colors, s=100, alpha=0.7)
+       scatter = plt.scatter(features[:, 0], features[:, 1], c=colors, s=100, alpha=0.7)
 
        # Add labels
        for i, comp in enumerate(compositions):
-           plt.annotate(comp, (features[i, 0], features[i, 1]),
-                       xytext=(5, 5), textcoords='offset points')
+           plt.annotate(
+               comp,
+               (features[i, 0], features[i, 1]),
+               xytext=(5, 5),
+               textcoords="offset points",
+           )
 
-       plt.xlabel('Feature 1')
-       plt.ylabel('Feature 2')
-       plt.title('Chemical Space Exploration')
+       plt.xlabel("Feature 1")
+       plt.ylabel("Feature 2")
+       plt.title("Chemical Space Exploration")
        plt.grid(True, alpha=0.3)
        plt.show()
 
        return structures, features, compositions
 
+
    chem_structures, chem_features, chem_compositions = explore_chemical_space()
 
 Structural Motif Analysis
-~~~~~~~~~~~~~~~~~~~~~~~~~
+=========================
 
-.. code-block:: python
+.. code:: python
 
    def analyze_structural_motifs():
        """Analyze different structural motifs"""
@@ -371,14 +403,15 @@ Structural Motif Analysis
        si_bcc = bulk("Si", cubic=True, a=5.43, crystalstructure="bcc")
 
        structures.extend([si_diamond, si_fcc, si_bcc])
-       motif_labels.extend(['diamond', 'fcc', 'bcc'])
+       motif_labels.extend(["diamond", "fcc", "bcc"])
 
        # Different coordination environments
        from ase.build import surface
+
        si_surface = surface("Si", (1, 0, 0), 4, vacuum=10.0)
 
        structures.append(si_surface)
-       motif_labels.append('surface')
+       motif_labels.append("surface")
 
        # Molecular structures
        molecules = [molecule("H2O"), molecule("CO2"), molecule("CH4"), molecule("NH3")]
@@ -402,25 +435,32 @@ Structural Motif Analysis
            mask = [label == motif for label in motif_labels]
            motif_features = features[mask]
 
-           plt.scatter(motif_features[:, 0], motif_features[:, 1],
-                      c=[motif_colors[motif]], s=100, alpha=0.7, label=motif)
+           plt.scatter(
+               motif_features[:, 0],
+               motif_features[:, 1],
+               c=[motif_colors[motif]],
+               s=100,
+               alpha=0.7,
+               label=motif,
+           )
 
-       plt.xlabel('Feature 1')
-       plt.ylabel('Feature 2')
-       plt.title('Structural Motif Analysis')
-       plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
+       plt.xlabel("Feature 1")
+       plt.ylabel("Feature 2")
+       plt.title("Structural Motif Analysis")
+       plt.legend(bbox_to_anchor=(1.05, 1), loc="upper left")
        plt.grid(True, alpha=0.3)
        plt.tight_layout()
        plt.show()
 
        return structures, features, motif_labels
 
+
    motif_structures, motif_features, motif_labels = analyze_structural_motifs()
 
 Time Series Analysis
-~~~~~~~~~~~~~~~~~~~~
+====================
 
-.. code-block:: python
+.. code:: python
 
    def analyze_trajectory_evolution():
        """Analyze evolution of structures over time"""
@@ -433,11 +473,11 @@ Time Series Analysis
        for i, temp in enumerate(np.linspace(0, 1000, 20)):
            # Create structure with thermal expansion (simplified)
            expansion = 1 + temp * 1e-5  # Simple thermal expansion
-           atoms = bulk("Si", cubic=True, a=5.43*expansion, crystalstructure="diamond")
+           atoms = bulk("Si", cubic=True, a=5.43 * expansion, crystalstructure="diamond")
 
            # Add some random displacement to simulate thermal motion
            positions = atoms.get_positions()
-           displacement = np.random.normal(0, temp*1e-4, positions.shape)
+           displacement = np.random.normal(0, temp * 1e-4, positions.shape)
            atoms.set_positions(positions + displacement)
 
            trajectory.append(atoms)
@@ -451,23 +491,29 @@ Time Series Analysis
 
        plt.subplot(1, 2, 1)
        # Color by time/temperature
-       scatter = plt.scatter(traj_features[:, 0], traj_features[:, 1],
-                           c=times, s=50, alpha=0.7, cmap='viridis')
-       plt.colorbar(scatter, label='Temperature (K)')
-       plt.xlabel('Feature 1')
-       plt.ylabel('Feature 2')
-       plt.title('Trajectory in Feature Space')
+       scatter = plt.scatter(
+           traj_features[:, 0],
+           traj_features[:, 1],
+           c=times,
+           s=50,
+           alpha=0.7,
+           cmap="viridis",
+       )
+       plt.colorbar(scatter, label="Temperature (K)")
+       plt.xlabel("Feature 1")
+       plt.ylabel("Feature 2")
+       plt.title("Trajectory in Feature Space")
 
        # Plot trajectory path
-       plt.plot(traj_features[:, 0], traj_features[:, 1], 'k-', alpha=0.3)
+       plt.plot(traj_features[:, 0], traj_features[:, 1], "k-", alpha=0.3)
 
        plt.subplot(1, 2, 2)
        # Feature evolution over time
-       plt.plot(times, traj_features[:, 0], 'b-', label='Feature 1')
-       plt.plot(times, traj_features[:, 1], 'r-', label='Feature 2')
-       plt.xlabel('Temperature (K)')
-       plt.ylabel('Feature Value')
-       plt.title('Feature Evolution')
+       plt.plot(times, traj_features[:, 0], "b-", label="Feature 1")
+       plt.plot(times, traj_features[:, 1], "r-", label="Feature 2")
+       plt.xlabel("Temperature (K)")
+       plt.ylabel("Feature Value")
+       plt.title("Feature Evolution")
        plt.legend()
        plt.grid(True, alpha=0.3)
 
@@ -476,17 +522,20 @@ Time Series Analysis
 
        return trajectory, traj_features, times
 
+
    traj_structures, traj_features, traj_times = analyze_trajectory_evolution()
 
-Similarity Analysis
--------------------
+*********************
+ Similarity Analysis
+*********************
 
 Structure Similarity Metrics
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+============================
 
-.. code-block:: python
+.. code:: python
 
    from sklearn.metrics.pairwise import cosine_similarity, euclidean_distances
+
 
    def analyze_structure_similarity(structures, features):
        """Analyze similarity between structures"""
@@ -502,8 +551,8 @@ Structure Similarity Metrics
        fig, axes = plt.subplots(1, 2, figsize=(12, 5))
 
        # Cosine similarity
-       im1 = axes[0].imshow(cosine_sim, cmap='viridis')
-       axes[0].set_title('Cosine Similarity')
+       im1 = axes[0].imshow(cosine_sim, cmap="viridis")
+       axes[0].set_title("Cosine Similarity")
        axes[0].set_xticks(range(len(labels)))
        axes[0].set_yticks(range(len(labels)))
        axes[0].set_xticklabels(labels, rotation=45)
@@ -511,8 +560,8 @@ Structure Similarity Metrics
        plt.colorbar(im1, ax=axes[0])
 
        # Euclidean distance
-       im2 = axes[1].imshow(euclidean_dist, cmap='viridis_r')
-       axes[1].set_title('Euclidean Distance')
+       im2 = axes[1].imshow(euclidean_dist, cmap="viridis_r")
+       axes[1].set_title("Euclidean Distance")
        axes[1].set_xticks(range(len(labels)))
        axes[1].set_yticks(range(len(labels)))
        axes[1].set_xticklabels(labels, rotation=45)
@@ -524,21 +573,23 @@ Structure Similarity Metrics
 
        return cosine_sim, euclidean_dist
 
+
    # Analyze similarity for our structures
    cos_sim, euc_dist = analyze_structure_similarity(structures, features)
 
 Nearest Neighbors Analysis
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+==========================
 
-.. code-block:: python
+.. code:: python
 
    from sklearn.neighbors import NearestNeighbors
+
 
    def find_similar_structures(structures, features, query_idx, n_neighbors=3):
        """Find most similar structures to a query structure"""
 
        # Fit nearest neighbors
-       nn = NearestNeighbors(n_neighbors=n_neighbors+1, metric='euclidean')
+       nn = NearestNeighbors(n_neighbors=n_neighbors + 1, metric="euclidean")
        nn.fit(features)
 
        # Find neighbors for query structure
@@ -558,6 +609,7 @@ Nearest Neighbors Analysis
 
        return indices, distances
 
+
    # Find structures similar to water
    if len(structures) > 3:  # Make sure we have enough structures
        water_idx = 3  # Assuming water is at index 3
@@ -565,16 +617,18 @@ Nearest Neighbors Analysis
            structures, features, water_idx, n_neighbors=2
        )
 
-Export and Data Management
---------------------------
+****************************
+ Export and Data Management
+****************************
 
 Saving Features and Results
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+===========================
 
-.. code-block:: python
+.. code:: python
 
    import pickle
    import json
+
 
    def save_exploration_results(structures, features, filename_base):
        """Save exploration results for later use"""
@@ -586,23 +640,24 @@ Saving Features and Results
        structure_info = []
        for i, atoms in enumerate(structures):
            info = {
-               'index': i,
-               'formula': atoms.get_chemical_formula(),
-               'n_atoms': len(atoms),
-               'cell': atoms.get_cell().tolist(),
-               'positions': atoms.get_positions().tolist(),
-               'symbols': atoms.get_chemical_symbols()
+               "index": i,
+               "formula": atoms.get_chemical_formula(),
+               "n_atoms": len(atoms),
+               "cell": atoms.get_cell().tolist(),
+               "positions": atoms.get_positions().tolist(),
+               "symbols": atoms.get_chemical_symbols(),
            }
            structure_info.append(info)
 
-       with open(f"{filename_base}_structures.json", 'w') as f:
+       with open(f"{filename_base}_structures.json", "w") as f:
            json.dump(structure_info, f, indent=2)
 
        # Save complete structures (for reconstruction)
-       with open(f"{filename_base}_atoms.pkl", 'wb') as f:
+       with open(f"{filename_base}_atoms.pkl", "wb") as f:
            pickle.dump(structures, f)
 
        print(f"Saved exploration results to {filename_base}_*")
+
 
    def load_exploration_results(filename_base):
        """Load previously saved exploration results"""
@@ -611,42 +666,48 @@ Saving Features and Results
        features = np.load(f"{filename_base}_features.npy")
 
        # Load structure information
-       with open(f"{filename_base}_structures.json", 'r') as f:
+       with open(f"{filename_base}_structures.json", "r") as f:
            structure_info = json.load(f)
 
        # Load complete structures
-       with open(f"{filename_base}_atoms.pkl", 'rb') as f:
+       with open(f"{filename_base}_atoms.pkl", "rb") as f:
            structures = pickle.load(f)
 
        return structures, features, structure_info
+
 
    # Example usage
    # save_exploration_results(structures, features, "my_exploration")
    # loaded_structures, loaded_features, loaded_info = load_exploration_results("my_exploration")
 
-Best Practices
---------------
+****************
+ Best Practices
+****************
 
 Choosing Appropriate Datasets
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+=============================
 
-1. **Diversity**: Include diverse chemical compositions and structures
-2. **Size**: Balance dataset size with computational resources
-3. **Relevance**: Focus on chemically meaningful comparisons
-4. **Quality**: Ensure structures are reasonable and well-optimized
+#. **Diversity**: Include diverse chemical compositions and structures
+#. **Size**: Balance dataset size with computational resources
+#. **Relevance**: Focus on chemically meaningful comparisons
+#. **Quality**: Ensure structures are reasonable and well-optimized
 
 Interpretation Guidelines
-~~~~~~~~~~~~~~~~~~~~~~~~~
+=========================
 
-1. **Feature space**: Remember that features are learned representations, not physical properties
-2. **Clustering**: Clusters may reflect chemical similarity, structural similarity, or both
-3. **Outliers**: Unusual positions in feature space may indicate novel structures or errors
-4. **Validation**: Cross-reference feature-based similarities with known chemical knowledge
+#. **Feature space**: Remember that features are learned
+   representations, not physical properties
+#. **Clustering**: Clusters may reflect chemical similarity, structural
+   similarity, or both
+#. **Outliers**: Unusual positions in feature space may indicate novel
+   structures or errors
+#. **Validation**: Cross-reference feature-based similarities with known
+   chemical knowledge
 
 Performance Optimization
-~~~~~~~~~~~~~~~~~~~~~~~~
+========================
 
-.. code-block:: python
+.. code:: python
 
    # For large datasets, consider:
 
@@ -654,31 +715,32 @@ Performance Optimization
    featurizer = PETMADFeaturizer(
        version="latest",
        device="cuda",  # Use GPU if available
-       batch_size=32   # Adjust based on memory
+       batch_size=32,  # Adjust based on memory
    )
 
    # 2. Progress tracking
    from tqdm import tqdm
 
    featurizer_with_progress = PETMADFeaturizer(
-       version="latest",
-       progress_bar=tqdm  # Show progress for large datasets
+       version="latest", progress_bar=tqdm  # Show progress for large datasets
    )
 
-Troubleshooting
----------------
+*****************
+ Troubleshooting
+*****************
 
 Common Issues
-~~~~~~~~~~~~~
+=============
 
-1. **Memory errors**: Reduce batch size or use CPU instead of GPU
-2. **Inconsistent results**: Ensure all structures use the same coordinate system
-3. **Poor clustering**: Try different distance metrics or preprocessing
+#. **Memory errors**: Reduce batch size or use CPU instead of GPU
+#. **Inconsistent results**: Ensure all structures use the same
+   coordinate system
+#. **Poor clustering**: Try different distance metrics or preprocessing
 
 Validation Checks
-~~~~~~~~~~~~~~~~~
+=================
 
-.. code-block:: python
+.. code:: python
 
    def validate_exploration_results(structures, features):
        """Validate exploration results"""
@@ -698,6 +760,7 @@ Validation Checks
                print(f"Warning: Structure {i} is empty")
 
        print("Validation completed")
+
 
    # Validate results
    validate_exploration_results(structures, features)

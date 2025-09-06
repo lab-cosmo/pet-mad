@@ -1,10 +1,12 @@
-Utilities Module
-================
+##################
+ Utilities Module
+##################
 
 The utils module provides utility functions for PET-MAD.
 
-Utility Functions
------------------
+*******************
+ Utility Functions
+*******************
 
 .. automodule:: pet_mad.utils
    :members:

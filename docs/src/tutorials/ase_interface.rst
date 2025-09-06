@@ -1,17 +1,23 @@
-ASE Interface Tutorial
-=======================
+########################
+ ASE Interface Tutorial
+########################
 
-This tutorial covers the comprehensive usage of PET-MAD with the Atomic Simulation Environment (ASE).
+This tutorial covers the comprehensive usage of PET-MAD with the Atomic
+Simulation Environment (ASE).
 
-Introduction
-------------
+**************
+ Introduction
+**************
 
-The ASE interface is the primary way to use PET-MAD for single-point calculations and molecular dynamics simulations. It provides a familiar interface for users already working with ASE.
+The ASE interface is the primary way to use PET-MAD for single-point
+calculations and molecular dynamics simulations. It provides a familiar
+interface for users already working with ASE.
 
-Basic Setup
------------
+*************
+ Basic Setup
+*************
 
-.. code-block:: python
+.. code:: python
 
    from pet_mad.calculator import PETMADCalculator
    from ase.build import bulk, molecule
@@ -24,13 +30,14 @@ Basic Setup
    # Initialize calculator
    calculator = PETMADCalculator(version="latest", device=device)
 
-Single-Point Calculations
---------------------------
+***************************
+ Single-Point Calculations
+***************************
 
 Energy and Forces
-~~~~~~~~~~~~~~~~~
+=================
 
-.. code-block:: python
+.. code:: python
 
    from ase.build import bulk
 
@@ -51,9 +58,9 @@ Energy and Forces
    print(f"Stress tensor shape: {stress.shape}")
 
 Molecular Systems
-~~~~~~~~~~~~~~~~~
+=================
 
-.. code-block:: python
+.. code:: python
 
    from ase.build import molecule
    from ase.visualize import view
@@ -74,10 +81,11 @@ Molecular Systems
    ch4_energy = methane.get_potential_energy()
    print(f"Methane energy: {ch4_energy:.3f} eV")
 
-Geometry Optimization
----------------------
+***********************
+ Geometry Optimization
+***********************
 
-.. code-block:: python
+.. code:: python
 
    from ase.build import molecule
    from ase.optimize import BFGS
@@ -100,9 +108,9 @@ Geometry Optimization
    print(f"Optimized energy: {final_energy:.3f} eV")
 
 Surface Calculations
-~~~~~~~~~~~~~~~~~~~~
+====================
 
-.. code-block:: python
+.. code:: python
 
    from ase.build import surface, add_adsorbate
    from ase.optimize import BFGS
@@ -117,19 +125,20 @@ Surface Calculations
    slab.calc = calculator
 
    # Optimize only the adsorbate and top layer
-   constraint = FixAtoms(indices=range(len(slab)-8))  # Fix bottom atoms
+   constraint = FixAtoms(indices=range(len(slab) - 8))  # Fix bottom atoms
    slab.set_constraint(constraint)
 
    optimizer = BFGS(slab, trajectory="surface_opt.traj")
    optimizer.run(fmax=0.05)
 
-Molecular Dynamics
-------------------
+********************
+ Molecular Dynamics
+********************
 
 NVE Dynamics
-~~~~~~~~~~~~
+============
 
-.. code-block:: python
+.. code:: python
 
    from ase.md.velocitydistribution import MaxwellBoltzmannDistribution
    from ase.md.verlet import VelocityVerlet
@@ -145,13 +154,17 @@ NVE Dynamics
    MaxwellBoltzmannDistribution(atoms, temperature_K=300)
 
    # Create MD object
-   md = VelocityVerlet(atoms, timestep=1.0*units.fs)
+   md = VelocityVerlet(atoms, timestep=1.0 * units.fs)
+
 
    def print_energy(a=atoms):
        epot = a.get_potential_energy() / len(a)
        ekin = a.get_kinetic_energy() / len(a)
-       print(f"Energy per atom: Epot = {epot:.3f} eV  Ekin = {ekin:.3f} eV  "
-             f"Etot = {epot+ekin:.3f} eV  T = {ekin/(1.5*units.kB):.1f} K")
+       print(
+           f"Energy per atom: Epot = {epot:.3f} eV  Ekin = {ekin:.3f} eV  "
+           f"Etot = {epot+ekin:.3f} eV  T = {ekin/(1.5*units.kB):.1f} K"
+       )
+
 
    # Run MD
    for i in range(100):
@@ -159,9 +172,9 @@ NVE Dynamics
        print_energy()
 
 NVT Dynamics
-~~~~~~~~~~~~
+============
 
-.. code-block:: python
+.. code:: python
 
    from ase.md.langevin import Langevin
    from ase import units
@@ -174,10 +187,11 @@ NVT Dynamics
    MaxwellBoltzmannDistribution(atoms, temperature_K=300)
 
    # Langevin thermostat
-   md = Langevin(atoms, timestep=1.0*units.fs, temperature_K=300, friction=0.01)
+   md = Langevin(atoms, timestep=1.0 * units.fs, temperature_K=300, friction=0.01)
 
    # Run simulation with trajectory output
    from ase.io import Trajectory
+
    traj = Trajectory("nvt_md.traj", "w", atoms)
 
    for i in range(1000):
@@ -188,19 +202,18 @@ NVT Dynamics
 
    traj.close()
 
-Advanced Features
------------------
+*******************
+ Advanced Features
+*******************
 
 Non-Conservative Forces
-~~~~~~~~~~~~~~~~~~~~~~~
+=======================
 
-.. code-block:: python
+.. code:: python
 
    # For faster MD simulations (requires v1.1.0+)
    fast_calculator = PETMADCalculator(
-       version="v1.1.0",
-       device=device,
-       non_conservative=True
+       version="v1.1.0", device=device, non_conservative=True
    )
 
    atoms = bulk("Si", cubic=True, a=5.43, crystalstructure="diamond")
@@ -211,19 +224,19 @@ Non-Conservative Forces
    forces = atoms.get_forces()
 
 .. warning::
-   Non-conservative forces can lead to instabilities in MD simulations. Use with caution and consider using smaller timesteps or additional stabilization techniques.
+
+   Non-conservative forces can lead to instabilities in MD simulations.
+   Use with caution and consider using smaller timesteps or additional
+   stabilization techniques.
 
 Uncertainty Quantification
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+==========================
 
-.. code-block:: python
+.. code:: python
 
    # Enable uncertainty estimation
    uq_calculator = PETMADCalculator(
-       version="v1.0.2",
-       device=device,
-       calculate_uncertainty=True,
-       calculate_ensemble=True
+       version="v1.0.2", device=device, calculate_uncertainty=True, calculate_ensemble=True
    )
 
    atoms = molecule("H2O")
@@ -237,15 +250,13 @@ Uncertainty Quantification
    print(f"Ensemble std: {np.std(ensemble):.3f} eV")
 
 Rotational Averaging
-~~~~~~~~~~~~~~~~~~~~
+====================
 
-.. code-block:: python
+.. code:: python
 
    # Useful for molecules and clusters
    rot_calculator = PETMADCalculator(
-       version="latest",
-       device=device,
-       rotational_average_order=14  # Lebedev grid
+       version="latest", device=device, rotational_average_order=14  # Lebedev grid
    )
 
    # This averages predictions over molecular rotations
@@ -255,37 +266,36 @@ Rotational Averaging
    energy = methane.get_potential_energy()
    forces = methane.get_forces()
 
-Performance Tips
-----------------
+******************
+ Performance Tips
+******************
 
 Memory Management
-~~~~~~~~~~~~~~~~~
+=================
 
-.. code-block:: python
+.. code:: python
 
    import torch
 
    # For large systems, use mixed precision
    calculator = PETMADCalculator(
-       version="latest",
-       device="cuda",
-       dtype=torch.float32  # Saves GPU memory
+       version="latest", device="cuda", dtype=torch.float32  # Saves GPU memory
    )
 
    # Clear GPU cache when needed
    torch.cuda.empty_cache()
 
 Batch Processing
-~~~~~~~~~~~~~~~~
+================
 
 For multiple single-point calculations, use batched evaluation:
 
-.. code-block:: python
+.. code:: python
 
    # Create multiple structures
    structures = []
    for i in range(50):
-       atoms = bulk("Si", cubic=True, a=5.43 + i*0.01, crystalstructure="diamond")
+       atoms = bulk("Si", cubic=True, a=5.43 + i * 0.01, crystalstructure="diamond")
        structures.append(atoms)
 
    # Batch evaluation is much faster
@@ -293,21 +303,23 @@ For multiple single-point calculations, use batched evaluation:
    all_energies = []
 
    for i in range(0, len(structures), batch_size):
-       batch = structures[i:i+batch_size]
+       batch = structures[i : i + batch_size]
        results = calculator.compute_energy(batch)
        all_energies.extend(results["energy"])
 
-Troubleshooting
----------------
+*****************
+ Troubleshooting
+*****************
 
 Common Issues
-~~~~~~~~~~~~~
+=============
 
-1. **Out of Memory**: Reduce batch size or use ``dtype=torch.float32``
-2. **Unsupported Elements**: PET-MAD supports elements 1-86 except Astatine (85)
-3. **Slow Performance**: Ensure you're using GPU if available
+#. **Out of Memory**: Reduce batch size or use ``dtype=torch.float32``
+#. **Unsupported Elements**: PET-MAD supports elements 1-86 except
+   Astatine (85)
+#. **Slow Performance**: Ensure you're using GPU if available
 
-.. code-block:: python
+.. code:: python
 
    # Check supported elements
    supported_z = list(range(1, 87))
@@ -320,9 +332,9 @@ Common Issues
        print(f"Unsupported elements: {unsupported}")
 
 Debugging
-~~~~~~~~~
+=========
 
-.. code-block:: python
+.. code:: python
 
    import logging
 
@@ -332,13 +344,14 @@ Debugging
    # This will show detailed information about calculations
    calculator = PETMADCalculator(version="latest", device="cpu")
 
-Integration with Other Tools
-----------------------------
+******************************
+ Integration with Other Tools
+******************************
 
 With ASE Databases
-~~~~~~~~~~~~~~~~~~
+==================
 
-.. code-block:: python
+.. code:: python
 
    from ase.db import connect
 
@@ -354,9 +367,9 @@ With ASE Databases
        db.write(atoms, energy=energy, formula=atoms.get_chemical_formula())
 
 With Phonopy
-~~~~~~~~~~~~
+============
 
-.. code-block:: python
+.. code:: python
 
    from phonopy import Phonopy
    from phonopy.structure.atoms import PhonopyAtoms
@@ -369,7 +382,7 @@ With Phonopy
    phonopy_atoms = PhonopyAtoms(
        symbols=atoms.get_chemical_symbols(),
        positions=atoms.get_positions(),
-       cell=atoms.get_cell()
+       cell=atoms.get_cell(),
    )
 
    # Create supercell for phonon calculation
