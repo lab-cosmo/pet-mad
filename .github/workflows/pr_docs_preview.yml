@@ -6,6 +6,8 @@ on:
       - opened
       - synchronize
       - reopened
+      - ready_for_review
+      - draft
 
 permissions:
   pull-requests: write
