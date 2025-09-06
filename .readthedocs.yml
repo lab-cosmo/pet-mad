@@ -1,0 +1,27 @@
+# .readthedocs.yml
+# Read the Docs configuration file
+# See https://docs.readthedocs.io/en/stable/config-file/v2.html for details
+
+# Required
+version: 2
+
+# Set the OS, Python version and other tools you might need
+build:
+  os: ubuntu-22.04
+  tools:
+    python: "3.13"
+
+# Build documentation in the docs/ directory with Sphinx
+sphinx:
+  configuration: docs/src/conf.py
+  fail_on_warning: true
+
+# Declare the Python requirements required to build the docs.
+# Additionally, a custom environment variable
+# PIP_EXTRA_INDEX_URL: https://download.pytorch.org/whl/cpu
+# is declared in the project’s dashboard
+python:
+  install:
+    - method: pip
+      path: .
+      extra_requirements: docs

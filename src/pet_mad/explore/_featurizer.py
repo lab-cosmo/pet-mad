@@ -29,7 +29,8 @@ PETMAD_EXPLORER_URL = "https://huggingface.co/lab-cosmo/pet-mad-explorer/resolve
 
 METADATA = mta.ModelMetadata(
     name="PET-MAD explorer",
-    description="Exploration tool for PET-MAD model features using Sketch-Map projection",
+    description="Exploration tool for PET-MAD model features using Sketch-Map "
+    "projection",
     authors=[
         "Arslan Mazitov (arslan.mazitov@epfl.ch)",
         "Sofiia Chorna",
@@ -59,10 +60,7 @@ class PETMADFeaturizer:
         >>> frames = ase.io.read("dataset.xyz", ":")
 
         >>> # Create visualization
-        >>> chemiscope.explore(
-        ...     frames,
-        ...     featurize=PETMADFeaturizer(version="latest")
-        ... )
+        >>> chemiscope.explore(frames, featurize=PETMADFeaturizer(version="latest"))
     """
 
     def __init__(
@@ -78,8 +76,8 @@ class PETMADFeaturizer:
         progress_bar=tqdm,
     ):
         """
-        :param version: PET-MAD Explorer version to use. Supported versions are "latest",
-            "1.0.0".
+        :param version: PET-MAD Explorer version to use. Supported versions are
+            "latest", "1.0.0".
         :param checkpoint_path: path to a checkpoint file to load the exploration model
             from. If provided, the `version` parameter is ignored.
         :param pet_checkpoint_path: path to a petmad checkpoint file to use for the

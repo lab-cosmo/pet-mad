@@ -1,12 +1,13 @@
-from metatomic.torch import ModelMetadata
+import re
+from pathlib import Path
+from typing import List, Optional, Union
+from urllib.parse import unquote
+
+import torch
 from ase import Atoms
 from ase.units import kB
-from typing import List, Union, Optional
-import torch
-from pathlib import Path
-from urllib.parse import unquote
 from huggingface_hub import hf_hub_download
-import re
+from metatomic.torch import ModelMetadata
 
 
 hf_pattern = re.compile(
@@ -131,7 +132,8 @@ def get_pet_mad_metadata(version: str):
 def get_pet_mad_dos_metadata(version: str):
     return ModelMetadata(
         name=f"PET-MAD-DOS v{version}",
-        description="A universal machine learning model for the electronic density of states",
+        description="A universal machine learning model "
+        "for the electronic density of states",
         authors=[
             "Wei Bin How (weibin.how@epfl.ch)",
             "Pol Febrer",
@@ -171,7 +173,7 @@ def get_num_electrons(atoms: Union[Atoms, List[Atoms]]) -> torch.Tensor:
 
     :param atoms: ASE atoms object or a list of ASE atoms objects
     :return: Number of electrons for each ase.Atoms object stored in a torch.Tensor
-    format.
+        format.
     """
     num_electrons = []
     if isinstance(atoms, Atoms):
