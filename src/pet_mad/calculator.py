@@ -158,6 +158,25 @@ class PETMADCalculator(MetatomicCalculator):
             non_conservative=non_conservative,
         )
 
+    def calculate(
+        self, atoms: Atoms, properties: List[str], system_changes: List[str]
+    ) -> None:
+        """
+        Compute some ``properties`` with this calculator, and return them in the format
+        expected by ASE.
+
+        This is not intended to be called directly by users, but to be an implementation
+        detail of ``atoms.get_energy()`` and related functions. See
+        :py:meth:`ase.calculators.calculator.Calculator.calculate` for more information.
+
+        If the `rot_average_order` parameter is set during initialization, the prediction
+        will be averaged over unique rotations in the Lebedev-Laikov grid of a chosen order.
+        """
+
+        super().calculate(atoms, properties, system_changes)
+        if self._rotational_average_order is not None:
+            self._compute_rotational_average(atoms, properties, system_changes)
+
     def _init_lebedev_grid(
         self,
         order,
@@ -185,6 +204,7 @@ class PETMADCalculator(MetatomicCalculator):
         zhat = np.array([0.0, 0.0, 1.0])
         alphas = (2.0 * np.pi / self.lebedev_n_alpha) * np.arange(self.lebedev_n_alpha)
 
+        # Create rotation matrices and weights
         rot_mats = []
         weights = []
         for n, wi in zip(x.T, w):
@@ -213,6 +233,7 @@ class PETMADCalculator(MetatomicCalculator):
                 rot_mats.append(Rz @ R_align)
                 weights.append(wi / self.lebedev_n_alpha)
 
+        # Cache rotations and weights
         R_all = np.stack(rot_mats, axis=0)  # (B, 3, 3)
         w_all = np.array(weights)  # (B,)
         self.rotations = np.ascontiguousarray(R_all)
@@ -298,25 +319,6 @@ class PETMADCalculator(MetatomicCalculator):
         # Finalize
         avg = compute_rotational_average(m1, m2, self.wsum, suffix_std="_rot_std")
         self.results = avg
-
-    def calculate(
-        self, atoms: Atoms, properties: List[str], system_changes: List[str]
-    ) -> None:
-        """
-        Compute some ``properties`` with this calculator, and return them in the format
-        expected by ASE.
-
-        This is not intended to be called directly by users, but to be an implementation
-        detail of ``atoms.get_energy()`` and related functions. See
-        :py:meth:`ase.calculators.calculator.Calculator.calculate` for more information.
-
-        If the `rot_average_order` parameter is set during initialization, the prediction
-        will be averaged over unique rotations in the Lebedev-Laikov grid of a chosen order.
-        """
-
-        super().calculate(atoms, properties, system_changes)
-        if self._rotational_average_order is not None:
-            self._compute_rotational_average(atoms, properties, system_changes)
 
     def _get_uq_output(self, output_name: str):
         if output_name not in self.additional_outputs:
