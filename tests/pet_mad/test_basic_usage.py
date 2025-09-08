@@ -1,8 +1,11 @@
-from pet_mad.calculator import PETMADCalculator
-from pet_mad._models import get_pet_mad, save_pet_mad
-from ase.build import bulk
 import os
+
 import pytest
+from ase.build import bulk
+
+from pet_mad._models import get_pet_mad, save_pet_mad
+from pet_mad.calculator import PETMADCalculator
+
 
 VERSIONS = ("1.1.0", "1.0.2", "1.0.1")
 
