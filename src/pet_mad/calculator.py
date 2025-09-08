@@ -1,11 +1,12 @@
 import logging
 import os
-from typing import Optional, Tuple, List, Union
+from typing import Dict, Optional, Tuple, List, Union
 
 from metatomic.torch import ModelOutput
 from metatomic.torch.ase_calculator import MetatomicCalculator
 from platformdirs import user_cache_dir
 from scipy.integrate import lebedev_rule
+from scipy.spatial.transform import Rotation as R
 import torch
 import numpy as np
 from ase import Atoms
@@ -14,10 +15,11 @@ from packaging.version import Version
 
 from ._models import get_pet_mad, get_pet_mad_dos, _get_bandgap_model
 from .utils import (
+    accumulate_rotational_moments,
+    compute_rotational_average,
     get_num_electrons,
     fermi_dirac_distribution,
     rotate_atoms,
-    compute_rotational_average,
     AVAILABLE_LEBEDEV_GRID_ORDERS,
 )
 from ._version import (
@@ -54,6 +56,9 @@ class PETMADCalculator(MetatomicCalculator):
         check_consistency: bool = False,
         device: Optional[str] = None,
         non_conservative: bool = False,
+        initial_batch_size: Optional[int] = None,
+        min_batch_size: int = 1,
+        lebedev_n_alpha: int = 4,
     ):
         """
         :param version: PET-MAD version to use. Defaults to the latest stable version.
@@ -74,6 +79,10 @@ class PETMADCalculator(MetatomicCalculator):
         :param non_conservative: whether to use the non-conservative regime of forces
             and stresses prediction. Defaults to False. Only available for PET-MAD
             version 1.1.0 or higher.
+        :param initial_batch_size: initial batch size to use for rotational averaging.
+        :param min_batch_size: minimum batch size to use for rotational averaging.
+        :param lebedev_n_alpha: number of in-plane rotations to use for each Lebedev
+            grid point. Defaults to 4.
 
         """
 
@@ -105,13 +114,14 @@ class PETMADCalculator(MetatomicCalculator):
                     additional_outputs["energy_ensemble"] = ModelOutput(
                         quantity="energy", unit="eV", per_atom=False
                     )
-        if rotational_average_order is not None:
-            if rotational_average_order not in AVAILABLE_LEBEDEV_GRID_ORDERS:
-                raise ValueError(
-                    f"Lebedev-Laikov grid order {rotational_average_order} is not available. "
-                    f"Please use one of the following orders: {AVAILABLE_LEBEDEV_GRID_ORDERS}."
-                )
-        self._rotational_average_order = rotational_average_order
+
+        # Initialize Lebedev grid for rotational averaging
+        self._init_lebedev_grid(
+            rotational_average_order,
+            initial_batch_size,
+            min_batch_size,
+            lebedev_n_alpha,
+        )
 
         model = get_pet_mad(version=version, checkpoint_path=checkpoint_path)
 
@@ -148,6 +158,147 @@ class PETMADCalculator(MetatomicCalculator):
             non_conservative=non_conservative,
         )
 
+    def _init_lebedev_grid(
+        self,
+        order,
+        initial_batch_size,
+        min_batch_size,
+        lebedev_n_alpha,
+    ) -> None:
+        self._rotational_average_order = order
+        if order is None:
+            return
+        if order not in AVAILABLE_LEBEDEV_GRID_ORDERS:
+            raise ValueError(
+                f"Lebedev-Laikov grid order {order} is not available. "
+                f"Please use one of the following orders: {AVAILABLE_LEBEDEV_GRID_ORDERS}."
+            )
+        # Build SO(3) samples from (S^2 Lebedev) x (S^1 uniform)
+        # lebedev_rule returns points on the sphere in Cartesian coordinates and
+        # weights
+        x, w = lebedev_rule(self._rotational_average_order)  # x: (3, m); w: (m,)
+        self.lebedev_n_alpha = lebedev_n_alpha
+
+        # For each direction n_i, construct rotation R_align that maps z-hat to n_i.
+        # Then compose with an in-plane rotation by alpha in {2pi j / n_alpha}.
+        # We store full rotation matrices and per-rotation weights
+        zhat = np.array([0.0, 0.0, 1.0])
+        alphas = (2.0 * np.pi / self.lebedev_n_alpha) * np.arange(self.lebedev_n_alpha)
+
+        rot_mats = []
+        weights = []
+        for n, wi in zip(x.T, w):
+            n_norm = np.linalg.norm(n)
+            if n_norm == 0:
+                continue
+            n_hat = n / n_norm
+            # Rotation that takes zhat to n_hat (axis-angle via cross/acos)
+            c = float(np.clip(np.dot(zhat, n_hat), -1.0, 1.0))
+            if c > 1.0 - 1e-12:
+                R_align = np.eye(3)
+            elif c < -1.0 + 1e-12:
+                # 180 deg. about any axis orthogonal to z
+                R_align = R.from_rotvec(np.pi * np.array([1.0, 0.0, 0.0])).as_matrix()
+            else:
+                axis = np.cross(zhat, n_hat)
+                axis /= np.linalg.norm(axis)
+                angle = np.arccos(c)
+                R_align = R.from_rotvec(angle * axis).as_matrix()
+
+            for a in alphas:
+                Rz = R.from_rotvec(a * zhat).as_matrix()
+                # First align z -> n, then spin around new z by alpha
+                # Total rotation acts on row-vectors as r @ R^T, so we store R_total
+                # accordingly.
+                rot_mats.append(Rz @ R_align)
+                weights.append(wi / self.lebedev_n_alpha)
+
+        R_all = np.stack(rot_mats, axis=0)  # (B, 3, 3)
+        w_all = np.array(weights)  # (B,)
+        self.rotations = np.ascontiguousarray(R_all)
+        self.weights = np.ascontiguousarray(w_all)
+        self.wsum = float(self.weights.sum())
+
+        # Precompute weighted rotations for faster forces averaging
+        self.wR = np.ascontiguousarray(self.weights[:, None, None] * self.rotations)
+        self.total_rot = int(self.rotations.shape[0])
+
+        # batching configuration
+        if initial_batch_size is None and self.total_rot is not None:
+            initial_batch_size = self.total_rot
+        self.initial_batch_size = int(max(1, min(initial_batch_size, self.total_rot)))
+        self.min_batch_size = int(max(1, min(min_batch_size, self.initial_batch_size)))
+
+    def _compute_rotational_average(self, atoms, properties, system_changes) -> None:
+        need_forces = "forces" in properties or "non_conservative_forces" in properties
+        need_stress = "stress" in properties or "non_conservative_stress" in properties
+        want_grads = bool(need_forces or need_stress)
+
+        B = self.total_rot
+        start = 0
+        batch_size = self.initial_batch_size
+
+        m1: Dict[str, Union[np.ndarray, float]] = {}  # sum w*x
+        m2: Dict[str, Union[np.ndarray, float]] = {}  # sum w*x^2
+        while start < B:
+            end = min(start + batch_size, B)
+
+            R_b = self.rotations[start:end]  # (b,3,3)
+            w_b = self.weights[start:end]  # (b,)
+
+            # Rotate systems for this batch only
+            rotated_atoms = rotate_atoms(atoms, R_b)
+
+            # Try to compute. If OOM, back off the batch size and retry
+            while True:
+                try:
+                    res_b = self.compute_energy(
+                        rotated_atoms, compute_forces_and_stresses=want_grads
+                    )
+                    break
+                except RuntimeError as runtime_error:
+                    # Check if OOM
+                    if "CUDA out of memory" not in str(runtime_error):
+                        raise
+                    if batch_size < self.min_batch_size:
+                        raise
+                    batch_size = max(self.min_batch_size, batch_size // 2)
+                    end = min(start + batch_size, B)
+                    R_b = self.rotations[start:end]
+                    w_b = self.weights[start:end]
+                    rotated_atoms = rotate_atoms(atoms, R_b)
+                except Exception as e:
+                    # Torch CUDA OOM handling if available
+                    if isinstance(e, torch.cuda.OutOfMemoryError):
+                        if batch_size < self.min_batch_size:
+                            raise
+                        try:
+                            torch.cuda.empty_cache()
+                        except Exception:
+                            pass
+                        batch_size = max(self.min_batch_size, batch_size // 2)
+                        end = min(start + batch_size, B)
+                        R_b = self.rotations[start:end]
+                        w_b = self.weights[start:end]
+                        rotated_atoms = rotate_atoms(atoms, R_b)
+                    else:
+                        raise
+
+            # Accumulate first and second moments for this batch
+            accumulate_rotational_moments(m1, m2, res_b, R_b, w_b)
+
+            # Clean-up
+            del rotated_atoms, res_b
+            try:
+                torch.cuda.empty_cache()
+            except Exception:
+                pass
+            start = end
+
+        # Finalize
+        avg = compute_rotational_average(m1, m2, self.wsum, suffix_std="_rot_std")
+        self.results = avg
+
     def calculate(
         self, atoms: Atoms, properties: List[str], system_changes: List[str]
     ) -> None:
@@ -162,29 +313,10 @@ class PETMADCalculator(MetatomicCalculator):
         If the `rot_average_order` parameter is set during initialization, the prediction
         will be averaged over unique rotations in the Lebedev-Laikov grid of a chosen order.
         """
-        if self._rotational_average_order is None:
-            super().calculate(atoms, properties, system_changes)
-        else:
-            lebedev_grid = lebedev_rule(self._rotational_average_order)[0].T
-            rotated_atoms_list = rotate_atoms(atoms, lebedev_grid)
-            compute_forces_and_stresses = (
-                True
-                if any(
-                    p in properties
-                    for p in [
-                        "forces",
-                        "stress",
-                        "non_conservative_forces",
-                        "non_conservative_stress",
-                    ]
-                )
-                else False
-            )
-            results = self.compute_energy(
-                rotated_atoms_list, compute_forces_and_stresses
-            )
-            results = compute_rotational_average(results, lebedev_grid)
-            self.results.update(results)
+
+        super().calculate(atoms, properties, system_changes)
+        if self._rotational_average_order is not None:
+            self._compute_rotational_average(atoms, properties, system_changes)
 
     def _get_uq_output(self, output_name: str):
         if output_name not in self.additional_outputs:
