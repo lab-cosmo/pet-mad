@@ -1,6 +1,6 @@
 import logging
 import os
-from typing import Optional, Tuple, List, Union
+from typing import Optional, Tuple, List, Union, Dict
 
 from metatomic.torch import ModelOutput
 from metatomic.torch.ase_calculator import MetatomicCalculator
@@ -9,6 +9,7 @@ from scipy.integrate import lebedev_rule
 import torch
 import numpy as np
 from ase import Atoms
+from scipy.spatial.transform import Rotation
 
 from packaging.version import Version
 
@@ -17,8 +18,8 @@ from .utils import (
     get_num_electrons,
     fermi_dirac_distribution,
     rotate_atoms,
-    compute_rotational_average,
     AVAILABLE_LEBEDEV_GRID_ORDERS,
+    compute_rotational_average,
 )
 from ._version import (
     PET_MAD_LATEST_STABLE_VERSION,
@@ -49,6 +50,7 @@ class PETMADCalculator(MetatomicCalculator):
         calculate_uncertainty: bool = False,
         calculate_ensemble: bool = False,
         rotational_average_order: Optional[int] = None,
+        rotational_average_batch_size: Optional[int] = None,
         dtype: Optional[torch.dtype] = None,
         *,
         check_consistency: bool = False,
@@ -67,6 +69,8 @@ class PETMADCalculator(MetatomicCalculator):
             running, defaults to False.
         :param rotational_average_order: order of the Lebedev-Laikov grid used for averaging
             the prediction over rotations.
+        :param rotational_average_batch_size: batch size to use for the rotational averaging.
+            If `None`, all rotations will be computed at once.
         :param dtype: dtype to use for the calculations. If `None`, we will use the
             default dtype.
         :param device: torch device to use for the calculation. If `None`, we will try
@@ -105,13 +109,20 @@ class PETMADCalculator(MetatomicCalculator):
                     additional_outputs["energy_ensemble"] = ModelOutput(
                         quantity="energy", unit="eV", per_atom=False
                     )
+        self._rotations: List[np.ndarray] = []
         if rotational_average_order is not None:
             if rotational_average_order not in AVAILABLE_LEBEDEV_GRID_ORDERS:
                 raise ValueError(
                     f"Lebedev-Laikov grid order {rotational_average_order} is not available. "
                     f"Please use one of the following orders: {AVAILABLE_LEBEDEV_GRID_ORDERS}."
                 )
-        self._rotational_average_order = rotational_average_order
+
+            lebedev_grid = lebedev_rule(rotational_average_order)[0].T
+            self._rotations = [
+                Rotation.align_vectors(rot_vector, [0, 0, 1])[0].as_matrix()
+                for rot_vector in lebedev_grid
+            ]
+        self._rotational_average_batch_size = rotational_average_batch_size
 
         model = get_pet_mad(version=version, checkpoint_path=checkpoint_path)
 
@@ -159,14 +170,13 @@ class PETMADCalculator(MetatomicCalculator):
         detail of ``atoms.get_energy()`` and related functions. See
         :py:meth:`ase.calculators.calculator.Calculator.calculate` for more information.
 
-        If the `rot_average_order` parameter is set during initialization, the prediction
+        If the `rotational_average_order` parameter is set during initialization, the prediction
         will be averaged over unique rotations in the Lebedev-Laikov grid of a chosen order.
         """
-        if self._rotational_average_order is None:
+        if len(self._rotations) == 0:
             super().calculate(atoms, properties, system_changes)
         else:
-            lebedev_grid = lebedev_rule(self._rotational_average_order)[0].T
-            rotated_atoms_list = rotate_atoms(atoms, lebedev_grid)
+            rotated_atoms_list = rotate_atoms(atoms, self._rotations)
             compute_forces_and_stresses = (
                 True
                 if any(
@@ -180,10 +190,26 @@ class PETMADCalculator(MetatomicCalculator):
                 )
                 else False
             )
-            results = self.compute_energy(
-                rotated_atoms_list, compute_forces_and_stresses
+            batch_size = (
+                self._rotational_average_batch_size
+                if self._rotational_average_batch_size is not None
+                else len(rotated_atoms_list)
             )
-            results = compute_rotational_average(results, lebedev_grid)
+            batches = [
+                rotated_atoms_list[i : i + batch_size]
+                for i in range(0, len(rotated_atoms_list), batch_size)
+            ]
+            results: Dict[str, List[Union[np.ndarray, float]]] = {}
+            for batch in batches:
+                batch_results = self.compute_energy(batch, compute_forces_and_stresses)
+                for key, value in batch_results.items():
+                    if key not in results:
+                        results[key] = []
+                    if isinstance(value, float):
+                        results[key].append(value)
+                    else:
+                        results[key].extend(value)
+            results = compute_rotational_average(results, self._rotations)
             self.results.update(results)
 
     def _get_uq_output(self, output_name: str):

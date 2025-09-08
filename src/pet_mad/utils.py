@@ -6,7 +6,6 @@ import torch
 from pathlib import Path
 from urllib.parse import unquote
 from huggingface_hub import hf_hub_download
-from scipy.spatial.transform import Rotation
 import numpy as np
 import re
 
@@ -143,29 +142,35 @@ AVAILABLE_LEBEDEV_GRID_ORDERS = [
 ]
 
 
-def rotate_atoms(atoms: Atoms, grid: np.ndarray) -> List[Atoms]:
+def rotate_atoms(atoms: Atoms, rotations: List[np.ndarray]) -> List[Atoms]:
     rotated_atoms_list = []
-    for rot_vec in grid:
+    has_cell = atoms.cell is not None and atoms.cell.rank > 0
+    for rot in rotations:
         new_atoms = atoms.copy()
-        new_atoms.rotate([1, 0, 0], rot_vec, rotate_cell=True)
+        new_atoms.positions = new_atoms.positions @ rot.T
+        if has_cell:
+            new_atoms.cell = new_atoms.cell @ rot.T
         rotated_atoms_list.append(new_atoms)
     return rotated_atoms_list
 
 
 def compute_rotational_average(
-    results: Dict[str, np.ndarray], grid: np.ndarray
-) -> Dict[str, np.ndarray]:
+    results: Dict[str, List[Union[np.ndarray, float]]], rotations: List[np.ndarray]
+) -> Dict[str, Union[np.ndarray, float]]:
     new_results = {}
-    rotations = [
-        Rotation.align_vectors(rot_vector, [1, 0, 0])[0].inv() for rot_vector in grid
-    ]
     for key, value in results.items():
         if "energy" in key:
             new_results[key] = np.mean(value)
             new_results[key + "_rot_std"] = np.std(value)
-        else:
+        elif "forces" in key:
             rotated_back_values = np.array(
-                [rot.apply(val) for rot, val in zip(rotations, value)]
+                [val @ rot for rot, val in zip(rotations, value)]
+            )
+            new_results[key] = rotated_back_values.mean(axis=0)
+            new_results[key + "_rot_std"] = rotated_back_values.std(axis=0)
+        elif "stress" in key:
+            rotated_back_values = np.array(
+                [rot.T @ val @ rot for rot, val in zip(rotations, value)]
             )
             new_results[key] = rotated_back_values.mean(axis=0)
             new_results[key + "_rot_std"] = rotated_back_values.std(axis=0)
