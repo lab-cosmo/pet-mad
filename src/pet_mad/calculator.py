@@ -56,9 +56,6 @@ class PETMADCalculator(MetatomicCalculator):
         check_consistency: bool = False,
         device: Optional[str] = None,
         non_conservative: bool = False,
-        initial_batch_size: Optional[int] = None,
-        min_batch_size: int = 1,
-        lebedev_n_alpha: int = 4,
     ):
         """
         :param version: PET-MAD version to use. Defaults to the latest stable version.
@@ -83,10 +80,6 @@ class PETMADCalculator(MetatomicCalculator):
         :param non_conservative: whether to use the non-conservative regime of forces
             and stresses prediction. Defaults to False. Only available for PET-MAD
             version 1.1.0 or higher.
-        :param initial_batch_size: initial batch size to use for rotational averaging.
-        :param min_batch_size: minimum batch size to use for rotational averaging.
-        :param lebedev_n_alpha: number of in-plane rotations to use for each Lebedev
-            grid point. Defaults to 4.
 
         """
 
@@ -184,6 +177,10 @@ class PETMADCalculator(MetatomicCalculator):
 
         If the `rotational_average_order` parameter is set during initialization, the prediction
         will be averaged over unique rotations in the Lebedev-Laikov grid of a chosen order.
+
+        If the `rotational_average_batch_size` parameter is set during initialization,
+        averaging will be performed in batches of the given size to avoid out of memory
+        errors.
         """
         if len(self._rotations) == 0:
             super().calculate(atoms, properties, system_changes)

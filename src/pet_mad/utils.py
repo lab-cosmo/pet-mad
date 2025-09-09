@@ -1,7 +1,7 @@
 from metatomic.torch import ModelMetadata
 from ase import Atoms
 from ase.units import kB
-from typing import List, Union, Optional, Dict
+from typing import List, Union, Optional, Dict, Any
 import torch
 from pathlib import Path
 from urllib.parse import unquote
@@ -180,8 +180,8 @@ def rotate_atoms(atoms: Atoms, rotations: List[np.ndarray]) -> List[Atoms]:
 
 
 def compute_rotational_average(
-    results: Dict[str, List[Union[np.ndarray, float]]], rotations: List[np.ndarray]
-) -> Dict[str, Union[np.ndarray, float]]:
+    results: Dict[str, List[Any]], rotations: List[np.ndarray]
+) -> Dict[str, Any]:
     new_results = {}
     for key, value in results.items():
         if "energy" in key:
