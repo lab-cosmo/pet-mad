@@ -1,12 +1,10 @@
 import logging
 import os
-from typing import Dict, Optional, Tuple, List, Union
+from typing import Optional, Tuple, List, Union, Dict, Any
 
 from metatomic.torch import ModelOutput
 from metatomic.torch.ase_calculator import MetatomicCalculator
 from platformdirs import user_cache_dir
-from scipy.integrate import lebedev_rule
-from scipy.spatial.transform import Rotation as R
 import torch
 import numpy as np
 from ase import Atoms
@@ -15,12 +13,12 @@ from packaging.version import Version
 
 from ._models import get_pet_mad, get_pet_mad_dos, _get_bandgap_model
 from .utils import (
-    accumulate_rotational_moments,
     compute_rotational_average,
     get_num_electrons,
     fermi_dirac_distribution,
     rotate_atoms,
     AVAILABLE_LEBEDEV_GRID_ORDERS,
+    get_so3_rotations,
 )
 from ._version import (
     PET_MAD_LATEST_STABLE_VERSION,
@@ -51,6 +49,8 @@ class PETMADCalculator(MetatomicCalculator):
         calculate_uncertainty: bool = False,
         calculate_ensemble: bool = False,
         rotational_average_order: Optional[int] = None,
+        rotational_average_num_primitive_rotations: int = 4,
+        rotational_average_batch_size: Optional[int] = None,
         dtype: Optional[torch.dtype] = None,
         *,
         check_consistency: bool = False,
@@ -72,6 +72,10 @@ class PETMADCalculator(MetatomicCalculator):
             running, defaults to False.
         :param rotational_average_order: order of the Lebedev-Laikov grid used for averaging
             the prediction over rotations.
+        :param rotational_average_num_primitive_rotations: number of primitive rotations used
+            for sampling the unit sphere around each Lebedev-Laikov rotation vector.
+        :param rotational_average_batch_size: batch size to use for the rotational averaging.
+            If `None`, all rotations will be computed at once.
         :param dtype: dtype to use for the calculations. If `None`, we will use the
             default dtype.
         :param device: torch device to use for the calculation. If `None`, we will try
@@ -115,14 +119,6 @@ class PETMADCalculator(MetatomicCalculator):
                         quantity="energy", unit="eV", per_atom=False
                     )
 
-        # Initialize Lebedev grid for rotational averaging
-        self._init_lebedev_grid(
-            rotational_average_order,
-            initial_batch_size,
-            min_batch_size,
-            lebedev_n_alpha,
-        )
-
         model = get_pet_mad(version=version, checkpoint_path=checkpoint_path)
 
         if dtype is not None:
@@ -131,6 +127,23 @@ class PETMADCalculator(MetatomicCalculator):
                 dtype = STR_TO_DTYPE[dtype]
             model._capabilities.dtype = DTYPE_TO_STR[dtype]
             model = model.to(dtype=dtype, device=device)
+
+        self._rotations: List[np.ndarray] = []
+        if rotational_average_order is not None:
+            assert rotational_average_num_primitive_rotations > 0, (
+                "Number of primitive rotations must be greater than 0."
+            )
+            if rotational_average_order not in AVAILABLE_LEBEDEV_GRID_ORDERS:
+                raise ValueError(
+                    f"Lebedev-Laikov grid order {rotational_average_order} is not available. "
+                    f"Please use one of the following orders: {AVAILABLE_LEBEDEV_GRID_ORDERS}."
+                )
+
+            self._rotations = get_so3_rotations(
+                rotational_average_order,
+                rotational_average_num_primitive_rotations,
+            )
+        self._rotational_average_batch_size = rotational_average_batch_size
 
         cache_dir = user_cache_dir("pet-mad", "metatensor")
         os.makedirs(cache_dir, exist_ok=True)
@@ -169,156 +182,43 @@ class PETMADCalculator(MetatomicCalculator):
         detail of ``atoms.get_energy()`` and related functions. See
         :py:meth:`ase.calculators.calculator.Calculator.calculate` for more information.
 
-        If the `rot_average_order` parameter is set during initialization, the prediction
+        If the `rotational_average_order` parameter is set during initialization, the prediction
         will be averaged over unique rotations in the Lebedev-Laikov grid of a chosen order.
         """
-
-        super().calculate(atoms, properties, system_changes)
-        if self._rotational_average_order is not None:
-            self._compute_rotational_average(atoms, properties, system_changes)
-
-    def _init_lebedev_grid(
-        self,
-        order,
-        initial_batch_size,
-        min_batch_size,
-        lebedev_n_alpha,
-    ) -> None:
-        self._rotational_average_order = order
-        if order is None:
-            return
-        if order not in AVAILABLE_LEBEDEV_GRID_ORDERS:
-            raise ValueError(
-                f"Lebedev-Laikov grid order {order} is not available. "
-                f"Please use one of the following orders: {AVAILABLE_LEBEDEV_GRID_ORDERS}."
+        if len(self._rotations) == 0:
+            super().calculate(atoms, properties, system_changes)
+        else:
+            rotated_atoms_list = rotate_atoms(atoms, self._rotations)
+            compute_forces_and_stresses = (
+                True
+                if any(
+                    p in properties
+                    for p in [
+                        "forces",
+                        "stress",
+                        "non_conservative_forces",
+                        "non_conservative_stress",
+                    ]
+                )
+                else False
             )
-        # Build SO(3) samples from (S^2 Lebedev) x (S^1 uniform)
-        # lebedev_rule returns points on the sphere in Cartesian coordinates and
-        # weights
-        x, w = lebedev_rule(self._rotational_average_order)  # x: (3, m); w: (m,)
-        self.lebedev_n_alpha = lebedev_n_alpha
-
-        # For each direction n_i, construct rotation R_align that maps z-hat to n_i.
-        # Then compose with an in-plane rotation by alpha in {2pi j / n_alpha}.
-        # We store full rotation matrices and per-rotation weights
-        zhat = np.array([0.0, 0.0, 1.0])
-        alphas = (2.0 * np.pi / self.lebedev_n_alpha) * np.arange(self.lebedev_n_alpha)
-
-        # Create rotation matrices and weights
-        rot_mats = []
-        weights = []
-        for n, wi in zip(x.T, w):
-            n_norm = np.linalg.norm(n)
-            if n_norm == 0:
-                continue
-            n_hat = n / n_norm
-            # Rotation that takes zhat to n_hat (axis-angle via cross/acos)
-            c = float(np.clip(np.dot(zhat, n_hat), -1.0, 1.0))
-            if c > 1.0 - 1e-12:
-                R_align = np.eye(3)
-            elif c < -1.0 + 1e-12:
-                # 180 deg. about any axis orthogonal to z
-                R_align = R.from_rotvec(np.pi * np.array([1.0, 0.0, 0.0])).as_matrix()
-            else:
-                axis = np.cross(zhat, n_hat)
-                axis /= np.linalg.norm(axis)
-                angle = np.arccos(c)
-                R_align = R.from_rotvec(angle * axis).as_matrix()
-
-            for a in alphas:
-                Rz = R.from_rotvec(a * zhat).as_matrix()
-                # First align z -> n, then spin around new z by alpha
-                # Total rotation acts on row-vectors as r @ R^T, so we store R_total
-                # accordingly.
-                rot_mats.append(Rz @ R_align)
-                weights.append(wi / self.lebedev_n_alpha)
-
-        # Cache rotations and weights
-        R_all = np.stack(rot_mats, axis=0)  # (B, 3, 3)
-        w_all = np.array(weights)  # (B,)
-        self.rotations = np.ascontiguousarray(R_all)
-        self.weights = np.ascontiguousarray(w_all)
-        self.wsum = float(self.weights.sum())
-
-        # Precompute weighted rotations for faster forces averaging
-        self.wR = np.ascontiguousarray(self.weights[:, None, None] * self.rotations)
-        self.total_rot = int(self.rotations.shape[0])
-
-        # batching configuration
-        if initial_batch_size is None and self.total_rot is not None:
-            initial_batch_size = self.total_rot
-        self.initial_batch_size = int(max(1, min(initial_batch_size, self.total_rot)))
-        self.min_batch_size = int(max(1, min(min_batch_size, self.initial_batch_size)))
-
-    def _compute_rotational_average(self, atoms, properties, system_changes) -> None:
-        need_forces = "forces" in properties or "non_conservative_forces" in properties
-        need_stress = "stress" in properties or "non_conservative_stress" in properties
-        want_grads = bool(need_forces or need_stress)
-
-        B = self.total_rot
-        start = 0
-        batch_size = self.initial_batch_size
-
-        m1: Dict[str, Union[np.ndarray, float]] = {}  # sum w*x
-        m2: Dict[str, Union[np.ndarray, float]] = {}  # sum w*x^2
-        while start < B:
-            end = min(start + batch_size, B)
-
-            R_b = self.rotations[start:end]  # (b,3,3)
-            w_b = self.weights[start:end]  # (b,)
-
-            # Rotate systems for this batch only
-            rotated_atoms = rotate_atoms(atoms, R_b)
-
-            # Try to compute. If OOM, back off the batch size and retry
-            while True:
-                try:
-                    res_b = self.compute_energy(
-                        rotated_atoms, compute_forces_and_stresses=want_grads
-                    )
-                    break
-                except RuntimeError as runtime_error:
-                    # Check if OOM
-                    if "CUDA out of memory" not in str(runtime_error):
-                        raise
-                    if batch_size < self.min_batch_size:
-                        raise
-                    batch_size = max(self.min_batch_size, batch_size // 2)
-                    end = min(start + batch_size, B)
-                    R_b = self.rotations[start:end]
-                    w_b = self.weights[start:end]
-                    rotated_atoms = rotate_atoms(atoms, R_b)
-                except Exception as e:
-                    # Torch CUDA OOM handling if available
-                    if isinstance(e, torch.cuda.OutOfMemoryError):
-                        if batch_size < self.min_batch_size:
-                            raise
-                        try:
-                            torch.cuda.empty_cache()
-                        except Exception:
-                            pass
-                        batch_size = max(self.min_batch_size, batch_size // 2)
-                        end = min(start + batch_size, B)
-                        R_b = self.rotations[start:end]
-                        w_b = self.weights[start:end]
-                        rotated_atoms = rotate_atoms(atoms, R_b)
-                    else:
-                        raise
-
-            # Accumulate first and second moments for this batch
-            accumulate_rotational_moments(m1, m2, res_b, R_b, w_b)
-
-            # Clean-up
-            del rotated_atoms, res_b
-            try:
-                torch.cuda.empty_cache()
-            except Exception:
-                pass
-            start = end
-
-        # Finalize
-        avg = compute_rotational_average(m1, m2, self.wsum, suffix_std="_rot_std")
-        self.results = avg
+            batch_size = (
+                self._rotational_average_batch_size
+                if self._rotational_average_batch_size is not None
+                else len(rotated_atoms_list)
+            )
+            batches = [
+                rotated_atoms_list[i : i + batch_size]
+                for i in range(0, len(rotated_atoms_list), batch_size)
+            ]
+            results: Dict[str, Any] = {}
+            for batch in batches:
+                batch_results = self.compute_energy(batch, compute_forces_and_stresses)
+                for key, value in batch_results.items():
+                    results.setdefault(key, [])
+                    results[key].extend([value] if isinstance(value, float) else value)
+            results = compute_rotational_average(results, self._rotations)
+            self.results.update(results)
 
     def _get_uq_output(self, output_name: str):
         if output_name not in self.additional_outputs:

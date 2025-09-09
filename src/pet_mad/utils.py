@@ -8,6 +8,8 @@ from urllib.parse import unquote
 from huggingface_hub import hf_hub_download
 import numpy as np
 import re
+from scipy.integrate import lebedev_rule
+from scipy.spatial.transform import Rotation
 
 
 hf_pattern = re.compile(
@@ -142,127 +144,62 @@ AVAILABLE_LEBEDEV_GRID_ORDERS = [
 ]
 
 
-def rotate_atoms(
-    atoms: Atoms,
-    rotations: np.ndarray,
-) -> List[Atoms]:
-    """
-    Create rotated copies of `atoms` using rotation matrices (active convention).
-    Row-vector layout: r' = r @ R^T.
-    """
-    pos = atoms.get_positions()
-    has_cell = (atoms.cell is not None) and (atoms.cell.rank > 0)
-    cell = atoms.cell.array if has_cell else None
+def get_so3_rotations(
+    rotational_average_order: int,
+    num_primitive_rotations: int,
+    axis: Optional[np.ndarray] = None,
+) -> List[np.ndarray]:
+    axis = np.array([0, 0, 1]) if axis is None else axis
+    lebedev_grid = lebedev_rule(rotational_average_order)[0].T
 
-    rotated_atoms: List[Atoms] = []
-    for Ri in rotations:
-        ai = atoms.copy()
-        ai.positions = np.ascontiguousarray(pos @ Ri.T)
+    alphas = np.linspace(0, 2 * np.pi, num_primitive_rotations, endpoint=False)
+    primitive_rotations = [
+        Rotation.from_rotvec(axis * alpha).as_matrix() for alpha in alphas
+    ]
+    lebedev_rotations = [
+        Rotation.align_vectors(rot_vector, [0, 0, 1])[0].as_matrix()
+        for rot_vector in lebedev_grid
+    ]
+    rotations: List[np.ndarray] = []
+    for lrot in lebedev_rotations:
+        for prot in primitive_rotations:
+            rotations.append(lrot @ prot)
+    return rotations
+
+
+def rotate_atoms(atoms: Atoms, rotations: List[np.ndarray]) -> List[Atoms]:
+    rotated_atoms_list = []
+    has_cell = atoms.cell is not None and atoms.cell.rank > 0
+    for rot in rotations:
+        new_atoms = atoms.copy()
+        new_atoms.positions = new_atoms.positions @ rot.T
         if has_cell:
-            ai.cell = np.ascontiguousarray(cell @ Ri.T)
-        rotated_atoms.append(ai)
-    return rotated_atoms
+            new_atoms.cell = new_atoms.cell @ rot.T
+        rotated_atoms_list.append(new_atoms)
+    return rotated_atoms_list
 
 
 def compute_rotational_average(
-    m1: Dict[str, Union[np.ndarray, float]],
-    m2: Dict[str, Union[np.ndarray, float]],
-    total_weight: float,
-    suffix_std: str = "_rot_std",
-) -> Dict[str, np.ndarray | float]:
-    """
-    Convert accumulated weighted first/second moments to mean and std.
-    Uses population (probability-weighted) variance: Var = E[x^2] - (E[x])^2.
-    """
-    out: Dict[str, np.ndarray | float] = {}
-    W = float(total_weight)
-
-    for key, s1 in m1.items():
-        s2 = m2.get(key, None)
-        if s2 is None:
-            # No variance info; just pass through
-            out[key] = s1 if isinstance(s1, float) else np.ascontiguousarray(s1)
-            continue
-
-        if isinstance(s1, (float, np.floating)):
-            mean = float(s1 / W)
-            var = float(s2 / W) - mean * mean
-            std = float(np.sqrt(max(var, 0.0)))
-            out[key] = mean
-            out[key + suffix_std] = std
-        else:
-            mean = np.ascontiguousarray(s1 / W)
-            var = np.ascontiguousarray(s2 / W) - mean * mean
-            # guard tiny negative due to roundoff
-            var[var < 0] = 0.0
-            std = np.sqrt(var, dtype=mean.dtype, where=np.ones_like(var, dtype=bool))
-            out[key] = mean
-            out[key + suffix_std] = std
-
-    return out
-
-
-def accumulate_rotational_moments(
-    m1: Dict[str, Union[np.ndarray, float]],
-    m2: Dict[str, Union[np.ndarray, float]],
-    results_b: Dict[str, np.ndarray],
-    rotations_b: np.ndarray,  # (b,3,3)
-    weights_b: np.ndarray,  # (b,)
-) -> None:
-    """
-    Stream (online) accumulation of weighted first and second moments for a batch.
-
-    Conventions:
-      - Scalars (shape (b,)): accumulate sum(w*x) and sum(w*x^2).
-      - "*forces" (b,N,3): rotate back to lab (F_lab = F_rot @ R), then accumulate
-        sum(w*F_lab) and sum(w*F_lab^2) elementwise.
-      - "*stress" (b,3,3): S_lab = R S_rot R^T, then accumulate sum(w*S_lab) and sum(w*S_lab^2).
-      - Fallback: if leading dim is b, treat remaining dims elementwise as above.
-    """
-    w = weights_b
-    b = w.shape[0]
-    Rt = np.transpose(rotations_b, (0, 2, 1))  # (b,3,3)
-
-    for key, val in results_b.items():
-        arr = np.asarray(val)
-
-        # Scalar (b,)
-        if arr.ndim == 1 and arr.shape[0] == b:
-            wx = (w * arr).sum()
-            wx2 = (w * (arr**2)).sum()
-            m1[key] = m1.get(key, 0.0) + float(wx)
-            m2[key] = m2.get(key, 0.0) + float(wx2)
-            continue
-
-        # Forces (b,N,3)
-        if key.endswith("forces") and arr.ndim == 3 and arr.shape[-1] == 3:
-            # Rotate back and weight
-            # sum_i w_i * (F_i @ R_i), elementwise second moment via (F_lab**2)
-            F_lab = np.matmul(arr, rotations_b)  # (b,N,3)
-            wF = w[:, None, None] * F_lab  # (b,N,3)
-            wx = wF.sum(axis=0)  # (N,3)
-            wx2 = (w[:, None, None] * (F_lab**2)).sum(axis=0)  # (N,3)
-
-            m1[key] = wx if key not in m1 else (m1[key] + wx)
-            m2[key] = wx2 if key not in m2 else (m2[key] + wx2)
-            continue
-
-        # Stress: (b,3,3)
-        if key.endswith("stress") and arr.ndim == 3 and arr.shape[-1] == 3:
-            RS = np.matmul(rotations_b, arr)  # (b,3,3)
-            S_lab = np.matmul(RS, Rt)  # (b,3,3)
-            wS = S_lab * w[:, None, None]  # (b,3,3)
-            wx = wS.sum(axis=0)  # (3,3)
-            wx2 = (w[:, None, None] * (S_lab**2)).sum(axis=0)  # (3,3)
-
-            m1[key] = wx if key not in m1 else (m1[key] + wx)
-            m2[key] = wx2 if key not in m2 else (m2[key] + wx2)
-            continue
-
-        # Otherwise: leave untouched (not per-rotation)
-        # (You could raise here if strictness is desired.)
-        if key not in m1 or key not in m2:
-            raise KeyError(f"{key} not in results")
+    results: Dict[str, List[Union[np.ndarray, float]]], rotations: List[np.ndarray]
+) -> Dict[str, Union[np.ndarray, float]]:
+    new_results = {}
+    for key, value in results.items():
+        if "energy" in key:
+            new_results[key] = np.mean(value)
+            new_results[key + "_rot_std"] = np.std(value)
+        elif "forces" in key:
+            rotated_back_values = np.array(
+                [val @ rot for rot, val in zip(rotations, value)]
+            )
+            new_results[key] = rotated_back_values.mean(axis=0)
+            new_results[key + "_rot_std"] = rotated_back_values.std(axis=0)
+        elif "stress" in key:
+            rotated_back_values = np.array(
+                [rot.T @ val @ rot for rot, val in zip(rotations, value)]
+            )
+            new_results[key] = rotated_back_values.mean(axis=0)
+            new_results[key + "_rot_std"] = rotated_back_values.std(axis=0)
+    return new_results
 
 
 def get_pet_mad_metadata(version: str):
