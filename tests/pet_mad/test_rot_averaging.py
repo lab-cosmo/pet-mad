@@ -11,8 +11,6 @@ import pytest
 
 GRID_ORDERS = [2, 3, 5, 7, 9]
 
-MODEL_PATH = "/Users/paolo/Software/pet-mad/pet-mad-dev.ckpt"
-
 
 def rotz(theta):
     c, s = np.cos(theta), np.sin(theta)
@@ -27,7 +25,7 @@ def rotx(theta):
 def test_rot_averaging():
     atoms = bulk("Si", cubic=True, a=5.43, crystalstructure="diamond")
     atoms.rattle(0.05)
-    calc = PETMADCalculator(checkpoint_path=MODEL_PATH)
+    calc = PETMADCalculator()
     atoms.calc = calc
 
     for order in GRID_ORDERS:
@@ -35,13 +33,9 @@ def test_rot_averaging():
             with pytest.raises(
                 ValueError, match="Lebedev-Laikov grid order 2 is not available."
             ):
-                atoms.calc = PETMADCalculator(
-                    checkpoint_path=MODEL_PATH, rotational_average_order=order
-                )
+                atoms.calc = PETMADCalculator(rotational_average_order=order)
         else:
-            leb_calc = PETMADCalculator(
-                checkpoint_path=MODEL_PATH, rotational_average_order=order
-            )
+            leb_calc = PETMADCalculator(rotational_average_order=order)
             atoms.calc = leb_calc
             atoms.get_potential_energy()
             atoms.get_forces()
@@ -197,7 +191,6 @@ def calc_with_rotavg(monkeypatch):
 
     # Create a calculator
     calc = PETMADCalculator(
-        checkpoint_path=MODEL_PATH,
         rotational_average_order=3,
         initial_batch_size=16,
         min_batch_size=1,
