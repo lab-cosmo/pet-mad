@@ -38,6 +38,9 @@ DTYPE_TO_STR = {
 }
 
 
+NUM_PRIMITIVE_ROTATIONS = 4
+
+
 class PETMADCalculator(MetatomicCalculator):
     """
     PET-MAD ASE Calculator
@@ -118,10 +121,18 @@ class PETMADCalculator(MetatomicCalculator):
                 )
 
             lebedev_grid = lebedev_rule(rotational_average_order)[0].T
-            self._rotations = [
+            axis = np.array([0, 0, 1])
+            alphas = np.linspace(0, 2 * np.pi, NUM_PRIMITIVE_ROTATIONS, endpoint=False)
+            primitive_rotations = [
+                Rotation.from_rotvec(axis * alpha).as_matrix() for alpha in alphas
+            ]
+            lebedev_rotations = [
                 Rotation.align_vectors(rot_vector, [0, 0, 1])[0].as_matrix()
                 for rot_vector in lebedev_grid
             ]
+            for lrot in lebedev_rotations:
+                for prot in primitive_rotations:
+                    self._rotations.append(lrot @ prot)
         self._rotational_average_batch_size = rotational_average_batch_size
 
         model = get_pet_mad(version=version, checkpoint_path=checkpoint_path)
@@ -173,9 +184,8 @@ class PETMADCalculator(MetatomicCalculator):
         If the `rotational_average_order` parameter is set during initialization, the prediction
         will be averaged over unique rotations in the Lebedev-Laikov grid of a chosen order.
         """
-        if len(self._rotations) == 0:
-            super().calculate(atoms, properties, system_changes)
-        else:
+        super().calculate(atoms, properties, system_changes)
+        if len(self._rotations) > 0:
             rotated_atoms_list = rotate_atoms(atoms, self._rotations)
             compute_forces_and_stresses = (
                 True
