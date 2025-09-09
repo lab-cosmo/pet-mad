@@ -1,6 +1,6 @@
 import logging
 import os
-from typing import Optional, Tuple, List, Union, Dict
+from typing import Optional, Tuple, List, Union, Dict, Any
 
 from metatomic.torch import ModelOutput
 from metatomic.torch.ase_calculator import MetatomicCalculator
@@ -16,8 +16,8 @@ from .utils import (
     get_num_electrons,
     fermi_dirac_distribution,
     rotate_atoms,
-    AVAILABLE_LEBEDEV_GRID_ORDERS,
     compute_rotational_average,
+    AVAILABLE_LEBEDEV_GRID_ORDERS,
     get_so3_rotations,
 )
 from ._version import (
@@ -111,6 +111,16 @@ class PETMADCalculator(MetatomicCalculator):
                     additional_outputs["energy_ensemble"] = ModelOutput(
                         quantity="energy", unit="eV", per_atom=False
                     )
+
+        model = get_pet_mad(version=version, checkpoint_path=checkpoint_path)
+
+        if dtype is not None:
+            if isinstance(dtype, str):
+                assert dtype in STR_TO_DTYPE, f"Invalid dtype: {dtype}"
+                dtype = STR_TO_DTYPE[dtype]
+            model._capabilities.dtype = DTYPE_TO_STR[dtype]
+            model = model.to(dtype=dtype, device=device)
+
         self._rotations: List[np.ndarray] = []
         if rotational_average_order is not None:
             assert rotational_average_num_primitive_rotations > 0, (
@@ -123,18 +133,10 @@ class PETMADCalculator(MetatomicCalculator):
                 )
 
             self._rotations = get_so3_rotations(
-                rotational_average_order, rotational_average_num_primitive_rotations
+                rotational_average_order,
+                rotational_average_num_primitive_rotations,
             )
         self._rotational_average_batch_size = rotational_average_batch_size
-
-        model = get_pet_mad(version=version, checkpoint_path=checkpoint_path)
-
-        if dtype is not None:
-            if isinstance(dtype, str):
-                assert dtype in STR_TO_DTYPE, f"Invalid dtype: {dtype}"
-                dtype = STR_TO_DTYPE[dtype]
-            model._capabilities.dtype = DTYPE_TO_STR[dtype]
-            model = model.to(dtype=dtype, device=device)
 
         cache_dir = user_cache_dir("pet-mad", "metatensor")
         os.makedirs(cache_dir, exist_ok=True)
@@ -176,8 +178,9 @@ class PETMADCalculator(MetatomicCalculator):
         If the `rotational_average_order` parameter is set during initialization, the prediction
         will be averaged over unique rotations in the Lebedev-Laikov grid of a chosen order.
         """
-        super().calculate(atoms, properties, system_changes)
-        if len(self._rotations) > 0:
+        if len(self._rotations) == 0:
+            super().calculate(atoms, properties, system_changes)
+        else:
             rotated_atoms_list = rotate_atoms(atoms, self._rotations)
             compute_forces_and_stresses = (
                 True
@@ -201,16 +204,12 @@ class PETMADCalculator(MetatomicCalculator):
                 rotated_atoms_list[i : i + batch_size]
                 for i in range(0, len(rotated_atoms_list), batch_size)
             ]
-            results: Dict[str, List[Union[np.ndarray, float]]] = {}
+            results: Dict[str, Any] = {}
             for batch in batches:
                 batch_results = self.compute_energy(batch, compute_forces_and_stresses)
                 for key, value in batch_results.items():
-                    if key not in results:
-                        results[key] = []
-                    if isinstance(value, float):
-                        results[key].append(value)
-                    else:
-                        results[key].extend(value)
+                    results.setdefault(key, [])
+                    results[key].extend([value] if isinstance(value, float) else value)
             results = compute_rotational_average(results, self._rotations)
             self.results.update(results)
 
