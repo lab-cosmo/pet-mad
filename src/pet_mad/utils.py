@@ -8,6 +8,8 @@ from urllib.parse import unquote
 from huggingface_hub import hf_hub_download
 import numpy as np
 import re
+from scipy.integrate import lebedev_rule
+from scipy.spatial.transform import Rotation
 
 
 hf_pattern = re.compile(
@@ -140,6 +142,29 @@ AVAILABLE_LEBEDEV_GRID_ORDERS = [
     125,
     131,
 ]
+
+
+def get_so3_rotations(
+    rotational_average_order: int,
+    num_primitive_rotations: int,
+    axis: Optional[np.ndarray] = None,
+) -> List[np.ndarray]:
+    axis = np.array([0, 0, 1]) if axis is None else axis
+    lebedev_grid = lebedev_rule(rotational_average_order)[0].T
+
+    alphas = np.linspace(0, 2 * np.pi, num_primitive_rotations, endpoint=False)
+    primitive_rotations = [
+        Rotation.from_rotvec(axis * alpha).as_matrix() for alpha in alphas
+    ]
+    lebedev_rotations = [
+        Rotation.align_vectors(rot_vector, [0, 0, 1])[0].as_matrix()
+        for rot_vector in lebedev_grid
+    ]
+    rotations: List[np.ndarray] = []
+    for lrot in lebedev_rotations:
+        for prot in primitive_rotations:
+            rotations.append(lrot @ prot)
+    return rotations
 
 
 def rotate_atoms(atoms: Atoms, rotations: List[np.ndarray]) -> List[Atoms]:

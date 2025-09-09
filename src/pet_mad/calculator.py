@@ -5,11 +5,9 @@ from typing import Optional, Tuple, List, Union, Dict
 from metatomic.torch import ModelOutput
 from metatomic.torch.ase_calculator import MetatomicCalculator
 from platformdirs import user_cache_dir
-from scipy.integrate import lebedev_rule
 import torch
 import numpy as np
 from ase import Atoms
-from scipy.spatial.transform import Rotation
 
 from packaging.version import Version
 
@@ -20,6 +18,7 @@ from .utils import (
     rotate_atoms,
     AVAILABLE_LEBEDEV_GRID_ORDERS,
     compute_rotational_average,
+    get_so3_rotations,
 )
 from ._version import (
     PET_MAD_LATEST_STABLE_VERSION,
@@ -38,9 +37,6 @@ DTYPE_TO_STR = {
 }
 
 
-NUM_PRIMITIVE_ROTATIONS = 4
-
-
 class PETMADCalculator(MetatomicCalculator):
     """
     PET-MAD ASE Calculator
@@ -53,6 +49,7 @@ class PETMADCalculator(MetatomicCalculator):
         calculate_uncertainty: bool = False,
         calculate_ensemble: bool = False,
         rotational_average_order: Optional[int] = None,
+        rotational_average_num_primitive_rotations: int = 4,
         rotational_average_batch_size: Optional[int] = None,
         dtype: Optional[torch.dtype] = None,
         *,
@@ -72,6 +69,8 @@ class PETMADCalculator(MetatomicCalculator):
             running, defaults to False.
         :param rotational_average_order: order of the Lebedev-Laikov grid used for averaging
             the prediction over rotations.
+        :param rotational_average_num_primitive_rotations: number of primitive rotations used
+            for sampling the unit sphere around each Lebedev-Laikov rotation vector.
         :param rotational_average_batch_size: batch size to use for the rotational averaging.
             If `None`, all rotations will be computed at once.
         :param dtype: dtype to use for the calculations. If `None`, we will use the
@@ -114,25 +113,18 @@ class PETMADCalculator(MetatomicCalculator):
                     )
         self._rotations: List[np.ndarray] = []
         if rotational_average_order is not None:
+            assert rotational_average_num_primitive_rotations > 0, (
+                "Number of primitive rotations must be greater than 0."
+            )
             if rotational_average_order not in AVAILABLE_LEBEDEV_GRID_ORDERS:
                 raise ValueError(
                     f"Lebedev-Laikov grid order {rotational_average_order} is not available. "
                     f"Please use one of the following orders: {AVAILABLE_LEBEDEV_GRID_ORDERS}."
                 )
 
-            lebedev_grid = lebedev_rule(rotational_average_order)[0].T
-            axis = np.array([0, 0, 1])
-            alphas = np.linspace(0, 2 * np.pi, NUM_PRIMITIVE_ROTATIONS, endpoint=False)
-            primitive_rotations = [
-                Rotation.from_rotvec(axis * alpha).as_matrix() for alpha in alphas
-            ]
-            lebedev_rotations = [
-                Rotation.align_vectors(rot_vector, [0, 0, 1])[0].as_matrix()
-                for rot_vector in lebedev_grid
-            ]
-            for lrot in lebedev_rotations:
-                for prot in primitive_rotations:
-                    self._rotations.append(lrot @ prot)
+            self._rotations = get_so3_rotations(
+                rotational_average_order, rotational_average_num_primitive_rotations
+            )
         self._rotational_average_batch_size = rotational_average_batch_size
 
         model = get_pet_mad(version=version, checkpoint_path=checkpoint_path)
