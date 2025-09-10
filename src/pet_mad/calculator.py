@@ -182,23 +182,11 @@ class PETMADCalculator(MetatomicCalculator):
         averaging will be performed in batches of the given size to avoid out of memory
         errors.
         """
-        if len(self._rotations) == 0:
-            super().calculate(atoms, properties, system_changes)
-        else:
+
+        super().calculate(atoms, properties, system_changes)
+
+        if len(self._rotations) > 0:
             rotated_atoms_list = rotate_atoms(atoms, self._rotations)
-            compute_forces_and_stresses = (
-                True
-                if any(
-                    p in properties
-                    for p in [
-                        "forces",
-                        "stress",
-                        "non_conservative_forces",
-                        "non_conservative_stress",
-                    ]
-                )
-                else False
-            )
             batch_size = (
                 self._rotational_average_batch_size
                 if self._rotational_average_batch_size is not None
@@ -210,7 +198,9 @@ class PETMADCalculator(MetatomicCalculator):
             ]
             results: Dict[str, Any] = {}
             for batch in batches:
-                batch_results = self.compute_energy(batch, compute_forces_and_stresses)
+                batch_results = self.compute_energy(
+                    batch, self._do_gradients_with_energy
+                )
                 for key, value in batch_results.items():
                     results.setdefault(key, [])
                     results[key].extend([value] if isinstance(value, float) else value)
