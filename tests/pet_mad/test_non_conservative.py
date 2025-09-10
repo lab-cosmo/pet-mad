@@ -1,9 +1,11 @@
-from pet_mad.calculator import PETMADCalculator
-from ase.build import bulk
 import numpy as np
-from pet_mad._version import PET_MAD_NC_AVAILABILITY_VERSION
 import pytest
+from ase.build import bulk
 from packaging.version import Version
+
+from pet_mad._version import PET_MAD_NC_AVAILABILITY_VERSION
+from pet_mad.calculator import PETMADCalculator
+
 
 VERSIONS = ("1.1.0", "1.0.2", "1.0.1")
 
@@ -14,7 +16,7 @@ VERSIONS = ("1.1.0", "1.0.2", "1.0.1")
 )
 def test_non_conservative(version):
     if Version(version) < Version(PET_MAD_NC_AVAILABILITY_VERSION):
-        msg = f"Non-conservative forces and stresses are not available for version {version}."
+        msg = f"Non-conservative forces and stresses are not available for version {version}."  # noqa: E501
         with pytest.raises(NotImplementedError, match=msg):
             calc = PETMADCalculator(version=version, non_conservative=True)
     else:

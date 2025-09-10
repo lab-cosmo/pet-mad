@@ -1,9 +1,11 @@
-from pet_mad.calculator import PETMADCalculator
-from ase.build import bulk
 import numpy as np
-from pet_mad._version import PET_MAD_UQ_AVAILABILITY_VERSION
-from packaging.version import Version
 import pytest
+from ase.build import bulk
+from packaging.version import Version
+
+from pet_mad._version import PET_MAD_UQ_AVAILABILITY_VERSION
+from pet_mad.calculator import PETMADCalculator
+
 
 VERSIONS = ("1.0.2", "1.0.1")
 

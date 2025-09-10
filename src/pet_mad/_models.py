@@ -52,7 +52,7 @@ def get_pet_mad(
                 "pip install pet-mad[deprecated]"
             )
 
-        import pet_neighbors_convert  # noqa: F401
+        import pet_neighbors_convert  # noqa: F401 # pyright: ignore[reportMissingImports]
 
     if checkpoint_path is not None:
         logging.info(f"Loading PET-MAD model from checkpoint: {checkpoint_path}")

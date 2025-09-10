@@ -29,8 +29,7 @@ PETMAD_EXPLORER_URL = "https://huggingface.co/lab-cosmo/pet-mad-explorer/resolve
 
 METADATA = mta.ModelMetadata(
     name="PET-MAD explorer",
-    description="Exploration tool for PET-MAD model features using Sketch-Map "
-    "projection",
+    description="Exploration tool for PET-MAD model features using Sketch-Map projection",  # noqa: E501
     authors=[
         "Arslan Mazitov (arslan.mazitov@epfl.ch)",
         "Sofiia Chorna",

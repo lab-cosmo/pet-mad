@@ -1,13 +1,16 @@
 import re
 from pathlib import Path
-from typing import List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 from urllib.parse import unquote
 
+import numpy as np
 import torch
 from ase import Atoms
 from ase.units import kB
 from huggingface_hub import hf_hub_download
 from metatomic.torch import ModelMetadata
+from scipy.integrate import lebedev_rule
+from scipy.spatial.transform import Rotation
 
 
 hf_pattern = re.compile(
@@ -106,6 +109,99 @@ NUM_ELECTRONS_PER_ELEMENT = {
     "Cu": 11.0,
 }
 
+AVAILABLE_LEBEDEV_GRID_ORDERS = [
+    3,
+    5,
+    7,
+    9,
+    11,
+    13,
+    15,
+    17,
+    19,
+    21,
+    23,
+    25,
+    27,
+    29,
+    31,
+    35,
+    41,
+    47,
+    53,
+    59,
+    65,
+    71,
+    77,
+    83,
+    89,
+    95,
+    101,
+    107,
+    113,
+    119,
+    125,
+    131,
+]
+
+
+def get_so3_rotations(
+    rotational_average_order: int,
+    num_additional_rotations: int,
+    axis: Optional[np.ndarray] = None,
+) -> List[np.ndarray]:
+    axis = np.array([0, 0, 1]) if axis is None else axis
+    lebedev_grid = lebedev_rule(rotational_average_order)[0].T
+
+    alphas = np.linspace(0, 2 * np.pi, num_additional_rotations, endpoint=False)
+    additional_rotations = [
+        Rotation.from_rotvec(axis * alpha).as_matrix() for alpha in alphas
+    ]
+    lebedev_rotations = [
+        Rotation.align_vectors(rot_vector, [0, 0, 1])[0].as_matrix()
+        for rot_vector in lebedev_grid
+    ]
+    rotations: List[np.ndarray] = []
+    for lrot in lebedev_rotations:
+        for prot in additional_rotations:
+            rotations.append(lrot @ prot)
+    return rotations
+
+
+def rotate_atoms(atoms: Atoms, rotations: List[np.ndarray]) -> List[Atoms]:
+    rotated_atoms_list = []
+    has_cell = atoms.cell is not None and atoms.cell.rank > 0
+    for rot in rotations:
+        new_atoms = atoms.copy()
+        new_atoms.positions = new_atoms.positions @ rot.T
+        if has_cell:
+            new_atoms.cell = new_atoms.cell @ rot.T
+        rotated_atoms_list.append(new_atoms)
+    return rotated_atoms_list
+
+
+def compute_rotational_average(
+    results: Dict[str, List[Any]], rotations: List[np.ndarray]
+) -> Dict[str, Any]:
+    new_results = {}
+    for key, value in results.items():
+        if "energy" in key:
+            new_results[key] = np.mean(value)
+            new_results[key + "_rot_std"] = np.std(value)
+        elif "forces" in key:
+            rotated_back_values = np.array(
+                [val @ rot for rot, val in zip(rotations, value, strict=False)]
+            )
+            new_results[key] = rotated_back_values.mean(axis=0)
+            new_results[key + "_rot_std"] = rotated_back_values.std(axis=0)
+        elif "stress" in key:
+            rotated_back_values = np.array(
+                [rot.T @ val @ rot for rot, val in zip(rotations, value, strict=False)]
+            )
+            new_results[key] = rotated_back_values.mean(axis=0)
+            new_results[key + "_rot_std"] = rotated_back_values.std(axis=0)
+    return new_results
+
 
 def get_pet_mad_metadata(version: str):
     return ModelMetadata(
@@ -132,8 +228,7 @@ def get_pet_mad_metadata(version: str):
 def get_pet_mad_dos_metadata(version: str):
     return ModelMetadata(
         name=f"PET-MAD-DOS v{version}",
-        description="A universal machine learning model "
-        "for the electronic density of states",
+        description="A universal machine learning model for the electronic density of states",  # noqa: E501
         authors=[
             "Wei Bin How (weibin.how@epfl.ch)",
             "Pol Febrer",

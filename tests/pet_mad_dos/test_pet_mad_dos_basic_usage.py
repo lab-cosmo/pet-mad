@@ -1,8 +1,10 @@
-from pet_mad.calculator import PETMADDOSCalculator
-from pet_mad._models import get_pet_mad_dos
-from ase.build import bulk
 import pytest
 import torch
+from ase.build import bulk
+
+from pet_mad._models import get_pet_mad_dos
+from pet_mad.calculator import PETMADDOSCalculator
+
 
 VERSIONS = ["1.0"]
 

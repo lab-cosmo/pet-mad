@@ -1,6 +1,6 @@
 import logging
 import os
-from typing import List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import torch
@@ -17,7 +17,24 @@ from ._version import (
     PET_MAD_NC_AVAILABILITY_VERSION,
     PET_MAD_UQ_AVAILABILITY_VERSION,
 )
-from .utils import fermi_dirac_distribution, get_num_electrons
+from .utils import (
+    AVAILABLE_LEBEDEV_GRID_ORDERS,
+    compute_rotational_average,
+    fermi_dirac_distribution,
+    get_num_electrons,
+    get_so3_rotations,
+    rotate_atoms,
+)
+
+
+STR_TO_DTYPE = {
+    "float32": torch.float32,
+    "float64": torch.float64,
+}
+DTYPE_TO_STR = {
+    torch.float32: "float32",
+    torch.float64: "float64",
+}
 
 
 class PETMADCalculator(MetatomicCalculator):
@@ -31,6 +48,10 @@ class PETMADCalculator(MetatomicCalculator):
         checkpoint_path: Optional[str] = None,
         calculate_uncertainty: bool = False,
         calculate_ensemble: bool = False,
+        rotational_average_order: Optional[int] = None,
+        rotational_average_num_additional_rotations: int = 1,
+        rotational_average_batch_size: Optional[int] = None,
+        dtype: Optional[torch.dtype] = None,
         *,
         check_consistency: bool = False,
         device: Optional[str] = None,
@@ -46,6 +67,17 @@ class PETMADCalculator(MetatomicCalculator):
             Defaults to False. Only available for PET-MAD version 1.0.2.
         :param check_consistency: should we check the model for consistency when
             running, defaults to False.
+        :param rotational_average_order: order of the Lebedev-Laikov grid used for
+            averaging the prediction over rotations.
+        :param rotational_average_num_additional_rotations: the number of additional
+            rotations sampled from 0 to 2pi angle applied on top of the each
+            Lebedev-Laikov rotation vector when performing rotational averaging.
+            Defaults to 1, which means that by default only the Lebedev-Laikov grid
+            is used for rotational averaging.
+        :param rotational_average_batch_size: batch size to use for the rotational
+            averaging. If `None`, all rotations will be computed at once.
+        :param dtype: dtype to use for the calculations. If `None`, we will use the
+            default dtype.
         :param device: torch device to use for the calculation. If `None`, we will try
             the options in the model's `supported_device` in order.
         :param non_conservative: whether to use the non-conservative regime of forces
@@ -72,8 +104,8 @@ class PETMADCalculator(MetatomicCalculator):
                 raise NotImplementedError(
                     f"Energy uncertainty and ensemble are not available for version "
                     f"{version}. Please use PET-MAD version "
-                    f"{PET_MAD_UQ_AVAILABILITY_VERSION} or higher, or disable "
-                    "the calculation of energy uncertainty and energy ensemble."
+                    f"{PET_MAD_UQ_AVAILABILITY_VERSION} or higher, or disable the "
+                    "calculation of energy uncertainty and energy ensemble."
                 )
             else:
                 if calculate_uncertainty:
@@ -86,6 +118,31 @@ class PETMADCalculator(MetatomicCalculator):
                     )
 
         model = get_pet_mad(version=version, checkpoint_path=checkpoint_path)
+
+        if dtype is not None:
+            if isinstance(dtype, str):
+                assert dtype in STR_TO_DTYPE, f"Invalid dtype: {dtype}"
+                dtype = STR_TO_DTYPE[dtype]
+            model._capabilities.dtype = DTYPE_TO_STR[dtype]
+            model = model.to(dtype=dtype, device=device)
+
+        self._rotations: List[np.ndarray] = []
+        if rotational_average_order is not None:
+            assert rotational_average_num_additional_rotations > 0, (
+                "Number of primitive rotations must be greater than 0."
+            )
+            if rotational_average_order not in AVAILABLE_LEBEDEV_GRID_ORDERS:
+                raise ValueError(
+                    f"Lebedev-Laikov grid order {rotational_average_order} is not "
+                    f"available. Please use one of the following orders: "
+                    f"{AVAILABLE_LEBEDEV_GRID_ORDERS}."
+                )
+
+            self._rotations = get_so3_rotations(
+                rotational_average_order,
+                rotational_average_num_additional_rotations,
+            )
+        self._rotational_average_batch_size = rotational_average_batch_size
 
         cache_dir = user_cache_dir("pet-mad", "metatensor")
         os.makedirs(cache_dir, exist_ok=True)
@@ -113,12 +170,70 @@ class PETMADCalculator(MetatomicCalculator):
             non_conservative=non_conservative,
         )
 
+    def calculate(
+        self, atoms: Atoms, properties: List[str], system_changes: List[str]
+    ) -> None:
+        """
+        Compute some ``properties`` with this calculator, and return them in the format
+        expected by ASE.
+
+        This is not intended to be called directly by users, but to be an implementation
+        detail of ``atoms.get_energy()`` and related functions. See
+        :py:meth:`ase.calculators.calculator.Calculator.calculate` for more information.
+
+        If the `rotational_average_order` parameter is set during initialization, the
+        prediction will be averaged over unique rotations in the Lebedev-Laikov grid of
+        a chosen order.
+
+        If the `rotational_average_batch_size` parameter is set during initialization,
+        averaging will be performed in batches of the given size to avoid out of memory
+        errors.
+        """
+
+        super().calculate(atoms, properties, system_changes)
+
+        if len(self._rotations) > 0:
+            rotated_atoms_list = rotate_atoms(atoms, self._rotations)
+            batch_size = (
+                self._rotational_average_batch_size
+                if self._rotational_average_batch_size is not None
+                else len(rotated_atoms_list)
+            )
+            batches = [
+                rotated_atoms_list[i : i + batch_size]
+                for i in range(0, len(rotated_atoms_list), batch_size)
+            ]
+            results: Dict[str, Any] = {}
+            for batch in batches:
+                try:
+                    batch_results = self.compute_energy(
+                        batch, self._do_gradients_with_energy
+                    )
+                    for key, value in batch_results.items():
+                        results.setdefault(key, [])
+                        results[key].extend(
+                            [value] if isinstance(value, float) else value
+                        )
+                except torch.cuda.OutOfMemoryError as e:
+                    raise RuntimeError(
+                        "Out of memory error encountered during rotational averaging. "
+                        "Please reduce the batch size or use a lower rotational "
+                        "averaging parameters. This can be done by setting the "
+                        "`rotational_average_batch_size`, `rotational_average_order`"
+                        "and `rotational_average_num_additional_rotations` parameters, "
+                        "while initializing the calculator."
+                        f"Full error message: {e}"
+                    )
+
+            results = compute_rotational_average(results, self._rotations)
+            self.results.update(results)
+
     def _get_uq_output(self, output_name: str):
         if output_name not in self.additional_outputs:
             quantity = output_name.split("_")[1]
             raise ValueError(
-                f"Energy {quantity} is not available. Please make sure that you have "
-                f"initialized the calculator with `calculate_{quantity}=True` and "
+                f"Energy {quantity} is not available. Please make sure that you have"
+                f" initialized the calculator with `calculate_{quantity}=True` and "
                 f"performed evaluation. This option is only available for PET-MAD "
                 f"version {PET_MAD_UQ_AVAILABILITY_VERSION} or higher."
             )
