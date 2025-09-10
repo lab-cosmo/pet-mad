@@ -1,5 +1,6 @@
 from pet_mad.calculator import PETMADCalculator
 from pet_mad.utils import rotate_atoms, get_so3_rotations, compute_rotational_average
+from pet_mad._version import PET_MAD_NC_AVAILABILITY_VERSION
 from ase.build import bulk, molecule
 import pytest
 import numpy as np
@@ -84,6 +85,20 @@ def test_calc_rot_averaging(order):
     np.testing.assert_allclose(averaged_energy, target_energy, atol=1e-2)
     np.testing.assert_allclose(averaged_forces, target_forces, atol=1e-2)
     np.testing.assert_allclose(averaged_stress, target_stress, atol=1e-2)
+
+
+def test_calc_rot_averaging_non_conservative():
+    atoms = bulk("Si", cubic=True, a=5.43, crystalstructure="diamond")
+    atoms.rattle(0.05)
+    atoms.calc = PETMADCalculator(
+        version=PET_MAD_NC_AVAILABILITY_VERSION,
+        rotational_average_order=3,
+        non_conservative=True,
+    )
+    _ = atoms.get_potential_energy()
+    assert "energy_rot_std" in atoms.calc.results
+    assert "forces_rot_std" in atoms.calc.results
+    assert "stress_rot_std" in atoms.calc.results
 
 
 @pytest.mark.parametrize("batch_size", BATCH_SIZES)
