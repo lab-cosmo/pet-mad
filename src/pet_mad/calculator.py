@@ -198,22 +198,25 @@ class PETMADCalculator(MetatomicCalculator):
             ]
             results: Dict[str, Any] = {}
             for batch in batches:
-                batch_results = self.compute_energy(
-                    batch, self._do_gradients_with_energy
-                )
-                for key, value in batch_results.items():
-                    results.setdefault(key, [])
-                    results[key].extend([value] if isinstance(value, float) else value)
-            try:
-                results = compute_rotational_average(results, self._rotations)
-            except torch.cuda.OutOfMemoryError as e:
-                raise RuntimeError(
-                    "Out of memory error encountered during rotational averaging. "
-                    "Please reduce the batch size or use a lower rotational averaging order."
-                    "This can be done by setting the `rotational_average_batch_size` and "
-                    "`rotational_average_order` parameters while initializing the calculator."
-                    f"Full error message: {e}"
-                )
+                try:
+                    batch_results = self.compute_energy(
+                        batch, self._do_gradients_with_energy
+                    )
+                    for key, value in batch_results.items():
+                        results.setdefault(key, [])
+                        results[key].extend(
+                            [value] if isinstance(value, float) else value
+                        )
+                except torch.cuda.OutOfMemoryError as e:
+                    raise RuntimeError(
+                        "Out of memory error encountered during rotational averaging. "
+                        "Please reduce the batch size or use a lower rotational averaging order."
+                        "This can be done by setting the `rotational_average_batch_size` and "
+                        "`rotational_average_order` parameters while initializing the calculator."
+                        f"Full error message: {e}"
+                    )
+
+            results = compute_rotational_average(results, self._rotations)
             self.results.update(results)
 
     def _get_uq_output(self, output_name: str):
