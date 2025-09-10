@@ -4,6 +4,12 @@
 
 - Added the rotational averaging feature to `PETMADCalculator`.
 
+## 1.4.2
+
+### Changed
+
+- Updated the metatrain dependency to version 2025.10.
+
 ## 1.4.1
 
 ### Fixed
