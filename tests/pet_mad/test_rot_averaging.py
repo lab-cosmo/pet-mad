@@ -1,9 +1,11 @@
-from pet_mad.calculator import PETMADCalculator
-from pet_mad.utils import rotate_atoms, get_so3_rotations, compute_rotational_average
-from pet_mad._version import PET_MAD_NC_AVAILABILITY_VERSION
-from ase.build import bulk, molecule
-import pytest
 import numpy as np
+import pytest
+from ase.build import bulk, molecule
+
+from pet_mad._version import PET_MAD_NC_AVAILABILITY_VERSION
+from pet_mad.calculator import PETMADCalculator
+from pet_mad.utils import compute_rotational_average, get_so3_rotations, rotate_atoms
+
 
 GRID_ORDERS = [3, 5, 7]
 NUM_ROTATIONS = [4, 8, 12]
@@ -28,7 +30,7 @@ def test_rotate_atoms():
     rotations = get_so3_rotations(3, 4)
     rotated_atoms = rotate_atoms(atoms, rotations)
     assert len(rotated_atoms) == len(rotations)
-    for rotation, item in zip(rotations, rotated_atoms):
+    for rotation, item in zip(rotations, rotated_atoms, strict=False):
         np.testing.assert_allclose(
             item.get_positions(), atoms.get_positions() @ rotation.T
         )

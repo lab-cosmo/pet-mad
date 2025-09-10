@@ -147,14 +147,14 @@ AVAILABLE_LEBEDEV_GRID_ORDERS = [
 
 def get_so3_rotations(
     rotational_average_order: int,
-    num_primitive_rotations: int,
+    num_additional_rotations: int,
     axis: Optional[np.ndarray] = None,
 ) -> List[np.ndarray]:
     axis = np.array([0, 0, 1]) if axis is None else axis
     lebedev_grid = lebedev_rule(rotational_average_order)[0].T
 
-    alphas = np.linspace(0, 2 * np.pi, num_primitive_rotations, endpoint=False)
-    primitive_rotations = [
+    alphas = np.linspace(0, 2 * np.pi, num_additional_rotations, endpoint=False)
+    additional_rotations = [
         Rotation.from_rotvec(axis * alpha).as_matrix() for alpha in alphas
     ]
     lebedev_rotations = [
@@ -163,7 +163,7 @@ def get_so3_rotations(
     ]
     rotations: List[np.ndarray] = []
     for lrot in lebedev_rotations:
-        for prot in primitive_rotations:
+        for prot in additional_rotations:
             rotations.append(lrot @ prot)
     return rotations
 

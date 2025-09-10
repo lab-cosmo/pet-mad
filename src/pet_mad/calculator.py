@@ -49,7 +49,7 @@ class PETMADCalculator(MetatomicCalculator):
         calculate_uncertainty: bool = False,
         calculate_ensemble: bool = False,
         rotational_average_order: Optional[int] = None,
-        rotational_average_num_primitive_rotations: int = 4,
+        rotational_average_num_additional_rotations: int = 1,
         rotational_average_batch_size: Optional[int] = None,
         dtype: Optional[torch.dtype] = None,
         *,
@@ -69,9 +69,11 @@ class PETMADCalculator(MetatomicCalculator):
             running, defaults to False.
         :param rotational_average_order: order of the Lebedev-Laikov grid used for
             averaging the prediction over rotations.
-        :param rotational_average_num_primitive_rotations: number of primitive rotations
-            used for sampling the unit sphere around each Lebedev-Laikov rotation
-            vector.
+        :param rotational_average_num_additional_rotations: the number of additional
+            rotations sampled from 0 to 2pi angle applied on top of the each
+            Lebedev-Laikov rotation vector when performing rotational averaging.
+            Defaults to 1, which means that by default only the Lebedev-Laikov grid
+            is used for rotational averaging.
         :param rotational_average_batch_size: batch size to use for the rotational
             averaging. If `None`, all rotations will be computed at once.
         :param dtype: dtype to use for the calculations. If `None`, we will use the
@@ -126,7 +128,7 @@ class PETMADCalculator(MetatomicCalculator):
 
         self._rotations: List[np.ndarray] = []
         if rotational_average_order is not None:
-            assert rotational_average_num_primitive_rotations > 0, (
+            assert rotational_average_num_additional_rotations > 0, (
                 "Number of primitive rotations must be greater than 0."
             )
             if rotational_average_order not in AVAILABLE_LEBEDEV_GRID_ORDERS:
@@ -138,7 +140,7 @@ class PETMADCalculator(MetatomicCalculator):
 
             self._rotations = get_so3_rotations(
                 rotational_average_order,
-                rotational_average_num_primitive_rotations,
+                rotational_average_num_additional_rotations,
             )
         self._rotational_average_batch_size = rotational_average_batch_size
 
@@ -218,7 +220,7 @@ class PETMADCalculator(MetatomicCalculator):
                         "Please reduce the batch size or use a lower rotational "
                         "averaging parameters. This can be done by setting the "
                         "`rotational_average_batch_size`, `rotational_average_order`"
-                        "and `rotational_average_num_primitive_rotations` parameters, "
+                        "and `rotational_average_num_additional_rotations` parameters, "
                         "while initializing the calculator."
                         f"Full error message: {e}"
                     )

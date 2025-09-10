@@ -1,10 +1,14 @@
-from pet_mad.calculator import PETMADCalculator
-from pet_mad._models import get_pet_mad, save_pet_mad
-from ase.build import bulk
 import os
+
 import pytest
+from ase.build import bulk
+
+from pet_mad._models import get_pet_mad, save_pet_mad
+from pet_mad.calculator import PETMADCalculator
+
 
 VERSIONS = ("1.1.0", "1.0.2", "1.0.1")
+
 
 @pytest.mark.parametrize(
     "version",
@@ -23,6 +27,7 @@ def test_save_pet_mad(version, monkeypatch, tmp_path):
     monkeypatch.chdir(tmp_path)
     save_pet_mad(version=version, output=f"pet-mad-{version}.pt")
     assert os.path.exists(f"pet-mad-{version}.pt")
+
 
 def test_basic_usage():
     atoms = bulk("Si", cubic=True, a=5.43, crystalstructure="diamond")
