@@ -113,4 +113,5 @@ filterwarnings = [
     # We don't yet have a linux-aarch64 wheel on PyPI, so libgomp is not copied to 
     # sphericart_torch.libs' by cibuildwheels
     "ignore:No libgomp shared library found in 'sphericart_torch.libs'.",
+    "ignore:trying to upgrade an old model",
 ]
