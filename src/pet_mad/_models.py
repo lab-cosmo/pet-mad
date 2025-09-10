@@ -66,7 +66,9 @@ def get_pet_mad(
             action="ignore",
             message="PET assumes that Cartesian tensors of rank 2 are stress-like",
         )
+        print("PATH", path)
         model = load_metatrain_model(path)
+        print("MODEL", model)
 
     metadata = get_pet_mad_metadata(version)
     return model.export(metadata)
