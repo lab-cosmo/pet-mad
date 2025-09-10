@@ -68,8 +68,7 @@ def test_compute_rotational_average():
 def test_calc_rot_averaging(order):
     atoms = bulk("Si", cubic=True, a=5.43, crystalstructure="diamond")
     atoms.rattle(0.05)
-    calc = PETMADCalculator()
-    atoms.calc = calc
+    atoms.calc = PETMADCalculator()
 
     target_energy = atoms.get_potential_energy()
     target_forces = atoms.get_forces()
@@ -91,14 +90,27 @@ def test_calc_rot_averaging_non_conservative():
     atoms = bulk("Si", cubic=True, a=5.43, crystalstructure="diamond")
     atoms.rattle(0.05)
     atoms.calc = PETMADCalculator(
-        version=PET_MAD_NC_AVAILABILITY_VERSION,
-        rotational_average_order=3,
-        non_conservative=True,
+        version=PET_MAD_NC_AVAILABILITY_VERSION, non_conservative=True
     )
-    _ = atoms.get_potential_energy()
+
+    target_energy = atoms.get_potential_energy()
+    target_forces = atoms.get_forces()
+    target_stress = atoms.get_stress()
+
+    atoms.calc = PETMADCalculator(
+        version=PET_MAD_NC_AVAILABILITY_VERSION,
+        non_conservative=True,
+        rotational_average_order=3,
+    )
+    averaged_energy = atoms.get_potential_energy()
+    averaged_forces = atoms.get_forces()
+    averaged_stress = atoms.get_stress()
     assert "energy_rot_std" in atoms.calc.results
     assert "forces_rot_std" in atoms.calc.results
     assert "stress_rot_std" in atoms.calc.results
+    np.testing.assert_allclose(averaged_energy, target_energy, atol=5e-2)
+    np.testing.assert_allclose(averaged_forces, target_forces, atol=5e-2)
+    np.testing.assert_allclose(averaged_stress, target_stress, atol=5e-2)
 
 
 @pytest.mark.parametrize("batch_size", BATCH_SIZES)
