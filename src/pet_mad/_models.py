@@ -2,23 +2,23 @@ import importlib.util
 import logging
 import warnings
 from typing import Optional
-
-from metatomic.torch import AtomisticModel
-from metatrain.utils.io import load_model as load_metatrain_model
-from .utils import get_pet_mad_metadata, get_pet_mad_dos_metadata, hf_hub_download_url
 from urllib.parse import urlparse
 from urllib.request import urlretrieve
-from .modules import BandgapModel
-import torch
 
+import torch
+from metatomic.torch import AtomisticModel
+from metatrain.utils.io import load_model as load_metatrain_model
 from packaging.version import Version
 
 from ._version import (
-    PET_MAD_LATEST_STABLE_VERSION,
     PET_MAD_AVAILABLE_VERSIONS,
-    PET_MAD_DOS_LATEST_STABLE_VERSION,
     PET_MAD_DOS_AVAILABLE_VERSIONS,
+    PET_MAD_DOS_LATEST_STABLE_VERSION,
+    PET_MAD_LATEST_STABLE_VERSION,
 )
+from .modules import BandgapModel
+from .utils import get_pet_mad_dos_metadata, get_pet_mad_metadata, hf_hub_download_url
+
 
 BASE_URL = "https://huggingface.co/lab-cosmo/pet-mad/resolve/{tag}/models/pet-mad-{version}.ckpt"
 
@@ -39,7 +39,8 @@ def get_pet_mad(
 
     if version not in [Version(v) for v in PET_MAD_AVAILABLE_VERSIONS]:
         raise ValueError(
-            f"Version {version} is not supported. Supported versions are {PET_MAD_AVAILABLE_VERSIONS}"
+            f"Version {version} is not supported. Supported versions are "
+            f"{PET_MAD_AVAILABLE_VERSIONS}"
         )
 
     if version == Version("1.0.0"):
@@ -51,7 +52,7 @@ def get_pet_mad(
                 "pip install pet-mad[deprecated]"
             )
 
-        import pet_neighbors_convert  # noqa: F401
+        import pet_neighbors_convert  # noqa: F401 # pyright: ignore[reportMissingImports]
 
     if checkpoint_path is not None:
         logging.info(f"Loading PET-MAD model from checkpoint: {checkpoint_path}")
@@ -127,7 +128,8 @@ def get_pet_mad_dos(
 
     if version not in [Version(v) for v in PET_MAD_DOS_AVAILABLE_VERSIONS]:
         raise ValueError(
-            f"Version {version} is not supported. Supported versions are {PET_MAD_DOS_AVAILABLE_VERSIONS}"
+            f"Version {version} is not supported. Supported versions are "
+            f"{PET_MAD_DOS_AVAILABLE_VERSIONS}"
         )
 
     if model_path is not None:
@@ -154,7 +156,8 @@ def _get_bandgap_model(version: str = "latest", model_path: Optional[str] = None
 
     if version not in [Version(v) for v in PET_MAD_DOS_AVAILABLE_VERSIONS]:
         raise ValueError(
-            f"Version {version} is not supported. Supported versions are {PET_MAD_DOS_AVAILABLE_VERSIONS}"
+            f"Version {version} is not supported. Supported versions are "
+            f"{PET_MAD_DOS_AVAILABLE_VERSIONS}"
         )
 
     if model_path is not None:
@@ -172,8 +175,8 @@ def _get_bandgap_model(version: str = "latest", model_path: Optional[str] = None
             if url.netloc == "huggingface.co":
                 path = hf_hub_download_url(url=url.geturl(), hf_token=None)
             else:
-                # Avoid caching generic URLs due to lack of a model hash for proper cache
-                # invalidation
+                # Avoid caching generic URLs due to lack of a model hash for proper
+                # cache invalidation
                 path, _ = urlretrieve(url=url.geturl())
 
     model = BandgapModel()

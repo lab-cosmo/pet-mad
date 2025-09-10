@@ -1,13 +1,14 @@
-from metatomic.torch import ModelMetadata
+import re
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Union
+from urllib.parse import unquote
+
+import numpy as np
+import torch
 from ase import Atoms
 from ase.units import kB
-from typing import List, Union, Optional, Dict, Any
-import torch
-from pathlib import Path
-from urllib.parse import unquote
 from huggingface_hub import hf_hub_download
-import numpy as np
-import re
+from metatomic.torch import ModelMetadata
 from scipy.integrate import lebedev_rule
 from scipy.spatial.transform import Rotation
 
@@ -189,13 +190,13 @@ def compute_rotational_average(
             new_results[key + "_rot_std"] = np.std(value)
         elif "forces" in key:
             rotated_back_values = np.array(
-                [val @ rot for rot, val in zip(rotations, value)]
+                [val @ rot for rot, val in zip(rotations, value, strict=False)]
             )
             new_results[key] = rotated_back_values.mean(axis=0)
             new_results[key + "_rot_std"] = rotated_back_values.std(axis=0)
         elif "stress" in key:
             rotated_back_values = np.array(
-                [rot.T @ val @ rot for rot, val in zip(rotations, value)]
+                [rot.T @ val @ rot for rot, val in zip(rotations, value, strict=False)]
             )
             new_results[key] = rotated_back_values.mean(axis=0)
             new_results[key + "_rot_std"] = rotated_back_values.std(axis=0)
@@ -227,7 +228,7 @@ def get_pet_mad_metadata(version: str):
 def get_pet_mad_dos_metadata(version: str):
     return ModelMetadata(
         name=f"PET-MAD-DOS v{version}",
-        description="A universal machine learning model for the electronic density of states",
+        description="A universal machine learning model for the electronic density of states",  # noqa: E501
         authors=[
             "Wei Bin How (weibin.how@epfl.ch)",
             "Pol Febrer",

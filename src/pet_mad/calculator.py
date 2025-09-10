@@ -1,31 +1,31 @@
 import logging
 import os
-from typing import Optional, Tuple, List, Union, Dict, Any
+from typing import Any, Dict, List, Optional, Tuple, Union
 
+import numpy as np
+import torch
+from ase import Atoms
 from metatomic.torch import ModelOutput
 from metatomic.torch.ase_calculator import MetatomicCalculator
-from platformdirs import user_cache_dir
-import torch
-import numpy as np
-from ase import Atoms
-
 from packaging.version import Version
+from platformdirs import user_cache_dir
 
-from ._models import get_pet_mad, get_pet_mad_dos, _get_bandgap_model
-from .utils import (
-    compute_rotational_average,
-    get_num_electrons,
-    fermi_dirac_distribution,
-    rotate_atoms,
-    AVAILABLE_LEBEDEV_GRID_ORDERS,
-    get_so3_rotations,
-)
+from ._models import _get_bandgap_model, get_pet_mad, get_pet_mad_dos
 from ._version import (
-    PET_MAD_LATEST_STABLE_VERSION,
-    PET_MAD_UQ_AVAILABILITY_VERSION,
-    PET_MAD_NC_AVAILABILITY_VERSION,
     PET_MAD_DOS_LATEST_STABLE_VERSION,
+    PET_MAD_LATEST_STABLE_VERSION,
+    PET_MAD_NC_AVAILABILITY_VERSION,
+    PET_MAD_UQ_AVAILABILITY_VERSION,
 )
+from .utils import (
+    AVAILABLE_LEBEDEV_GRID_ORDERS,
+    compute_rotational_average,
+    fermi_dirac_distribution,
+    get_num_electrons,
+    get_so3_rotations,
+    rotate_atoms,
+)
+
 
 STR_TO_DTYPE = {
     "float32": torch.float32,
@@ -67,12 +67,13 @@ class PETMADCalculator(MetatomicCalculator):
             Defaults to False. Only available for PET-MAD version 1.0.2.
         :param check_consistency: should we check the model for consistency when
             running, defaults to False.
-        :param rotational_average_order: order of the Lebedev-Laikov grid used for averaging
-            the prediction over rotations.
-        :param rotational_average_num_primitive_rotations: number of primitive rotations used
-            for sampling the unit sphere around each Lebedev-Laikov rotation vector.
-        :param rotational_average_batch_size: batch size to use for the rotational averaging.
-            If `None`, all rotations will be computed at once.
+        :param rotational_average_order: order of the Lebedev-Laikov grid used for
+            averaging the prediction over rotations.
+        :param rotational_average_num_primitive_rotations: number of primitive rotations
+            used for sampling the unit sphere around each Lebedev-Laikov rotation
+            vector.
+        :param rotational_average_batch_size: batch size to use for the rotational
+            averaging. If `None`, all rotations will be computed at once.
         :param dtype: dtype to use for the calculations. If `None`, we will use the
             default dtype.
         :param device: torch device to use for the calculation. If `None`, we will try
@@ -90,17 +91,19 @@ class PETMADCalculator(MetatomicCalculator):
 
         if non_conservative and version < Version(PET_MAD_NC_AVAILABILITY_VERSION):
             raise NotImplementedError(
-                f"Non-conservative forces and stresses are not available for version {version}. "
-                f"Please use PET-MAD version {PET_MAD_NC_AVAILABILITY_VERSION} or higher."
+                f"Non-conservative forces and stresses are not available for version "
+                f"{version}. Please use PET-MAD version "
+                f"{PET_MAD_NC_AVAILABILITY_VERSION} or higher."
             )
 
         additional_outputs = {}
         if calculate_uncertainty or calculate_ensemble:
             if version < Version(PET_MAD_UQ_AVAILABILITY_VERSION):
                 raise NotImplementedError(
-                    f"Energy uncertainty and ensemble are not available for version {version}. "
-                    f"Please use PET-MAD version {PET_MAD_UQ_AVAILABILITY_VERSION} or higher, "
-                    f"or disable the calculation of energy uncertainty and energy ensemble."
+                    f"Energy uncertainty and ensemble are not available for version "
+                    f"{version}. Please use PET-MAD version "
+                    f"{PET_MAD_UQ_AVAILABILITY_VERSION} or higher, or disable the "
+                    "calculation of energy uncertainty and energy ensemble."
                 )
             else:
                 if calculate_uncertainty:
@@ -128,8 +131,9 @@ class PETMADCalculator(MetatomicCalculator):
             )
             if rotational_average_order not in AVAILABLE_LEBEDEV_GRID_ORDERS:
                 raise ValueError(
-                    f"Lebedev-Laikov grid order {rotational_average_order} is not available. "
-                    f"Please use one of the following orders: {AVAILABLE_LEBEDEV_GRID_ORDERS}."
+                    f"Lebedev-Laikov grid order {rotational_average_order} is not "
+                    f"available. Please use one of the following orders: "
+                    f"{AVAILABLE_LEBEDEV_GRID_ORDERS}."
                 )
 
             self._rotations = get_so3_rotations(
@@ -175,8 +179,9 @@ class PETMADCalculator(MetatomicCalculator):
         detail of ``atoms.get_energy()`` and related functions. See
         :py:meth:`ase.calculators.calculator.Calculator.calculate` for more information.
 
-        If the `rotational_average_order` parameter is set during initialization, the prediction
-        will be averaged over unique rotations in the Lebedev-Laikov grid of a chosen order.
+        If the `rotational_average_order` parameter is set during initialization, the
+        prediction will be averaged over unique rotations in the Lebedev-Laikov grid of
+        a chosen order.
 
         If the `rotational_average_batch_size` parameter is set during initialization,
         averaging will be performed in batches of the given size to avoid out of memory
@@ -210,9 +215,11 @@ class PETMADCalculator(MetatomicCalculator):
                 except torch.cuda.OutOfMemoryError as e:
                     raise RuntimeError(
                         "Out of memory error encountered during rotational averaging. "
-                        "Please reduce the batch size or use a lower rotational averaging order."
-                        "This can be done by setting the `rotational_average_batch_size` and "
-                        "`rotational_average_order` parameters while initializing the calculator."
+                        "Please reduce the batch size or use a lower rotational "
+                        "averaging parameters. This can be done by setting the "
+                        "`rotational_average_batch_size`, `rotational_average_order`"
+                        "and `rotational_average_num_primitive_rotations` parameters, "
+                        "while initializing the calculator."
                         f"Full error message: {e}"
                     )
 
@@ -223,9 +230,10 @@ class PETMADCalculator(MetatomicCalculator):
         if output_name not in self.additional_outputs:
             quantity = output_name.split("_")[1]
             raise ValueError(
-                f"Energy {quantity} is not available. Please make sure that you have initialized the "
-                f"calculator with `calculate_{quantity}=True` and performed evaluation. "
-                f"This option is only available for PET-MAD version {PET_MAD_UQ_AVAILABILITY_VERSION} or higher."
+                f"Energy {quantity} is not available. Please make sure that you have"
+                f" initialized the calculator with `calculate_{quantity}=True` and "
+                f"performed evaluation. This option is only available for PET-MAD "
+                f"version {PET_MAD_UQ_AVAILABILITY_VERSION} or higher."
             )
         return (
             self.additional_outputs[output_name]
@@ -271,11 +279,12 @@ class PETMADDOSCalculator(MetatomicCalculator):
         device: Optional[str] = None,
     ):
         """
-        :param version: PET-MAD-DOS version to use. Defaults to the latest stable version.
-        :param model_path: path to a Torch-Scripted model file to load the model from. If
-            provided, the `version` parameter is ignored.
-        :param bandgap_model_path: path to a PyTorch checkpoint file with the bandgap model.
+        :param version: PET-MAD-DOS version to use. Defaults to the latest stable
+            version.
+        :param model_path: path to a Torch-Scripted model file to load the model from.
             If provided, the `version` parameter is ignored.
+        :param bandgap_model_path: path to a PyTorch checkpoint file with the bandgap
+            model. If provided, the `version` parameter is ignored.
         :param check_consistency: should we check the model for consistency when
             running, defaults to False.
         :param device: torch device to use for the calculation. If `None`, we will try
