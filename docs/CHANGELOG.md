@@ -2,6 +2,8 @@
 
 ## Unreleased changes
 
+## 1.4.3
+
 - Added the rotational averaging feature to `PETMADCalculator`.
 
 ## 1.4.2
