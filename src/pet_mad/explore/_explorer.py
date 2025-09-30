@@ -37,12 +37,14 @@ class MADExplorer(torch.nn.Module):
         device: Optional[Union[str, torch.device]] = "cpu",
         features_output: str = "mtt::aux::energy_last_layer_features",
         project: bool = True,
+        per_atom: bool = False,
     ):
         super().__init__()
 
         self.device = device
         self.features_output = features_output
         self.project = project
+        self.per_atom = per_atom
 
         if isinstance(model, (str, Path)):
             self.pet = load_metatrain_model(model)
@@ -154,7 +156,7 @@ class MADExplorer(torch.nn.Module):
         if selected_atoms is not None:
             features = mts.slice(features, "samples", selected_atoms)
 
-        if outputs[self.features_output].per_atom:
+        if outputs[self.features_output].per_atom and not self.per_atom:
             mean = mts.mean_over_samples(features, "atom")
             mean_vals = torch.cat([block.values for block in mean.blocks()], dim=0)
 

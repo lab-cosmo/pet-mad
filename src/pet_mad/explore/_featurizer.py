@@ -75,6 +75,7 @@ class PETMADFeaturizer:
         pet_checkpoint_path: Optional[str] = None,
         *,
         project: bool = True,
+        per_atom: bool = False,
         check_consistency=False,
         device=None,
         length_unit="Angstrom",
@@ -114,7 +115,7 @@ class PETMADFeaturizer:
 
         petmad = get_pet_mad(version="1.1.0", checkpoint_path=pet_checkpoint_path)
 
-        explorer = MADExplorer(petmad.module, device=device, project=project)
+        explorer = MADExplorer(petmad.module, device=device, project=project, per_atom=per_atom)
         explorer.load_checkpoint(petmad_explorer_path)
 
         outputs = {"features": mta.ModelOutput(per_atom=True)}
