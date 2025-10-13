@@ -110,11 +110,11 @@ class PETMADCalculator(MetatomicCalculator):
             else:
                 if calculate_uncertainty:
                     additional_outputs["energy_uncertainty"] = ModelOutput(
-                        quantity="energy", unit="eV", per_atom=False
+                        quantity="energy", unit="eV", per_atom=True
                     )
                 if calculate_ensemble:
                     additional_outputs["energy_ensemble"] = ModelOutput(
-                        quantity="energy", unit="eV", per_atom=False
+                        quantity="energy", unit="eV", per_atom=True
                     )
 
         model = get_pet_mad(version=version, checkpoint_path=checkpoint_path)
@@ -207,7 +207,7 @@ class PETMADCalculator(MetatomicCalculator):
             for batch in batches:
                 try:
                     batch_results = self.compute_energy(
-                        batch, self._do_gradients_with_energy
+                        batch, self.parameters["do_gradients_with_energy"]
                     )
                     for key, value in batch_results.items():
                         results.setdefault(key, [])
