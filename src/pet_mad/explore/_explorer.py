@@ -4,9 +4,8 @@ from typing import Dict, List, Optional, Union
 import metatensor.torch as mts
 import metatomic.torch as mta
 import torch
-
-from metatrain.utils.io import load_model as load_metatrain_model
 from metatrain.pet import PET
+from metatrain.utils.io import load_model as load_metatrain_model
 
 from ._modules import MLPProjector, TorchStandardScaler
 

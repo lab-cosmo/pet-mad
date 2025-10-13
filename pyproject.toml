@@ -1,7 +1,7 @@
 [project]
 name = "pet-mad"
 dynamic = ["version"]
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 
 readme = "README.md"
 license = "BSD-3-Clause"
@@ -22,12 +22,13 @@ maintainers = [
 ]
 
 dependencies = [
-    "metatrain==2025.9.1",
+    "metatrain==2025.10",
     "huggingface_hub",
     "hf_xet",
     "packaging",
     "platformdirs",
     "tqdm",
+    "scipy>=1.15.0",
 ]
 
 keywords = ["machine learning", "molecular modeling"]
@@ -76,29 +77,41 @@ where = ["src"]
 [tool.setuptools.dynamic]
 version = {attr = "pet_mad.__version__"}
 
-[tool.black]
-exclude = 'docs/src/examples'
+[tool.ruff]
+line-length = 88
 
-[tool.isort]
-skip = "__init__.py"
-profile = "black"
-line_length = 88
-indent = 4
-include_trailing_comma = true
-lines_after_imports = 2
-known_first_party = "pet-mad"
+[tool.ruff.lint]
+select = ["E", "F", "B", "I"]
+ignore = ["B018", "B904"]
+
+[tool.ruff.lint.isort]
+lines-after-imports = 2
+known-first-party = ["pet_mad"]
+known-third-party = ["torch"]
+
+[tool.ruff.format]
+docstring-code-format = true
 
 [tool.mypy]
-exclude = [
-    "docs/src/examples"
-]
 follow_imports = 'skip'
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]
-# ignore" a bunch of internal warnings with Python 3.12 and PyTorch
+# ignore" a bunch of internal warnings with Python 3.13 and PyTorch
 filterwarnings = [
+    "error",
+    # PyTorch deprecation warnings
     "ignore:ast.Str is deprecated and will be removed in Python 3.14:DeprecationWarning",
     "ignore:Attribute s is deprecated and will be removed in Python 3.14:DeprecationWarning",
     "ignore:ast.NameConstant is deprecated and will be removed in Python 3.14:DeprecationWarning",
+    # PyTorch does not want these, but mypy requires them
+    "ignore:The TorchScript type system doesn't support instance-level annotations on empty non-base types",
+    # Sphericart double backward warning
+    "ignore:Second derivatives of the spherical harmonics with respect to the Cartesian coordinates were not requested at class creation.",
+    # OldCompositionModel deprecation warning
+    "ignore:`OldCompositionModel` composition model is deprecated. Please use `CompositionModel` instead.",
+    # We don't yet have a linux-aarch64 wheel on PyPI, so libgomp is not copied to 
+    # sphericart_torch.libs' by cibuildwheels
+    "ignore:No libgomp shared library found in 'sphericart_torch.libs'.",
+    "ignore:trying to upgrade an old model",
 ]
