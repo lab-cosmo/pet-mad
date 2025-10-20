@@ -268,7 +268,7 @@ def get_num_electrons(atoms: Union[Atoms, List[Atoms]]) -> torch.Tensor:
 
     :param atoms: ASE atoms object or a list of ASE atoms objects
     :return: Number of electrons for each ase.Atoms object stored in a torch.Tensor
-    format.
+        format.
     """
     num_electrons = []
     if isinstance(atoms, Atoms):

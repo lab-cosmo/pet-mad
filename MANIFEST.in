@@ -11,5 +11,6 @@ prune .tox
 
 exclude .gitignore
 exclude tox.ini
+exclude .readthedocs.yml
 
 global-exclude *.py[cod] __pycache__/* *.so *.dylib

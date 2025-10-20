@@ -386,7 +386,7 @@ class PETMADDOSCalculator(MetatomicCalculator):
             density of states is calculated using the `calculate_dos` method.
         :param temperature: Temperature (K). Defaults to 0 K.
         :return: Fermi energy for each ase.Atoms object stored in a torch.Tensor
-        format.
+            format.
         """
         if isinstance(atoms, Atoms):
             atoms = [atoms]
