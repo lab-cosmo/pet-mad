@@ -231,7 +231,7 @@ def get_upet_metadata(model: str, size: str, version: str):
     dataset = model.split("-")[1].upper()
 
     return ModelMetadata(
-        name=f"{model.capitalize()}-{size.capitalize()}-v{version}",
+        name=f"{model.upper()}-{size.upper()} v{version}",
         description=description.format(dataset, size),
         authors=authors,
         references={
