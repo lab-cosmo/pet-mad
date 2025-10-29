@@ -20,6 +20,7 @@ from ._models import (
 from ._version import (
     PET_MAD_DOS_LATEST_STABLE_VERSION,
     UPET_AVAILABLE_MODELS,
+    UPET_UQ_SUPPORTED_MODELS,
 )
 from .utils import (
     AVAILABLE_LEBEDEV_GRID_ORDERS,
@@ -150,11 +151,11 @@ class UPETCalculator(MetatomicCalculator):
         additional_outputs = {}
         if calculate_uncertainty:
             additional_outputs["energy_uncertainty"] = ModelOutput(
-                quantity="energy", unit="eV", per_atom=False
+                quantity="energy", unit="eV", per_atom=True
             )
         if calculate_ensemble:
             additional_outputs["energy_ensemble"] = ModelOutput(
-                quantity="energy", unit="eV", per_atom=False
+                quantity="energy", unit="eV", per_atom=True
             )
 
         if dtype is not None:
@@ -262,7 +263,8 @@ class UPETCalculator(MetatomicCalculator):
             raise ValueError(
                 f"Energy {quantity} is not available. Please make sure that you have"
                 f" initialized the calculator with `calculate_{quantity}=True` and "
-                f"performed evaluation."
+                f"performed evaluation. Uncertainty quantification is only available "
+                f"for the following models: {UPET_UQ_SUPPORTED_MODELS}"
             )
         return (
             self.additional_outputs[output_name]
