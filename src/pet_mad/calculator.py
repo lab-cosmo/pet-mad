@@ -235,7 +235,7 @@ class UPETCalculator(MetatomicCalculator):
             for batch in batches:
                 try:
                     batch_results = self.compute_energy(
-                        batch, self._do_gradients_with_energy
+                        batch, self.parameters["do_gradients_with_energy"]
                     )
                     for key, value in batch_results.items():
                         results.setdefault(key, [])

@@ -93,7 +93,7 @@ def test_calc_rot_averaging_non_conservative():
     atoms = bulk("Si", cubic=True, a=5.43, crystalstructure="diamond")
     atoms.rattle(0.05)
     atoms.calc = UPETCalculator(
-        model="pet-mad-s", version="1.0.2", non_conservative=True
+        model="pet-mad-s", version="1.1.0", non_conservative=True
     )
 
     target_energy = atoms.get_potential_energy()
@@ -102,7 +102,7 @@ def test_calc_rot_averaging_non_conservative():
 
     atoms.calc = UPETCalculator(
         model="pet-mad-s",
-        version="1.0.2",
+        version="1.1.0",
         non_conservative=True,
         rotational_average_order=3,
     )
