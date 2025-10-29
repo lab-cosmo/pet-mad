@@ -137,6 +137,33 @@ These ASE methods are ideal for single-structure evaluations, but they are
 inefficient for the evaluation on a large number of pre-defined structures. To
 perform efficient evaluation in that case, read [here](docs/README_BATCHED.md).
 
+#### Other PET models
+
+You can now use other pre-trained PET models! Here is a summary:
+
+|:------------|:-----------------------:|:----------------------:|:-----------------------:|:---------------------:|
+| Name        | Level of theory         | Available sizes        | To be used for          | Training              |
+|:------------|:-----------------------:|:----------------------:|:-----------------------:|:---------------------:|
+| PET-OMAD    | PBEsol                  | "l"                    | materials and molecules | OMat -> MAD           |
+| PET-OMATPES | r2SCAN                  | "l"                    | materials               | OMat -> MATPES        |
+| PET-OMat    | PBE                     | "xs", "s", "m", "l"    | materials               | OMat                  |
+| PET-OAM     | PBE (Materials Project) | "l"                    | materials               | OMat -> sAlex + MPtrj |
+| PET-SPICE   | ωB97M-D3                | "s", "l"               | molecules               | SPICE                 | 
+|-------------|-------------------------|------------------------|-------------------------|-----------------------|
+
+
+Here is an example:
+
+```python
+from pet_mad.calculator import PETMLIPCalculator
+from ase.build import bulk
+
+atoms = bulk("Si", cubic=True, a=5.43, crystalstructure="diamond")
+calculator = PETMLIPCalculator(model="pet-omatpes", size="l", device="cpu")
+atoms.calc = calculator
+energy = atoms.get_potential_energy()
+forces = atoms.get_forces()
+```
 
 #### Non-conservative (direct) forces and stresses prediction
 
@@ -264,6 +291,12 @@ mtt export https://huggingface.co/lab-cosmo/pet-mad/resolve/v1.0.2/models/pet-ma
 This will download the model and convert it to TorchScript format compatible
 with LAMMPS, using the `metatomic` and `metatrain` libraries, which PET-MAD is
 based on.
+
+Other pre-trained PET models can be prepared in the same way, e.g.,
+```bash
+mtt export https://huggingface.co/lab-cosmo/upet/resolve/main/models/pet-omat-xs-v1.0.0.ckpt -o pet-omat-xs.pt
+mtt export https://huggingface.co/lab-cosmo/upet/resolve/main/models/pet-omatpes-l-v0.1.0.ckpt -o pet-omatpes-l.pt
+```
 
 Prepare a lammps input file using `pair_style metatomic` and defining the
 mapping from LAMMPS types in the data file to elements PET-MAD can handle using

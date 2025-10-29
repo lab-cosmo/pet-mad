@@ -10,7 +10,7 @@ from metatomic.torch.ase_calculator import MetatomicCalculator
 from packaging.version import Version
 from platformdirs import user_cache_dir
 
-from ._models import _get_bandgap_model, get_pet_mad, get_pet_mad_dos
+from ._models import _get_bandgap_model, get_pet_mad, get_pet_mad_dos, get_upet, upet_get_size_to_load, upet_get_version_to_load
 from ._version import (
     PET_MAD_DOS_LATEST_STABLE_VERSION,
     PET_MAD_LATEST_STABLE_VERSION,
@@ -437,3 +437,246 @@ class PETMADDOSCalculator(MetatomicCalculator):
             weights = torch.softmax(-torch.abs(residue) / tau, dim=1)
             efermi = torch.sum(weights * efermi_grid_interp.unsqueeze(0), dim=1)
         return efermi
+
+
+class PETMLIPCalculator(MetatomicCalculator):
+    """
+    ASE Calculator for MLIPs based on the PET architecture.
+    """
+
+    def __init__(
+        self,
+        model: str,
+        size: Optional[str] = None,
+        version: str = "latest",
+        *,
+        device: Optional[str] = None,
+        dtype: Optional[torch.dtype] = None,
+        checkpoint_path: Optional[str] = None,
+        calculate_uncertainty: bool = False,
+        calculate_ensemble: bool = False,
+        rotational_average_order: Optional[int] = None,
+        rotational_average_num_additional_rotations: int = 1,
+        rotational_average_batch_size: Optional[int] = None,
+        non_conservative: bool = False,
+        check_consistency: bool = False,
+    ):
+        """
+        :param model: PET-MLIP model to use. Can be one of the following:
+            - "pet-mad": PET-MAD model (materials and molecules, PBEsol)
+            - "pet-omad": PET-OMAD model (materials and molecules, PBEsol, slower and more accurate)
+            - "pet-omatpes": PET-OMATPES model (materials, r2SCAN)
+            - "pet-omat": PET-OMat model (materials, PBE)
+            - "pet-oam": PET-OAM model (materials, Materials-Project-consistent PBE)
+            - "pet-spice": PET-SPICE model (molecules, ωB97M-D3)
+        :param size: size of the model to use. Can be one of the following:
+            - "xs": extra small
+            - "s": small
+            - "m": medium
+            - "l": large
+            - "xl": extra large
+            If set to `None` (default) and the model has multiple sizes available, the
+            sizes will be chosen based on the following priority: s > m > xs > l > xl,
+            depending on availability.
+        :param version: version of the model to use. Defaults to the latest stable version.
+        :param device: torch device to use for the calculation. If `None`, we will try
+            the options in the model's `supported_device` in order.
+        :param dtype: dtype to use for the calculations. If `None`, we will use the
+            default dtype.
+        :param checkpoint_path: checkpoint path to a checkpoint file to load the model from.
+            Mainly designed for loading fine-tuned models.
+        :param calculate_uncertainty: whether to calculate energy uncertainty.
+            Defaults to False. Only available for PET-MAD version 1.0.2.
+        :param calculate_ensemble: whether to calculate energy ensemble.
+            Defaults to False. Only available for PET-MAD version 1.0.2.
+        :param rotational_average_order: order of the Lebedev-Laikov grid used for
+            averaging the prediction over rotations.
+        :param rotational_average_num_additional_rotations: the number of additional
+            rotations sampled from 0 to 2pi angle applied on top of the each
+            Lebedev-Laikov rotation vector when performing rotational averaging.
+            Defaults to 1, which means that by default only the Lebedev-Laikov grid
+            is used for rotational averaging.
+        :param rotational_average_batch_size: batch size to use for the rotational
+            averaging. If `None`, all rotations will be computed at once.
+        :param non_conservative: whether to use the non-conservative regime of forces
+            and stresses prediction. Defaults to False. Available for all models,
+            except:
+                - PET-MAD models with version < 1.1.0
+                - PET-SPICE models
+        :param check_consistency: whether internal consistency checks should be
+            performed. Mainly for developers, defaults to False.
+        """
+
+        if model == "pet-mad":
+            if version == "latest":
+                version = Version(PET_MAD_LATEST_STABLE_VERSION)
+        else:
+            size = upet_get_size_to_load(model, requested_size=size)
+            version = upet_get_version_to_load(model, size, requested_version=version)
+        
+        if not isinstance(version, Version):
+            version = Version(version)
+
+        if model == "pet-mad":
+            model = get_pet_mad(version=version, checkpoint_path=checkpoint_path)
+        else:
+            model = get_upet(model=model, size=size, version=version, checkpoint_path=checkpoint_path)
+
+        model_outputs = model.capabilities().outputs
+        if non_conservative:
+            # Check for "non_conservative_{forces/stress} availability"
+            if "non_conservative_forces" not in model_outputs or "non_conservative_stress" not in model_outputs:
+                raise NotImplementedError(
+                    "Non-conservative forces and stresses are not available for this "
+                    "model. Please check the documentation of this class for more "
+                    "information."
+                )
+        if calculate_uncertainty or calculate_ensemble:
+            if "energy_uncertainty" not in model_outputs or "energy_ensemble" not in model_outputs:
+                raise NotImplementedError(
+                    "Energy uncertainty and ensemble are not available for this "
+                    "model. Please check the documentation of this class for more "
+                    "information."
+                )
+
+        additional_outputs = {}
+        if calculate_uncertainty:
+            additional_outputs["energy_uncertainty"] = ModelOutput(
+                quantity="energy", unit="eV", per_atom=False
+            )
+        if calculate_ensemble:
+            additional_outputs["energy_ensemble"] = ModelOutput(
+                quantity="energy", unit="eV", per_atom=False
+            )
+
+        if dtype is not None:
+            if isinstance(dtype, str):
+                assert dtype in STR_TO_DTYPE, f"Invalid dtype: {dtype}"
+                dtype = STR_TO_DTYPE[dtype]
+            model._capabilities.dtype = DTYPE_TO_STR[dtype]
+            model = model.to(dtype=dtype, device=device)
+
+        self._rotations: List[np.ndarray] = []
+        if rotational_average_order is not None:
+            assert rotational_average_num_additional_rotations > 0, (
+                "Number of primitive rotations must be greater than 0."
+            )
+            if rotational_average_order not in AVAILABLE_LEBEDEV_GRID_ORDERS:
+                raise ValueError(
+                    f"Lebedev-Laikov grid order {rotational_average_order} is not "
+                    f"available. Please use one of the following orders: "
+                    f"{AVAILABLE_LEBEDEV_GRID_ORDERS}."
+                )
+
+            self._rotations = get_so3_rotations(
+                rotational_average_order,
+                rotational_average_num_additional_rotations,
+            )
+        self._rotational_average_batch_size = rotational_average_batch_size
+
+        cache_dir = user_cache_dir("pet-mad", "metatensor")
+        os.makedirs(cache_dir, exist_ok=True)
+
+        extensions_directory = None
+        if model == "pet-mad" and version == Version("1.0.0"):
+            extensions_directory = "extensions"
+
+        pt_path = cache_dir + f"/pet-mad-{version}.pt"
+        extensions_directory = (
+            (cache_dir + "/" + extensions_directory)
+            if extensions_directory is not None
+            else None
+        )
+
+        logging.info(f"Exporting checkpoint to TorchScript at {pt_path}")
+        model.save(pt_path, collect_extensions=extensions_directory)
+
+        super().__init__(
+            pt_path,
+            additional_outputs=additional_outputs,
+            extensions_directory=extensions_directory,
+            check_consistency=check_consistency,
+            device=device,
+            non_conservative=non_conservative,
+        )
+
+    def calculate(
+        self, atoms: Atoms, properties: List[str], system_changes: List[str]
+    ) -> None:
+        """
+        Compute some ``properties`` with this calculator, and return them in the format
+        expected by ASE.
+
+        This is not intended to be called directly by users, but to be an implementation
+        detail of ``atoms.get_energy()`` and related functions. See
+        :py:meth:`ase.calculators.calculator.Calculator.calculate` for more information.
+
+        If the `rotational_average_order` parameter is set during initialization, the
+        prediction will be averaged over unique rotations in the Lebedev-Laikov grid of
+        a chosen order.
+
+        If the `rotational_average_batch_size` parameter is set during initialization,
+        averaging will be performed in batches of the given size to avoid out of memory
+        errors.
+        """
+
+        super().calculate(atoms, properties, system_changes)
+
+        if len(self._rotations) > 0:
+            rotated_atoms_list = rotate_atoms(atoms, self._rotations)
+            batch_size = (
+                self._rotational_average_batch_size
+                if self._rotational_average_batch_size is not None
+                else len(rotated_atoms_list)
+            )
+            batches = [
+                rotated_atoms_list[i : i + batch_size]
+                for i in range(0, len(rotated_atoms_list), batch_size)
+            ]
+            results: Dict[str, Any] = {}
+            for batch in batches:
+                try:
+                    batch_results = self.compute_energy(
+                        batch, self._do_gradients_with_energy
+                    )
+                    for key, value in batch_results.items():
+                        results.setdefault(key, [])
+                        results[key].extend(
+                            [value] if isinstance(value, float) else value
+                        )
+                except torch.cuda.OutOfMemoryError as e:
+                    raise RuntimeError(
+                        "Out of memory error encountered during rotational averaging. "
+                        "Please reduce the batch size or use a lower rotational "
+                        "averaging parameters. This can be done by setting the "
+                        "`rotational_average_batch_size`, `rotational_average_order`"
+                        "and `rotational_average_num_additional_rotations` parameters, "
+                        "while initializing the calculator."
+                        f"Full error message: {e}"
+                    )
+
+            results = compute_rotational_average(results, self._rotations)
+            self.results.update(results)
+
+    def _get_uq_output(self, output_name: str):
+        if output_name not in self.additional_outputs:
+            quantity = output_name.split("_")[1]
+            raise ValueError(
+                f"Energy {quantity} is not available. Please make sure that you have"
+                f" initialized the calculator with `calculate_{quantity}=True` and "
+                f"performed evaluation. This option is only available for PET-MAD "
+                f"version {PET_MAD_UQ_AVAILABILITY_VERSION} or higher."
+            )
+        return (
+            self.additional_outputs[output_name]
+            .block()
+            .values.detach()
+            .numpy()
+            .squeeze()
+        )
+
+    def get_energy_uncertainty(self):
+        return self._get_uq_output("energy_uncertainty")
+
+    def get_energy_ensemble(self):
+        return self._get_uq_output("energy_ensemble")
