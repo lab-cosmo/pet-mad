@@ -34,7 +34,7 @@ jobs:
 
     - name: run Python tests
       run: |
-        tox -e pet-mad-tests-dev
+        tox -e upet-tests-dev
       env:
         # Use the CPU only version of torch when building/running the code
         PIP_EXTRA_INDEX_URL: https://download.pytorch.org/whl/cpu
