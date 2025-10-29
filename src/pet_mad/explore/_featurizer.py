@@ -13,7 +13,7 @@ from metatrain.utils.dtype import dtype_to_str
 from platformdirs import user_cache_dir
 from tqdm import tqdm
 
-from .._models import get_pet_mad
+from .._models import get_upet
 from ._explorer import MADExplorer
 
 
@@ -103,7 +103,12 @@ class PETMADFeaturizer:
             cache_dir=cache_dir,
         )
 
-        petmad = get_pet_mad(version="1.1.0", checkpoint_path=pet_checkpoint_path)
+        petmad = get_upet(
+            model="pet-mad",
+            size="s",
+            version="1.1.0",
+            checkpoint_path=pet_checkpoint_path,
+        )
 
         explorer = MADExplorer(petmad.module, device=device)
         explorer.load_checkpoint(petmad_explorer_path)
