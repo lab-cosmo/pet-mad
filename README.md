@@ -6,9 +6,12 @@
 </div>
 
 > [!WARNING]
-> Breaking change of the PET-MAD API in version `1.5.0` is introduced.
-> Please use the version `1.4.3` of PET-MAD if you want to use the old API.
-> The older version of the README file is avaiable [here](docs/README_OLD.md).
+> This repository is a successor of the PET-MAD repository, which is now deprecated.
+> The package has been renamed to **UPET** to reflect the broader scope of the models
+> and functionalities provided, going beyond the original PET-MAD model. This introduced
+> a breaking change in the package name and API.
+> Please use the version `1.4.3` of PET-MAD package if you want to use the old API.
+> The older version of the README file with documentation is avaiable [here](docs/README_OLD.md).
   
 # UPET: Universal Models for Advanced Atomistic Simulations
 
