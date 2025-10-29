@@ -3,9 +3,9 @@ from ase.build import bulk, molecule
 from huggingface_hub import HfApi
 from packaging.version import Version
 
-from pet_mad._models import get_upet, upet_get_size_to_load, upet_get_version_to_load
-from pet_mad._version import UPET_AVAILABLE_MODELS
-from pet_mad.calculator import UPETCalculator
+from upet._models import get_upet, upet_get_size_to_load, upet_get_version_to_load
+from upet._version import UPET_AVAILABLE_MODELS
+from upet.calculator import UPETCalculator
 
 
 @pytest.mark.parametrize("size", ["s", "m", "l", "xl", "xs"])

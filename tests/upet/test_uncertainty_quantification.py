@@ -4,8 +4,8 @@ from ase.build import bulk, molecule
 from huggingface_hub import HfApi
 from packaging.version import Version
 
-from pet_mad._version import UPET_AVAILABLE_MODELS, UPET_UQ_SUPPORTED_MODELS
-from pet_mad.calculator import UPETCalculator
+from upet._version import UPET_AVAILABLE_MODELS, UPET_UQ_SUPPORTED_MODELS
+from upet.calculator import UPETCalculator
 
 
 @pytest.mark.parametrize("model_name", UPET_AVAILABLE_MODELS)

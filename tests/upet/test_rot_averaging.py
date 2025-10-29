@@ -2,8 +2,8 @@ import numpy as np
 import pytest
 from ase.build import bulk, molecule
 
-from pet_mad.calculator import UPETCalculator
-from pet_mad.utils import compute_rotational_average, get_so3_rotations, rotate_atoms
+from upet.calculator import UPETCalculator
+from upet.utils import compute_rotational_average, get_so3_rotations, rotate_atoms
 
 
 GRID_ORDERS = [3, 5, 7]

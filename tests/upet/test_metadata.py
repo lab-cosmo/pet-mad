@@ -2,8 +2,8 @@ import pytest
 from huggingface_hub import HfApi
 from packaging.version import Version
 
-from pet_mad._version import UPET_AVAILABLE_MODELS
-from pet_mad.utils import get_upet_metadata
+from upet._version import UPET_AVAILABLE_MODELS
+from upet.utils import get_upet_metadata
 
 
 @pytest.mark.parametrize("model_name", UPET_AVAILABLE_MODELS)

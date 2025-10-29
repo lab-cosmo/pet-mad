@@ -105,7 +105,7 @@ Simulation Environment (ASE). Model name can be obtained from the
 by combining the model name and the size, e.g., `pet-mad-s`, `pet-omat-l`, etc.
 
 ```python
-from pet_mad.calculator import UPETCalculator
+from upet.calculator import UPETCalculator
 from ase.build import bulk
 
 atoms = bulk("Si", cubic=True, a=5.43, crystalstructure="diamond")
@@ -132,7 +132,7 @@ instabilities during the molecular dynamics simulations.
 To use the non-conservative forces and stresses, you need to set the `non_conservative` parameter to `True` when initializing the `UPETCalculator` class.
 
 ```python
-from pet_mad.calculator import UPETCalculator
+from upet.calculator import UPETCalculator
 from ase.build import bulk
 
 atoms = bulk("Si", cubic=True, a=5.43, crystalstructure="diamond")
@@ -195,7 +195,7 @@ ensemble of the energy predictions based on the shallow ensemble of the last
 layers of the model.
 
 ```python
-from pet_mad.calculator import UPETCalculator
+from upet.calculator import UPETCalculator
 from ase.build import bulk
 
 atoms = bulk("Si", cubic=True, a=5.43, crystalstructure="diamond")
@@ -381,7 +381,7 @@ Then you can use the `D3Calculator` class to combine the two calculators:
 
 ```python
 from torch_dftd.torch_dftd3_calculator import TorchDFTD3Calculator
-from pet_mad.calculator import UPETCalculator
+from upet.calculator import UPETCalculator
 from  ase.calculators.mixing import SumCalculator
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -404,7 +404,7 @@ electronic density of states of materials, as well as their Fermi levels and
 bandgaps. The **PET-MAD-DOS** model is also available in the **ASE** interface.
 
 ```python
-from pet_mad.calculator import PETMADDOSCalculator
+from upet.calculator import PETMADDOSCalculator
 
 atoms = bulk("Si", cubic=True, a=5.43, crystalstructure="diamond")
 pet_mad_dos_calculator = PETMADDOSCalculator(version="latest", device="cpu")
@@ -461,7 +461,7 @@ interactive visualization.
 ```python
 import ase.io
 import chemiscope
-from pet_mad.explore import PETMADFeaturizer
+from upet.explore import PETMADFeaturizer
 
 featurizer = PETMADFeaturizer(version="latest")
 

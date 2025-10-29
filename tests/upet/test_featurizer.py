@@ -1,7 +1,7 @@
 import numpy as np
 from ase.build import bulk
 
-from pet_mad.explore import PETMADFeaturizer
+from upet.explore import PETMADFeaturizer
 
 
 def test_basic_usage():
