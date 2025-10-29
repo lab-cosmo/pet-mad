@@ -1,7 +1,8 @@
 import ase.units
 import pytest
 from ase.build import bulk, molecule
-from ase.md.langevin import Langevin
+from ase.md.velocitydistribution import MaxwellBoltzmannDistribution
+from ase.md.verlet import VelocityVerlet
 from huggingface_hub import HfApi
 from packaging.version import Version
 
@@ -35,5 +36,6 @@ def test_md(model_name):
     for version in all_model_versions:
         calc = UPETCalculator(model=model_name, version=version)
         atoms.calc = calc
-        dyn = Langevin(atoms, 0.5 * ase.units.fs, temperature_K=310, friction=5e-3)
+        MaxwellBoltzmannDistribution(atoms, temperature_K=300)
+        dyn = VelocityVerlet(atoms, 0.5 * ase.units.fs)
         dyn.run(10)
