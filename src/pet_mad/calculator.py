@@ -12,7 +12,6 @@ from platformdirs import user_cache_dir
 
 from ._models import (
     _get_bandgap_model,
-    get_pet_mad,
     get_pet_mad_dos,
     get_upet,
     upet_get_size_to_load,
@@ -20,7 +19,6 @@ from ._models import (
 )
 from ._version import (
     PET_MAD_DOS_LATEST_STABLE_VERSION,
-    PET_MAD_UQ_AVAILABILITY_VERSION,
 )
 from .utils import (
     AVAILABLE_LEBEDEV_GRID_ORDERS,
@@ -52,8 +50,6 @@ class PETMLIPCalculator(MetatomicCalculator):
         model: str,
         size: Optional[str] = None,
         version: str = "latest",
-        *,
-        device: Optional[str] = None,
         dtype: Optional[torch.dtype] = None,
         checkpoint_path: Optional[str] = None,
         calculate_uncertainty: bool = False,
@@ -61,6 +57,8 @@ class PETMLIPCalculator(MetatomicCalculator):
         rotational_average_order: Optional[int] = None,
         rotational_average_num_additional_rotations: int = 1,
         rotational_average_batch_size: Optional[int] = None,
+        *,
+        device: Optional[str] = None,
         non_conservative: bool = False,
         check_consistency: bool = False,
     ):
@@ -84,8 +82,6 @@ class PETMLIPCalculator(MetatomicCalculator):
             depending on availability.
         :param version: version of the model to use. Defaults to the latest stable
             version.
-        :param device: torch device to use for the calculation. If `None`, we will try
-            the options in the model's `supported_device` in order.
         :param dtype: dtype to use for the calculations. If `None`, we will use the
             default dtype.
         :param checkpoint_path: checkpoint path to a checkpoint file to load the model
@@ -103,6 +99,8 @@ class PETMLIPCalculator(MetatomicCalculator):
             is used for rotational averaging.
         :param rotational_average_batch_size: batch size to use for the rotational
             averaging. If `None`, all rotations will be computed at once.
+        :param device: torch device to use for the calculation. If `None`, we will try
+            the options in the model's `supported_device` in order.
         :param non_conservative: whether to use the non-conservative regime of forces
             and stresses prediction. Defaults to False. Available for all models,
             except:
@@ -118,15 +116,12 @@ class PETMLIPCalculator(MetatomicCalculator):
         if not isinstance(version, Version):
             version = Version(version)
 
-        if model == "pet-mad":
-            loaded_model = get_pet_mad(version=version, checkpoint_path=checkpoint_path)
-        else:
-            model = get_upet(
-                model=model,
-                size=size,  # type: ignore
-                version=version,
-                checkpoint_path=checkpoint_path,
-            )
+        loaded_model = get_upet(
+            model=model,
+            size=size,  # type: ignore
+            version=version,
+            checkpoint_path=checkpoint_path,
+        )
 
         model_outputs = loaded_model.capabilities().outputs
         if non_conservative:
@@ -266,8 +261,7 @@ class PETMLIPCalculator(MetatomicCalculator):
             raise ValueError(
                 f"Energy {quantity} is not available. Please make sure that you have"
                 f" initialized the calculator with `calculate_{quantity}=True` and "
-                f"performed evaluation. This option is only available for PET-MAD "
-                f"version {PET_MAD_UQ_AVAILABILITY_VERSION} or higher."
+                f"performed evaluation."
             )
         return (
             self.additional_outputs[output_name]
