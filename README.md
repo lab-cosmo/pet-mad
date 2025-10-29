@@ -20,8 +20,7 @@ atomistic simulations.
 
 In addition, it contains **PET-MAD-DOS** - a universal model for predicting
 the density of states (DOS) of materials, as well as their Fermi levels and bandgaps.
-**PET-MAD-DOS** is using a slightly modified **PET** architecture, and the same
-**MAD** dataset. 
+**PET-MAD-DOS** is using a slightly modified **PET** architecture, and the **MAD** dataset. 
 
 ## Key Features
 
@@ -45,10 +44,10 @@ the density of states (DOS) of materials, as well as their Fermi levels and band
     - [ASE Interface](#ase-interface)
         - [Basic usage](#basic-usage)
         - [Non-conservative (direct) forces and stresses prediction](#non-conservative-direct-forces-and-stresses-prediction)
-    - [Evaluating PET-MAD on a dataset](#evaluating-pet-mad-on-a-dataset)
-    - [Running PET-MAD with LAMMPS](#running-pet-mad-with-lammps)
+    - [Evaluating UPET models on a dataset](#evaluating-upet-models-on-a-dataset)
+    - [Running UPET models with LAMMPS](#running-upet-models-with-lammps)
     - [Uncertainty Quantification](#uncertainty-quantification)
-    - [Running PET-MAD with empirical dispersion corrections](#running-pet-mad-with-empirical-dispersion-corrections)
+    - [Running UPET models with empirical dispersion corrections](#running-upet-models-with-empirical-dispersion-corrections)
     - [Calculating the DOS, Fermi levels, and bandgaps](#calculating-the-dos-fermi-levels-and-bandgaps)
     - [Dataset visualization with the PET-MAD featurizer](#dataset-visualization-with-the-pet-mad-featurizer)
 5. [Examples](#examples)
