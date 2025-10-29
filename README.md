@@ -82,6 +82,8 @@ Currently, we provide the following pre-trained models:
 | PET-OAM     | PBE (Materials Project) | L                      | materials               | OMat -> sAlex+MPtrj   |
 | PET-SPICE   | ωB97M-D3                | S, L                   | molecules               | SPICE                 | 
 
+All the checkpoints are available on the HuggingFace [repository](https://huggingface.co/lab-cosmo/upet).
+
 ## Interfaces for Atomistic Simulations
 
 UPET integrates with the following atomistic simulation engines:
@@ -99,7 +101,8 @@ UPET integrates with the following atomistic simulation engines:
 #### Basic usage
 
 You can use the UPET calculator, which is compatible with the Atomic
-Simulation Environment (ASE):
+Simulation Environment (ASE). Model name can be obtained from the
+by combining the model name and the size, e.g., `pet-mad-s`, `pet-omat-l`, etc.
 
 ```python
 from pet_mad.calculator import UPETCalculator
