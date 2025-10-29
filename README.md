@@ -143,12 +143,12 @@ You can now use other pre-trained PET models! Here is a summary:
 
 |:------------|:-----------------------:|:----------------------:|:-----------------------:|:---------------------:|
 | Name        | Level of theory         | Available sizes        | To be used for          | Training              |
-|:------------|:-----------------------:|:----------------------:|:-----------------------:|:---------------------:|
-| PET-OMAD    | PBEsol                  | "l"                    | materials and molecules | OMat -> MAD           |
-| PET-OMATPES | r2SCAN                  | "l"                    | materials               | OMat -> MATPES        |
-| PET-OMat    | PBE                     | "xs", "s", "m", "l"    | materials               | OMat                  |
-| PET-OAM     | PBE (Materials Project) | "l"                    | materials               | OMat -> sAlex + MPtrj |
-| PET-SPICE   | ωB97M-D3                | "s", "l"               | molecules               | SPICE                 | 
+|-------------|-------------------------|------------------------|-------------------------|-----------------------|
+| PET-OMAD    | PBEsol                  | l                      | materials and molecules | OMat -> MAD           |
+| PET-OMATPES | r2SCAN                  | l                      | materials               | OMat -> MATPES        |
+| PET-OMat    | PBE                     | xs, s, m, l            | materials               | OMat                  |
+| PET-OAM     | PBE (Materials Project) | l                      | materials               | OMat -> sAlex+MPtrj   |
+| PET-SPICE   | ωB97M-D3                | s, l                   | molecules               | SPICE                 | 
 |-------------|-------------------------|------------------------|-------------------------|-----------------------|
 
 
