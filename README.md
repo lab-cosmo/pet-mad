@@ -1,7 +1,7 @@
 <div align="center" width="600">
   <picture>
-    <source srcset="https://github.com/lab-cosmo/pet-mad/raw/refs/heads/main/docs/static/pet-mad-logo-with-text-dark.svg" media="(prefers-color-scheme: dark)">
-    <img src="https://github.com/lab-cosmo/pet-mad/raw/refs/heads/main/docs/static/pet-mad-logo-with-text.svg" alt="Figure">
+    <source srcset="https://github.com/lab-cosmo/pet-mad/raw/refs/heads/main/docs/static/upet-logo-with-text-dark.svg" media="(prefers-color-scheme: dark)">
+    <img src="https://github.com/lab-cosmo/pet-mad/raw/refs/heads/main/docs/static/upet-logo-with-text.svg" alt="Figure">
   </picture>
 </div>
 
