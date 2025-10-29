@@ -157,7 +157,7 @@ from pet_mad.calculator import PETMLIPCalculator
 from ase.build import bulk
 
 atoms = bulk("Si", cubic=True, a=5.43, crystalstructure="diamond")
-calculator = PETMLIPCalculator(model="pet-omatpes", size="l", device="cpu")
+calculator = PETMLIPCalculator(model="pet-omatpes-l", device="cpu")
 atoms.calc = calculator
 energy = atoms.get_potential_energy()
 forces = atoms.get_forces()
