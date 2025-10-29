@@ -19,6 +19,7 @@ from ._models import (
 )
 from ._version import (
     PET_MAD_DOS_LATEST_STABLE_VERSION,
+    UPET_AVAILABLE_MODELS,
 )
 from .utils import (
     AVAILABLE_LEBEDEV_GRID_ORDERS,
@@ -40,15 +41,14 @@ DTYPE_TO_STR = {
 }
 
 
-class PETMLIPCalculator(MetatomicCalculator):
+class UPETCalculator(MetatomicCalculator):
     """
-    ASE Calculator for MLIPs based on the PET architecture.
+    ASE Calculator for universal MLIPs based on the PET architecture.
     """
 
     def __init__(
         self,
         model: str,
-        size: Optional[str] = None,
         version: str = "latest",
         dtype: Optional[torch.dtype] = None,
         checkpoint_path: Optional[str] = None,
@@ -64,22 +64,18 @@ class PETMLIPCalculator(MetatomicCalculator):
     ):
         """
         :param model: PET-MLIP model to use. Can be one of the following:
-            - "pet-mad": PET-MAD model (materials and molecules, PBEsol)
-            - "pet-omad": PET-OMAD model (materials and molecules, PBEsol, slower and
-              more accurate)
-            - "pet-omatpes": PET-OMATPES model (materials, r2SCAN)
-            - "pet-omat": PET-OMat model (materials, PBE)
-            - "pet-oam": PET-OAM model (materials, Materials-Project-consistent PBE)
-            - "pet-spice": PET-SPICE model (molecules, ωB97M-D3)
-        :param size: size of the model to use. Can be one of the following:
-            - "xs": extra small
-            - "s": small
-            - "m": medium
-            - "l": large
-            - "xl": extra large
-            If set to `None` (default) and the model has multiple sizes available, the
-            sizes will be chosen based on the following priority: s > m > xs > l > xl,
-            depending on availability.
+            - "pet-mad-s": PET-MAD model (size "s', materials and molecules, PBEsol)
+            - "pet-omad-l": PET-OMAD model (size "l", materials and molecules, PBEsol,
+                slower and more accurate)
+            - "pet-omat-xs": PET-OMat model (size "xs", materials, PBE)
+            - "pet-omat-s": PET-OMat model (size "s", materials, PBE)
+            - "pet-omat-m": PET-OMat model (size "m", materials, PBE)
+            - "pet-omat-l": PET-OMat model (size "l", materials, PBE)
+            - "pet-oam-l": PET-OAM model (size "l", materials,
+                Materials-Project-consistent PBE)
+            - "pet-omatpes-l": PET-OMATPES model (size "l", materials, r2SCAN)
+            - "pet-spice-s": PET-SPICE model (size "s", molecules, ωB97M-D3)
+            - "pet-spice-l": PET-SPICE model (size "l", molecules, ωB97M-D3)
         :param version: version of the model to use. Defaults to the latest stable
             version.
         :param dtype: dtype to use for the calculations. If `None`, we will use the
@@ -109,7 +105,12 @@ class PETMLIPCalculator(MetatomicCalculator):
         :param check_consistency: whether internal consistency checks should be
             performed. Mainly for developers, defaults to False.
         """
-
+        if model.lower() not in UPET_AVAILABLE_MODELS:
+            raise ValueError(
+                f"Model {model} is not available. Please select one of the following: "
+                f"{UPET_AVAILABLE_MODELS}"
+            )
+        model, size = model.rsplit("-", 1)
         size = upet_get_size_to_load(model, requested_size=size)
         version = upet_get_version_to_load(model, size, requested_version=version)
 
