@@ -1,5 +1,5 @@
 [project]
-name = "pet-mad"
+name = "upet"
 dynamic = ["version"]
 requires-python = ">=3.10"
 
@@ -19,6 +19,7 @@ authors = [
 ]
 maintainers = [
   {name = "Arslan Mazitov", email = "arslan.mazitov@epfl.ch"},
+  {name = "Filippo Bigi", email = "filippo.bigi@epfl.ch"},
 ]
 
 dependencies = [
@@ -49,7 +50,7 @@ classifiers = [
 ]
 
 [project.urls]
-repository = "https://github.com/lab-cosmo/pet-mad"
+repository = "https://github.com/lab-cosmo/upet"
 
 
 ### ======================================================================== ###
@@ -75,7 +76,7 @@ deprecated = [
 where = ["src"]
 
 [tool.setuptools.dynamic]
-version = {attr = "pet_mad.__version__"}
+version = {attr = "upet.__version__"}
 
 [tool.ruff]
 line-length = 88
@@ -86,7 +87,7 @@ ignore = ["B018", "B904"]
 
 [tool.ruff.lint.isort]
 lines-after-imports = 2
-known-first-party = ["pet_mad"]
+known-first-party = ["upet"]
 known-third-party = ["torch"]
 
 [tool.ruff.format]
