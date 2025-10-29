@@ -203,11 +203,9 @@ def compute_rotational_average(
     return new_results
 
 
-def get_pet_mad_metadata(version: str):
-    return ModelMetadata(
-        name=f"PET-MAD v{version}",
-        description="A universal interatomic potential for advanced materials modeling",
-        authors=[
+def get_upet_metadata(model: str, size: str, version: str):
+    if "mad" in model.lower():
+        authors = [
             "Arslan Mazitov (arslan.mazitov@epfl.ch)",
             "Filippo Bigi",
             "Matthias Kellner",
@@ -217,7 +215,25 @@ def get_pet_mad_metadata(version: str):
             "Sergey Pozdnyakov",
             "Philip Loche",
             "Michele Ceriotti (michele.ceriotti@epfl.ch)",
-        ],
+        ]
+    else:
+        authors = [
+            "Filippo Bigi (filippo.bigi@epfl.ch)",
+            "Arslan Mazitov (arslan.mazitov@epfl.ch)",
+            "Paolo Pegolo",
+            "Michele Ceriotti (michele.ceriotti@epfl.ch)",
+        ]
+    description = (
+        r"A universal interatomic potential for advanced materials modeling "
+        r"based on a Point-Edge Transformer (PET) architecture, and trained on "
+        r"the {} dataset. Model size: {}"
+    )
+    dataset = model.split("-")[1].upper()
+
+    return ModelMetadata(
+        name=f"{model.capitalize()}-{size.capitalize()}-v{version}",
+        description=description.format(dataset, size),
+        authors=authors,
         references={
             "architecture": ["https://arxiv.org/abs/2305.19302v3"],
             "model": ["http://arxiv.org/abs/2503.14118"],
