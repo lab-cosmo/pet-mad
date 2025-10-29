@@ -4,10 +4,9 @@ import warnings
 from typing import Optional
 from urllib.parse import urlparse
 from urllib.request import urlretrieve
-from huggingface_hub import HfApi, hf_hub_download
-from packaging.version import Version
 
 import torch
+from huggingface_hub import HfApi, hf_hub_download
 from metatomic.torch import AtomisticModel
 from metatrain.utils.io import load_model as load_metatrain_model
 from packaging.version import Version
@@ -194,16 +193,20 @@ def upet_get_size_to_load(model: str, requested_size: Optional[str] = None) -> s
     :param requested_size: a requested size of the model.
     :return: If the model has multiple sizes available, the
         sizes will be chosen based on the following priority: s > m > xs > l > xl,
-        depending on availability. 
+        depending on availability.
     """
     # We need to inspect the models in https://huggingface.co/lab-cosmo/upet/tree/main/models
     # and get the available sizes for each model.
     hf_api = HfApi()
     repo_files = hf_api.list_repo_files("lab-cosmo/upet")
     files_in_models_folder = [f[7:] for f in repo_files if f.startswith("models/")]
-    all_model_files = [f for f in files_in_models_folder if f.startswith(f"{model}-") and f.endswith(".ckpt")]
+    all_model_files = [
+        f
+        for f in files_in_models_folder
+        if f.startswith(f"{model}-") and f.endswith(".ckpt")
+    ]
     all_model_sizes = [f.split(f"{model}-")[1].split("-")[0] for f in all_model_files]
-    all_model_sizes = set(all_model_sizes)
+    all_model_sizes = sorted(set(all_model_sizes))
 
     if requested_size is not None:
         if requested_size in all_model_sizes:
@@ -227,7 +230,10 @@ def upet_get_size_to_load(model: str, requested_size: Optional[str] = None) -> s
     else:
         raise ValueError(f"No sizes found for model {model}")
 
-def upet_get_version_to_load(model: str, size: str, requested_version: Optional[Version] = None) -> Version:
+
+def upet_get_version_to_load(
+    model: str, size: str, requested_version: Optional[Version] = None
+) -> Version:
     """
     Get the version of a UPET model.
 
@@ -248,9 +254,10 @@ def upet_get_version_to_load(model: str, size: str, requested_version: Optional[
         if f.startswith(f"{model}-{size}-") and f.endswith(".ckpt")
     ]
     all_model_versions = [
-        Version(f.split(f"{model}-{size}-")[1].split(".ckpt")[0]) for f in all_model_files
+        Version(f.split(f"{model}-{size}-")[1].split(".ckpt")[0])
+        for f in all_model_files
     ]
-    all_model_versions = set(all_model_versions)
+    all_model_versions = sorted(set(all_model_versions))
 
     if requested_version is not None:
         if not isinstance(requested_version, Version):
@@ -261,9 +268,9 @@ def upet_get_version_to_load(model: str, size: str, requested_version: Optional[
             raise ValueError(
                 f"Requested version {requested_version} not available for model "
                 f"{model} size {size}. Available versions are: "
-                f"{list(str(v) for v in sorted(all_model_versions))}"
+                f"{list(str(v) for v in all_model_versions)}"
             )
-        
+
     return max(all_model_versions)
 
 
@@ -295,7 +302,7 @@ def get_upet(
             action="ignore",
             message="PET assumes that Cartesian tensors of rank 2 are stress-like",
         )
-        model = load_metatrain_model(path)
+        loaded_model = load_metatrain_model(path)
 
     metadata = get_pet_mad_metadata(version)
-    return model.export(metadata)
+    return loaded_model.export(metadata)

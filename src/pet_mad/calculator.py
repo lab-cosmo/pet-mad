@@ -10,7 +10,14 @@ from metatomic.torch.ase_calculator import MetatomicCalculator
 from packaging.version import Version
 from platformdirs import user_cache_dir
 
-from ._models import _get_bandgap_model, get_pet_mad, get_pet_mad_dos, get_upet, upet_get_size_to_load, upet_get_version_to_load
+from ._models import (
+    _get_bandgap_model,
+    get_pet_mad,
+    get_pet_mad_dos,
+    get_upet,
+    upet_get_size_to_load,
+    upet_get_version_to_load,
+)
 from ._version import (
     PET_MAD_DOS_LATEST_STABLE_VERSION,
     PET_MAD_LATEST_STABLE_VERSION,
@@ -464,7 +471,8 @@ class PETMLIPCalculator(MetatomicCalculator):
         """
         :param model: PET-MLIP model to use. Can be one of the following:
             - "pet-mad": PET-MAD model (materials and molecules, PBEsol)
-            - "pet-omad": PET-OMAD model (materials and molecules, PBEsol, slower and more accurate)
+            - "pet-omad": PET-OMAD model (materials and molecules, PBEsol, slower and
+              more accurate)
             - "pet-omatpes": PET-OMATPES model (materials, r2SCAN)
             - "pet-omat": PET-OMat model (materials, PBE)
             - "pet-oam": PET-OAM model (materials, Materials-Project-consistent PBE)
@@ -478,13 +486,14 @@ class PETMLIPCalculator(MetatomicCalculator):
             If set to `None` (default) and the model has multiple sizes available, the
             sizes will be chosen based on the following priority: s > m > xs > l > xl,
             depending on availability.
-        :param version: version of the model to use. Defaults to the latest stable version.
+        :param version: version of the model to use. Defaults to the latest stable
+            version.
         :param device: torch device to use for the calculation. If `None`, we will try
             the options in the model's `supported_device` in order.
         :param dtype: dtype to use for the calculations. If `None`, we will use the
             default dtype.
-        :param checkpoint_path: checkpoint path to a checkpoint file to load the model from.
-            Mainly designed for loading fine-tuned models.
+        :param checkpoint_path: checkpoint path to a checkpoint file to load the model
+            from. Mainly designed for loading fine-tuned models.
         :param calculate_uncertainty: whether to calculate energy uncertainty.
             Defaults to False. Only available for PET-MAD version 1.0.2.
         :param calculate_ensemble: whether to calculate energy ensemble.
@@ -513,26 +522,37 @@ class PETMLIPCalculator(MetatomicCalculator):
         else:
             size = upet_get_size_to_load(model, requested_size=size)
             version = upet_get_version_to_load(model, size, requested_version=version)
-        
+
         if not isinstance(version, Version):
             version = Version(version)
 
         if model == "pet-mad":
-            model = get_pet_mad(version=version, checkpoint_path=checkpoint_path)
+            loaded_model = get_pet_mad(version=version, checkpoint_path=checkpoint_path)
         else:
-            model = get_upet(model=model, size=size, version=version, checkpoint_path=checkpoint_path)
+            model = get_upet(
+                model=model,
+                size=size,  # type: ignore
+                version=version,
+                checkpoint_path=checkpoint_path,
+            )
 
-        model_outputs = model.capabilities().outputs
+        model_outputs = loaded_model.capabilities().outputs
         if non_conservative:
             # Check for "non_conservative_{forces/stress} availability"
-            if "non_conservative_forces" not in model_outputs or "non_conservative_stress" not in model_outputs:
+            if (
+                "non_conservative_forces" not in model_outputs
+                or "non_conservative_stress" not in model_outputs
+            ):
                 raise NotImplementedError(
                     "Non-conservative forces and stresses are not available for this "
                     "model. Please check the documentation of this class for more "
                     "information."
                 )
         if calculate_uncertainty or calculate_ensemble:
-            if "energy_uncertainty" not in model_outputs or "energy_ensemble" not in model_outputs:
+            if (
+                "energy_uncertainty" not in model_outputs
+                or "energy_ensemble" not in model_outputs
+            ):
                 raise NotImplementedError(
                     "Energy uncertainty and ensemble are not available for this "
                     "model. Please check the documentation of this class for more "
@@ -553,8 +573,8 @@ class PETMLIPCalculator(MetatomicCalculator):
             if isinstance(dtype, str):
                 assert dtype in STR_TO_DTYPE, f"Invalid dtype: {dtype}"
                 dtype = STR_TO_DTYPE[dtype]
-            model._capabilities.dtype = DTYPE_TO_STR[dtype]
-            model = model.to(dtype=dtype, device=device)
+            loaded_model._capabilities.dtype = DTYPE_TO_STR[dtype]
+            loaded_model = loaded_model.to(dtype=dtype, device=device)
 
         self._rotations: List[np.ndarray] = []
         if rotational_average_order is not None:
@@ -589,7 +609,7 @@ class PETMLIPCalculator(MetatomicCalculator):
         )
 
         logging.info(f"Exporting checkpoint to TorchScript at {pt_path}")
-        model.save(pt_path, collect_extensions=extensions_directory)
+        loaded_model.save(pt_path, collect_extensions=extensions_directory)
 
         super().__init__(
             pt_path,
