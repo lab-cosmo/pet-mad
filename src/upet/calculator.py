@@ -221,6 +221,12 @@ class UPETCalculator(MetatomicCalculator):
 
         super().calculate(atoms, properties, system_changes)
 
+        if not all(atoms.get_pbc()) and "stress" in self.results:
+            nan_mask = np.isnan(self.results["stress"]) | np.isinf(
+                self.results["stress"]
+            )
+            self.results["stress"][nan_mask] = 0.0
+
         if len(self._rotations) > 0:
             rotated_atoms_list = rotate_atoms(atoms, self._rotations)
             batch_size = (
