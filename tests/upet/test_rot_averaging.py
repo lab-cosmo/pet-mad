@@ -2,9 +2,8 @@ import numpy as np
 import pytest
 from ase.build import bulk, molecule
 
-from pet_mad._version import PET_MAD_NC_AVAILABILITY_VERSION
-from pet_mad.calculator import PETMADCalculator
-from pet_mad.utils import compute_rotational_average, get_so3_rotations, rotate_atoms
+from upet.calculator import UPETCalculator
+from upet.utils import compute_rotational_average, get_so3_rotations, rotate_atoms
 
 
 GRID_ORDERS = [3, 5, 7]
@@ -70,13 +69,15 @@ def test_compute_rotational_average():
 def test_calc_rot_averaging(order):
     atoms = bulk("Si", cubic=True, a=5.43, crystalstructure="diamond")
     atoms.rattle(0.05)
-    atoms.calc = PETMADCalculator()
+    atoms.calc = UPETCalculator(model="pet-mad-s", version="1.0.2")
 
     target_energy = atoms.get_potential_energy()
     target_forces = atoms.get_forces()
     target_stress = atoms.get_stress()
 
-    atoms.calc = PETMADCalculator(rotational_average_order=order)
+    atoms.calc = UPETCalculator(
+        model="pet-mad-s", version="1.0.2", rotational_average_order=order
+    )
     averaged_energy = atoms.get_potential_energy()
     averaged_forces = atoms.get_forces()
     averaged_stress = atoms.get_stress()
@@ -91,16 +92,17 @@ def test_calc_rot_averaging(order):
 def test_calc_rot_averaging_non_conservative():
     atoms = bulk("Si", cubic=True, a=5.43, crystalstructure="diamond")
     atoms.rattle(0.05)
-    atoms.calc = PETMADCalculator(
-        version=PET_MAD_NC_AVAILABILITY_VERSION, non_conservative=True
+    atoms.calc = UPETCalculator(
+        model="pet-mad-s", version="1.1.0", non_conservative=True
     )
 
     target_energy = atoms.get_potential_energy()
     target_forces = atoms.get_forces()
     target_stress = atoms.get_stress()
 
-    atoms.calc = PETMADCalculator(
-        version=PET_MAD_NC_AVAILABILITY_VERSION,
+    atoms.calc = UPETCalculator(
+        model="pet-mad-s",
+        version="1.1.0",
         non_conservative=True,
         rotational_average_order=3,
     )
@@ -119,9 +121,14 @@ def test_calc_rot_averaging_non_conservative():
 def test_batched_calc_rot_averaging(batch_size):
     atoms = bulk("Si", cubic=True, a=5.43, crystalstructure="diamond")
     atoms.rattle(0.05)
-    calc = PETMADCalculator(rotational_average_order=3)
-    batched_calc = PETMADCalculator(
-        rotational_average_order=3, rotational_average_batch_size=batch_size
+    calc = UPETCalculator(
+        model="pet-mad-s", version="1.0.2", rotational_average_order=3
+    )
+    batched_calc = UPETCalculator(
+        model="pet-mad-s",
+        version="1.0.2",
+        rotational_average_order=3,
+        rotational_average_batch_size=batch_size,
     )
     atoms.calc = calc
     target_energy = atoms.get_potential_energy()
@@ -142,4 +149,4 @@ def test_raises_bad_grid_order_error():
     with pytest.raises(
         ValueError, match="Lebedev-Laikov grid order 2 is not available."
     ):
-        PETMADCalculator(rotational_average_order=2)
+        UPETCalculator(model="pet-mad-s", version="1.0.2", rotational_average_order=2)

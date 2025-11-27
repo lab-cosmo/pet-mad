@@ -3,6 +3,10 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# System Folders
+.DS_Store
+.vscode
+
 # C extensions
 *.so
 

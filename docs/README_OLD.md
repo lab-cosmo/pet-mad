@@ -1,39 +1,37 @@
 <div align="center" width="600">
   <picture>
-    <source srcset="https://github.com/lab-cosmo/pet-mad/raw/refs/heads/main/docs/static/upet-logo-with-text-dark.svg" media="(prefers-color-scheme: dark)">
-    <img src="https://github.com/lab-cosmo/pet-mad/raw/refs/heads/main/docs/static/upet-logo-with-text.svg" alt="Figure">
+    <source srcset="https://github.com/lab-cosmo/pet-mad/raw/refs/heads/main/docs/static/pet-mad-logo-with-text-dark.svg" media="(prefers-color-scheme: dark)">
+    <img src="https://github.com/lab-cosmo/pet-mad/raw/refs/heads/main/docs/static/pet-mad-logo-with-text.svg" alt="Figure">
   </picture>
 </div>
 
 > [!WARNING]
-> This repository is a successor of the PET-MAD repository, which is now deprecated.
-> The package has been renamed to **UPET** to reflect the broader scope of the models
-> and functionalities provided, going beyond the original PET-MAD model.
-> Please use the version `1.4.3` of PET-MAD package if you want to use the old API.
-> The older version of the README file with documentation is avaiable [here](docs/README_OLD.md).
-> The migration guide from PET-MAD to UPET is available [here](docs/UPET_MIGRATION_GUIDE.md).
-  
-# UPET: Universal Models for Advanced Atomistic Simulations
+> This is the REAMDE file compatible with the old PET-MAD package API (versions `<1.5.0`).
+> Breaking change of the PET-MAD API in version `1.5.0` was introduced, and 
+> let to incompatibility with this documentation. Please refer to the new documentation 
+> in the [main README.md](README.md) file.
 
-This repository contains **UPET** models - universal interatomic potentials for
-advanced materials modeling across the periodic table. This models are based on
-the **Point Edge Transformer (PET)**  architecture, trained on various popular 
-materials datasets, and are capable of predicting energies and forces in complex
-atomistic simulations.
+# PET-MAD: Universal Models for Advanced Atomistic Simulations
+
+This repository contains **PET-MAD** - a universal interatomic potential for
+advanced materials modeling across the periodic table. This model is based on
+the **Point Edge Transformer (PET)** model trained on the **Massive Atomic Diversity (MAD) Dataset** 
+and is capable of predicting energies and forces in complex atomistic simulations.
 
 In addition, it contains **PET-MAD-DOS** - a universal model for predicting
 the density of states (DOS) of materials, as well as their Fermi levels and bandgaps.
-**PET-MAD-DOS** is using a slightly modified **PET** architecture, and the **MAD** dataset. 
+**PET-MAD-DOS** is using a slightly modified **PET** architecture, and the same
+**MAD** dataset. 
 
 ## Key Features
 
-- **Universality**: UPET models are generally-applicable, and can be used for
+- **Universality**: PET-MAD models are generally-applicable, and can be used for
   predicting energies and forces, as well as the density of states, Fermi levels,
   and bandgaps for a wide range of materials and molecules.
-- **Accuracy**: UPET models achieve high accuracy in various types of atomistic
+- **Accuracy**: PET-MAD models achieve high accuracy in various types of atomistic
   simulations of organic and inorganic systems, comparable with system-specific
   models, while being fast and efficient.
-- **Efficiency**: UPET models are highly computationally efficient and have low
+- **Efficiency**: PET-MAD models are highly computationally efficient and have low 
   memory usage, what makes them suitable for large-scale simulations.
 - **Infrastructure**: Various MD engines are available for diverse research and
   application needs.
@@ -47,10 +45,10 @@ the density of states (DOS) of materials, as well as their Fermi levels and band
     - [ASE Interface](#ase-interface)
         - [Basic usage](#basic-usage)
         - [Non-conservative (direct) forces and stresses prediction](#non-conservative-direct-forces-and-stresses-prediction)
-    - [Evaluating UPET models on a dataset](#evaluating-upet-models-on-a-dataset)
-    - [Running UPET models with LAMMPS](#running-upet-models-with-lammps)
+    - [Evaluating PET-MAD on a dataset](#evaluating-pet-mad-on-a-dataset)
+    - [Running PET-MAD with LAMMPS](#running-pet-mad-with-lammps)
     - [Uncertainty Quantification](#uncertainty-quantification)
-    - [Running UPET models with empirical dispersion corrections](#running-upet-models-with-empirical-dispersion-corrections)
+    - [Running PET-MAD with empirical dispersion corrections](#running-pet-mad-with-empirical-dispersion-corrections)
     - [Calculating the DOS, Fermi levels, and bandgaps](#calculating-the-dos-fermi-levels-and-bandgaps)
     - [Dataset visualization with the PET-MAD featurizer](#dataset-visualization-with-the-pet-mad-featurizer)
 5. [Examples](#examples)
@@ -60,36 +58,60 @@ the density of states (DOS) of materials, as well as their Fermi levels and band
 
 ## Installation
 
-You can install UPET using pip (not available yet):
+You can install PET-MAD using pip:
 
 ```bash
-pip install upet
+pip install pet-mad
 ```
 
 Or directly from the GitHub repository:
 
 ```bash
-pip install git+https://github.com/lab-cosmo/upet.git
+pip install git+https://github.com/lab-cosmo/pet-mad.git
+```
+
+Alternatively, you can install PET-MAD using `conda` package manager, which is
+especially important for running PET-MAD with **LAMMPS**.
+
+> [!WARNING]
+> We strongly recommend installing PET-MAD using
+> [`Miniforge`](https://github.com/conda-forge/miniforge) as a base `conda`
+> provider, because other `conda` providers (such as `Anaconda`) may yield
+> undesired behavior when resolving dependencies and are usually slower than
+> `Miniforge`. Smooth installation and use of PET-MAD is not guaranteed with
+> other `conda` providers.
+
+To install Miniforge on unix-like systems, run:
+
+```bash
+wget "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh"
+bash Miniforge3-$(uname)-$(uname -m).sh
+```
+
+Once Miniforge is installed, create a new conda environment and install PET-MAD
+with:
+
+```bash
+conda create -n pet-mad
+conda activate pet-mad
+conda install -c metatensor -c conda-forge pet-mad
 ```
 
 ## Pre-trained Models
 
 Currently, we provide the following pre-trained models:
 
-| Name        | Level of theory         | Available sizes        | To be used for          | Training set          |
-|:------------|:-----------------------:|:----------------------:|:-----------------------:|:---------------------:|
-| PET-MAD     | PBEsol                  | S                      | materials and molecules | MAD                   |
-| PET-OMAD    | PBEsol                  | L                      | materials and molecules | OMat -> MAD           |
-| PET-OMATPES | r2SCAN                  | L                      | materials               | OMat -> MATPES        |
-| PET-OMat    | PBE                     | XS, S, M, L            | materials               | OMat                  |
-| PET-OAM     | PBE (Materials Project) | L                      | materials               | OMat -> sAlex+MPtrj   |
-| PET-SPICE   | ωB97M-D3                | S, L                   | molecules               | SPICE                 | 
-
-All the checkpoints are available on the HuggingFace [repository](https://huggingface.co/lab-cosmo/upet).
+- **`v1.1.0`**: The dev version of the PET-MAD model with the non-conservative
+  forces and stresses. This version has notably worse performance on molecular
+  systems, and is not recommended for production use, as for now.
+- **`v1.0.2`**: Stable PET-MAD model trained on the MAD dataset, which contains 95,595
+  structures, including 3D and 2D inorganic crystals, surfaces, molecular
+  crystals, nanoclusters, and molecules. Use this version in the case you want
+  to repoduce the results from the [PET-MAD paper](https://arxiv.org/abs/2503.14118).
 
 ## Interfaces for Atomistic Simulations
 
-UPET integrates with the following atomistic simulation engines:
+PET-MAD integrates with the following atomistic simulation engines:
 
 - **Atomic Simulation Environment (ASE)**
 - **LAMMPS** (including the KOKKOS support)
@@ -103,17 +125,16 @@ UPET integrates with the following atomistic simulation engines:
 
 #### Basic usage
 
-You can use the UPET calculator, which is compatible with the Atomic
-Simulation Environment (ASE). Model name can be obtained from the
-by combining the model name and the size, e.g., `pet-mad-s`, `pet-omat-l`, etc.
+You can use the PET-MAD calculator, which is compatible with the Atomic
+Simulation Environment (ASE):
 
 ```python
-from upet.calculator import UPETCalculator
+from pet_mad.calculator import PETMADCalculator
 from ase.build import bulk
 
 atoms = bulk("Si", cubic=True, a=5.43, crystalstructure="diamond")
-calculator = UPETCalculator(model="pet-mad-s", version="1.0.2", device="cpu")
-atoms.calc = calculator
+pet_mad_calculator = PETMADCalculator(version="latest", device="cpu")
+atoms.calc = pet_mad_calculator
 energy = atoms.get_potential_energy()
 forces = atoms.get_forces()
 ```
@@ -124,7 +145,7 @@ perform efficient evaluation in that case, read [here](docs/README_BATCHED.md).
 
 #### Non-conservative (direct) forces and stresses prediction
 
-UPET models also supports the direct prediction of forces and stresses. In that case,
+PET-MAD also supports the direct prediction of forces and stresses. In that case,
 the forces and stresses are predicted as separate targets along with the energy
 target, i.e. not computed as derivatives of the energy using the PyTorch
 automatic differentiation. This approach typically leads to 2-3x speedup in the
@@ -132,15 +153,15 @@ evaluation time, since backward pass is disabled. However, as discussed in [this
 preprint](https://arxiv.org/abs/2412.11569) it requires additional care to avoid
 instabilities during the molecular dynamics simulations.
 
-To use the non-conservative forces and stresses, you need to set the `non_conservative` parameter to `True` when initializing the `UPETCalculator` class.
+To use the non-conservative forces and stresses, you need to set the `non_conservative` parameter to `True` when initializing the `PETMADCalculator` class.
 
 ```python
-from upet.calculator import UPETCalculator
+from pet_mad.calculator import PETMADCalculator
 from ase.build import bulk
 
 atoms = bulk("Si", cubic=True, a=5.43, crystalstructure="diamond")
-calculator = UPETCalculator(model="pet-mad-s", version="1.1.0", device="cpu", non_conservative=True)
-atoms.calc = calculator
+pet_mad_calculator = PETMADCalculator(version="latest", device="cpu", non_conservative=True)
+atoms.calc = pet_mad_calculator
 energy = atoms.get_potential_energy() # energy is computed as usual
 forces = atoms.get_forces() # forces now are predicted as a separate target
 stresses = atoms.get_stress() # stresses now are predicted as a separate target
@@ -149,15 +170,27 @@ stresses = atoms.get_stress() # stresses now are predicted as a separate target
 More details on how to make the direct forces MD simulations reliable are provided 
 in the [Atomistic Cookbook](https://atomistic-cookbook.org/examples/pet-mad-nc/pet-mad-nc.html).
 
-### Evaluating UPET models on a dataset
+### Evaluating PET-MAD on a dataset
 
-Efficient evaluation of UPET models on a desired dataset is also available from the
+Efficient evaluation of PET-MAD on a desired dataset is also available from the
 command line via [`metatrain`](https://github.com/metatensor/metatrain), which
-is installed as a dependency of UPET. To evaluate the model, you first need
-to fetch the UPET model from the HuggingFace repository:
+is installed as a dependency of PET-MAD. To evaluate the model, you first need
+to fetch the PET-MAD model from the HuggingFace repository:
 
 ```bash
-mtt export https://huggingface.co/lab-cosmo/upet/resolve/main/models/pet-mad-s-v1.0.2.ckpt -o model.pt
+mtt export https://huggingface.co/lab-cosmo/pet-mad/resolve/v1.0.2/models/pet-mad-v1.0.2.ckpt -o pet-mad-latest.pt
+```
+
+Alternatively, you can also download the model from Python:
+
+```py
+import pet_mad
+
+# Saving the latest version of PET-MAD to a TorchScript file
+pet_mad.save_pet_mad(version="latest", output="pet-mad-latest.pt")
+
+# you can also get a metatomic AtomisticModel for advance usage
+model = pet_mad.get_pet_mad(version="latest")
 ```
 
 This command will download the model and convert it to TorchScript format. Then
@@ -175,7 +208,7 @@ targets:
 Then, you can use the `mtt eval` command to evaluate the model on a dataset:
 
 ```bash
-mtt eval model.pt options.yaml --batch-size=16 --extensions-dir=extensions --output=predictions.xyz
+mtt eval pet-mad-latest.pt options.yaml --batch-size=16 --extensions-dir=extensions --output=predictions.xyz
 ```
 
 This will create a file called `predictions.xyz` with the predicted energies and
@@ -184,7 +217,7 @@ can be found in the [Metatrain documentation](https://metatensor.github.io/metat
 
 ### Uncertainty Quantification
 
-UPET models can also be used to calculate the uncertainty of the energy prediction.
+PET-MAD can also be used to calculate the uncertainty of the energy prediction.
 This feature is particularly important if you are interested in probing the model
 on the data that is far away from the training data. Another important use case
 is a propagation of the uncertainty of the energy prediction to other observables,
@@ -198,12 +231,12 @@ ensemble of the energy predictions based on the shallow ensemble of the last
 layers of the model.
 
 ```python
-from upet.calculator import UPETCalculator
+from pet_mad.calculator import PETMADCalculator
 from ase.build import bulk
 
 atoms = bulk("Si", cubic=True, a=5.43, crystalstructure="diamond")
-calculator = UPETCalculator(model="pet-mad-s", version="1.0.2", device="cpu", calculate_uncertainty=True, calculate_ensemble=True)
-atoms.calc = calculator
+pet_mad_calculator = PETMADCalculator(version="latest", device="cpu", calculate_uncertainty=True, calculate_ensemble=True)
+atoms.calc = pet_mad_calculator
 energy = atoms.get_potential_energy()
 
 energy_uncertainty = atoms.calc.get_energy_uncertainty()
@@ -215,36 +248,30 @@ ensemble method can be found in [this](https://doi.org/10.1088/2632-2153/ad594a)
 
 
 
-## Running UPET models with LAMMPS
+## Running PET-MAD with LAMMPS
 
 ### 1. Install LAMMPS with metatomic support
 
-To use UPET with LAMMPS, follow the instructions
-[here](https://docs.metatensor.org/metatomic/latest/engines/lammps.html#how-to-install-the-code) 
-to install lammps-metatomic. We recomend you also use conda to install prebuilt lammps binaries.
+To use PET-MAD with LAMMPS, you need to first install PET-MAD from `conda` (see
+the installation instructions above). Then, follow the instructions
+[here](https://docs.metatensor.org/metatomic/latest/engines/lammps.html#how-to-install-the-code) to install lammps-metatomic. We recomend you also use conda to install lammps.
 
-### 2. Run LAMMPS with UPET
+### 2. Run LAMMPS with PET-MAD
 
 #### 2.1. CPU version
 
-Fetch the UPET checkpoint from the HuggingFace repository:
+Fetch the PET-MAD checkpoint from the HuggingFace repository:
 
 ```bash
-mtt export https://huggingface.co/lab-cosmo/upet/resolve/main/models/pet-mad-s-v1.0.2.ckpt -o model.pt
+mtt export https://huggingface.co/lab-cosmo/pet-mad/resolve/v1.0.2/models/pet-mad-v1.0.2.ckpt -o pet-mad-latest.pt
 ```
 
 This will download the model and convert it to TorchScript format compatible
-with LAMMPS, using the `metatomic` and `metatrain` libraries, which UPET is
+with LAMMPS, using the `metatomic` and `metatrain` libraries, which PET-MAD is
 based on.
 
-Other pre-trained UPET models can be prepared in the same way, e.g.,
-```bash
-mtt export https://huggingface.co/lab-cosmo/upet/resolve/main/models/pet-omat-xs-v1.0.0.ckpt -o model.pt
-mtt export https://huggingface.co/lab-cosmo/upet/resolve/main/models/pet-omatpes-l-v0.1.0.ckpt -o model.pt
-```
-
 Prepare a lammps input file using `pair_style metatomic` and defining the
-mapping from LAMMPS types in the data file to elements UPET can handle using
+mapping from LAMMPS types in the data file to elements PET-MAD can handle using
 `pair_coeff` syntax. Here we indicate that lammps atom type 1 is Silicon (atomic
 number 14).
 
@@ -254,7 +281,7 @@ atom_style atomic
 
 read_data silicon.data
 
-pair_style metatomic model.pt device cpu # Change device to 'cuda' evaluate UPET on GPU
+pair_style metatomic pet-mad-latest.pt device cpu # Change device to 'cuda' evaluate PET-MAD on GPU
 pair_coeff * * 14
 
 neighbor 2.0 bin
@@ -321,7 +348,7 @@ atom_style atomic/kk
 
 read_data silicon.data
 
-pair_style metatomic/kk model.pt # This will use the same device as the kokkos simulation
+pair_style metatomic/kk pet-mad-latest.pt # This will use the same device as the kokkos simulation
 pair_coeff * * 14
 
 neighbor 2.0 bin
@@ -367,14 +394,14 @@ GPUs, this number should be adjusted accordingly.
 
 - For **GPU calculations**, use **one MPI task per GPU**.
 
-## Running UPET models with empirical dispersion corrections
+## Running PET-MAD with empirical dispersion corrections
 
 ### In **ASE**:
 
-You can combine the UPET calculator with the torch based implementation of
+You can combine the PET-MAD calculator with the torch based implementation of
 the D3 dispersion correction of `pfnet-research` - `torch-dftd`:
 
-Within the UPET environment you can install `torch-dftd` via:
+Within the PET-MAD environment you can install `torch-dftd` via:
 
 ```bash
 pip install torch-dftd
@@ -384,12 +411,12 @@ Then you can use the `D3Calculator` class to combine the two calculators:
 
 ```python
 from torch_dftd.torch_dftd3_calculator import TorchDFTD3Calculator
-from upet.calculator import UPETCalculator
+from pet_mad.calculator import PETMADCalculator
 from  ase.calculators.mixing import SumCalculator
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
-calc_MAD = UPETCalculator(model="pet-mad-s", version="1.0.2", device=device)
+calc_MAD = PETMADCalculator(version="latest", device=device)
 dft_d3 = TorchDFTD3Calculator(device=device, xc="pbesol", damping="bj")
 
 combined_calc = SumCalculator([calc_MAD, dft_d3])
@@ -402,12 +429,13 @@ atoms.calc = combined_calc
 
 ## Calculating the DOS, Fermi levels, and bandgaps
 
-UPET package also allows the use of the **PET-MAD-DOS** model to predict
+PET-MAD packages also allows the use of the **PET-MAD-DOS** model to predict 
 electronic density of states of materials, as well as their Fermi levels and
-bandgaps. The **PET-MAD-DOS** model is also available in the **ASE** interface.
+bandgaps. Similarly to the  **PET-MAD** model, the **PET-MAD-DOS** model is
+also available in the **ASE** interface.
 
 ```python
-from upet.calculator import PETMADDOSCalculator
+from pet_mad.calculator import PETMADDOSCalculator
 
 atoms = bulk("Si", cubic=True, a=5.43, crystalstructure="diamond")
 pet_mad_dos_calculator = PETMADDOSCalculator(version="latest", device="cpu")
@@ -464,7 +492,7 @@ interactive visualization.
 ```python
 import ase.io
 import chemiscope
-from upet.explore import PETMADFeaturizer
+from pet_mad.explore import PETMADFeaturizer
 
 featurizer = PETMADFeaturizer(version="latest")
 
