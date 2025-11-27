@@ -110,8 +110,8 @@ filterwarnings = [
     "ignore:Second derivatives of the spherical harmonics with respect to the Cartesian coordinates were not requested at class creation.",
     # OldCompositionModel deprecation warning
     "ignore:`OldCompositionModel` composition model is deprecated. Please use `CompositionModel` instead.",
-    # We don't yet have a linux-aarch64 wheel on PyPI, so libgomp is not copied to 
-    # sphericart_torch.libs' by cibuildwheels
-    "ignore:No libgomp shared library found in 'sphericart_torch.libs'.",
-    "ignore:trying to upgrade an old model",
+    # deprecation warnings from torch_geometric
+    "ignore:`torch_geometric.distributed` has been deprecated since 2.7.0 and will no longer be maintained",
+    # metatrain checkpoint upgrade warning
+    "ignore: trying to upgrade an old model checkpoint with unknown version, this might fail and require manual modifications"
 ]
