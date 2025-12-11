@@ -22,7 +22,7 @@ maintainers = [
 ]
 
 dependencies = [
-    "metatrain==2025.10",
+    "metatrain==2025.12",
     "huggingface_hub",
     "hf_xet",
     "packaging",

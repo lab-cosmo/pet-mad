@@ -1,15 +1,72 @@
 import numpy as np
 import pytest
 from ase.build import bulk, molecule
+from scipy.integrate import lebedev_rule
+from scipy.spatial.transform import Rotation
 
 from pet_mad._version import PET_MAD_NC_AVAILABILITY_VERSION
 from pet_mad.calculator import PETMADCalculator
-from pet_mad.utils import compute_rotational_average, get_so3_rotations, rotate_atoms
 
 
 GRID_ORDERS = [3, 5, 7]
 NUM_ROTATIONS = [4, 8, 12]
 BATCH_SIZES = [1, 2, 4, 8]
+
+
+def get_so3_rotations(
+    rotational_average_order: int,
+    num_additional_rotations: int,
+    axis=None,
+):
+    axis = np.array([0, 0, 1]) if axis is None else axis
+    lebedev_grid = lebedev_rule(rotational_average_order)[0].T
+
+    alphas = np.linspace(0, 2 * np.pi, num_additional_rotations, endpoint=False)
+    additional_rotations = [
+        Rotation.from_rotvec(axis * alpha).as_matrix() for alpha in alphas
+    ]
+    lebedev_rotations = [
+        Rotation.align_vectors(rot_vector, [0, 0, 1])[0].as_matrix()
+        for rot_vector in lebedev_grid
+    ]
+    rotations = []
+    for lrot in lebedev_rotations:
+        for prot in additional_rotations:
+            rotations.append(lrot @ prot)
+    return rotations
+
+
+def rotate_atoms(atoms, rotations):
+    rotated_atoms_list = []
+    has_cell = atoms.cell is not None and atoms.cell.rank > 0
+    for rot in rotations:
+        new_atoms = atoms.copy()
+        new_atoms.positions = new_atoms.positions @ rot.T
+        if has_cell:
+            new_atoms.cell = new_atoms.cell @ rot.T
+        rotated_atoms_list.append(new_atoms)
+    return rotated_atoms_list
+
+
+def compute_rotational_average(results, rotations):
+    new_results = {}
+    for key, value in results.items():
+        if "energy" in key:
+            new_results[key] = np.mean(value)
+            new_results[key + "_rot_std"] = np.std(value)
+        elif "forces" in key:
+            rotated_back_values = np.array(
+                [val @ rot for rot, val in zip(rotations, value, strict=False)]
+            )
+            new_results[key] = rotated_back_values.mean(axis=0)
+            new_results[key + "_rot_std"] = rotated_back_values.std(axis=0)
+        elif "stress" in key:
+            rotated_back_values = np.array(
+                [rot.T @ val @ rot for rot, val in zip(rotations, value, strict=False)]
+            )
+            new_results[key] = rotated_back_values.mean(axis=0)
+            new_results[key + "_rot_std"] = rotated_back_values.std(axis=0)
+    return new_results
 
 
 @pytest.mark.parametrize("order", GRID_ORDERS)
@@ -136,10 +193,3 @@ def test_batched_calc_rot_averaging(batch_size):
     np.testing.assert_allclose(batched_energy, target_energy, atol=1e-6)
     np.testing.assert_allclose(batched_forces, target_forces, atol=1e-6)
     np.testing.assert_allclose(batched_stress, target_stress, atol=1e-6)
-
-
-def test_raises_bad_grid_order_error():
-    with pytest.raises(
-        ValueError, match="Lebedev-Laikov grid order 2 is not available."
-    ):
-        PETMADCalculator(rotational_average_order=2)

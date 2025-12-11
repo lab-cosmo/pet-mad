@@ -1,4 +1,3 @@
-import importlib.util
 import logging
 import warnings
 from typing import Optional
@@ -37,22 +36,14 @@ def get_pet_mad(
     if not isinstance(version, Version):
         version = Version(version)
 
+    if version == Version("1.0.0"):
+        raise ValueError("PET-MAD version 1.0.0 is no longer supported")
+
     if version not in [Version(v) for v in PET_MAD_AVAILABLE_VERSIONS]:
         raise ValueError(
             f"Version {version} is not supported. Supported versions are "
             f"{PET_MAD_AVAILABLE_VERSIONS}"
         )
-
-    if version == Version("1.0.0"):
-        if not importlib.util.find_spec("pet_neighbors_convert"):
-            raise ImportError(
-                f"PET-MAD v{version} is now deprecated. Please consider using the "
-                "`latest` version. If you still want to use it, please install the "
-                "pet-mad package with optional dependencies: "
-                "pip install pet-mad[deprecated]"
-            )
-
-        import pet_neighbors_convert  # noqa: F401 # pyright: ignore[reportMissingImports]
 
     if checkpoint_path is not None:
         logging.info(f"Loading PET-MAD model from checkpoint: {checkpoint_path}")
