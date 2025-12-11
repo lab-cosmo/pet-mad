@@ -45,16 +45,3 @@ def test_version(version):
     atoms.calc = PETMADCalculator(version=version)
     _ = atoms.get_potential_energy()
     _ = atoms.get_forces()
-
-
-@pytest.mark.parametrize(
-    "version",
-    [
-        "1.0.0",
-    ],
-)
-def test_version_deprecated(version):
-    atoms = bulk("Si", cubic=True, a=5.43, crystalstructure="diamond")
-    atoms.calc = PETMADCalculator(version=version)
-    _ = atoms.get_potential_energy()
-    _ = atoms.get_forces()

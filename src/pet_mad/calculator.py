@@ -1,12 +1,14 @@
 import logging
 import os
-from typing import Any, Dict, List, Optional, Tuple, Union
+import warnings
+from typing import List, Optional, Tuple, Union
 
+import ase.calculators.calculator
 import numpy as np
 import torch
 from ase import Atoms
 from metatomic.torch import ModelOutput
-from metatomic.torch.ase_calculator import MetatomicCalculator
+from metatomic.torch.ase_calculator import MetatomicCalculator, SymmetrizedCalculator
 from packaging.version import Version
 from platformdirs import user_cache_dir
 
@@ -18,12 +20,8 @@ from ._version import (
     PET_MAD_UQ_AVAILABILITY_VERSION,
 )
 from .utils import (
-    AVAILABLE_LEBEDEV_GRID_ORDERS,
-    compute_rotational_average,
     fermi_dirac_distribution,
     get_num_electrons,
-    get_so3_rotations,
-    rotate_atoms,
 )
 
 
@@ -37,7 +35,7 @@ DTYPE_TO_STR = {
 }
 
 
-class PETMADCalculator(MetatomicCalculator):
+class PETMADCalculator(ase.calculators.calculator.Calculator):
     """
     PET-MAD ASE Calculator
     """
@@ -85,36 +83,43 @@ class PETMADCalculator(MetatomicCalculator):
             version 1.1.0 or higher.
 
         """
+        super().__init__()
 
         if version == "latest":
             version = Version(PET_MAD_LATEST_STABLE_VERSION)
+
         if not isinstance(version, Version):
             version = Version(version)
 
-        if non_conservative and version < Version(PET_MAD_NC_AVAILABILITY_VERSION):
+        self.version = version
+
+        if non_conservative and self.version < Version(PET_MAD_NC_AVAILABILITY_VERSION):
             raise NotImplementedError(
                 f"Non-conservative forces and stresses are not available for version "
-                f"{version}. Please use PET-MAD version "
+                f"{self.version}. Please use PET-MAD version "
                 f"{PET_MAD_NC_AVAILABILITY_VERSION} or higher."
             )
 
-        additional_outputs = {}
         if calculate_uncertainty or calculate_ensemble:
-            if version < Version(PET_MAD_UQ_AVAILABILITY_VERSION):
+            if self.version < Version(PET_MAD_UQ_AVAILABILITY_VERSION):
                 raise NotImplementedError(
                     f"Energy uncertainty and ensemble are not available for version "
-                    f"{version}. Please use PET-MAD version "
+                    f"{self.version}. Please use PET-MAD version "
                     f"{PET_MAD_UQ_AVAILABILITY_VERSION} or higher, or disable the "
                     "calculation of energy uncertainty and energy ensemble."
                 )
             else:
                 if calculate_uncertainty:
-                    additional_outputs["energy_uncertainty"] = ModelOutput(
-                        quantity="energy", unit="eV", per_atom=False
+                    warnings.warn(
+                        "`calculate_uncertainty` is deprecated, you can directly call "
+                        "`calculator.get_energy_uncertainty(atoms)`",
+                        stacklevel=2,
                     )
                 if calculate_ensemble:
-                    additional_outputs["energy_ensemble"] = ModelOutput(
-                        quantity="energy", unit="eV", per_atom=False
+                    warnings.warn(
+                        "`calculate_ensemble` is deprecated, you can directly call "
+                        "`calculator.get_energy_ensemble(atoms)`",
+                        stacklevel=2,
                     )
 
         model = get_pet_mad(version=version, checkpoint_path=checkpoint_path)
@@ -125,24 +130,6 @@ class PETMADCalculator(MetatomicCalculator):
                 dtype = STR_TO_DTYPE[dtype]
             model._capabilities.dtype = DTYPE_TO_STR[dtype]
             model = model.to(dtype=dtype, device=device)
-
-        self._rotations: List[np.ndarray] = []
-        if rotational_average_order is not None:
-            assert rotational_average_num_additional_rotations > 0, (
-                "Number of primitive rotations must be greater than 0."
-            )
-            if rotational_average_order not in AVAILABLE_LEBEDEV_GRID_ORDERS:
-                raise ValueError(
-                    f"Lebedev-Laikov grid order {rotational_average_order} is not "
-                    f"available. Please use one of the following orders: "
-                    f"{AVAILABLE_LEBEDEV_GRID_ORDERS}."
-                )
-
-            self._rotations = get_so3_rotations(
-                rotational_average_order,
-                rotational_average_num_additional_rotations,
-            )
-        self._rotational_average_batch_size = rotational_average_batch_size
 
         cache_dir = user_cache_dir("pet-mad", "metatensor")
         os.makedirs(cache_dir, exist_ok=True)
@@ -161,14 +148,29 @@ class PETMADCalculator(MetatomicCalculator):
         logging.info(f"Exporting checkpoint to TorchScript at {pt_path}")
         model.save(pt_path, collect_extensions=extensions_directory)
 
-        super().__init__(
+        self.calculator = MetatomicCalculator(
             pt_path,
-            additional_outputs=additional_outputs,
             extensions_directory=extensions_directory,
             check_consistency=check_consistency,
             device=device,
             non_conservative=non_conservative,
         )
+        self.implemented_properties = self.calculator.implemented_properties
+
+        if rotational_average_order is not None:
+            if rotational_average_num_additional_rotations != 1:
+                warnings.warn(
+                    "`rotational_average_num_additional_rotations` is deprecated and "
+                    "does nothing.",
+                    stacklevel=2,
+                )
+
+            self.calculator = SymmetrizedCalculator(
+                self.calculator,
+                l_max=rotational_average_order,
+                batch_size=rotational_average_batch_size,
+                store_rotational_std=True,
+            )
 
     def calculate(
         self, atoms: Atoms, properties: List[str], system_changes: List[str]
@@ -189,67 +191,88 @@ class PETMADCalculator(MetatomicCalculator):
         averaging will be performed in batches of the given size to avoid out of memory
         errors.
         """
-
-        super().calculate(atoms, properties, system_changes)
-
-        if len(self._rotations) > 0:
-            rotated_atoms_list = rotate_atoms(atoms, self._rotations)
-            batch_size = (
-                self._rotational_average_batch_size
-                if self._rotational_average_batch_size is not None
-                else len(rotated_atoms_list)
-            )
-            batches = [
-                rotated_atoms_list[i : i + batch_size]
-                for i in range(0, len(rotated_atoms_list), batch_size)
-            ]
-            results: Dict[str, Any] = {}
-            for batch in batches:
-                try:
-                    batch_results = self.compute_energy(
-                        batch, self._do_gradients_with_energy
-                    )
-                    for key, value in batch_results.items():
-                        results.setdefault(key, [])
-                        results[key].extend(
-                            [value] if isinstance(value, float) else value
-                        )
-                except torch.cuda.OutOfMemoryError as e:
-                    raise RuntimeError(
-                        "Out of memory error encountered during rotational averaging. "
-                        "Please reduce the batch size or use a lower rotational "
-                        "averaging parameters. This can be done by setting the "
-                        "`rotational_average_batch_size`, `rotational_average_order`"
-                        "and `rotational_average_num_additional_rotations` parameters, "
-                        "while initializing the calculator."
-                        f"Full error message: {e}"
-                    )
-
-            results = compute_rotational_average(results, self._rotations)
-            self.results.update(results)
-
-    def _get_uq_output(self, output_name: str):
-        if output_name not in self.additional_outputs:
-            quantity = output_name.split("_")[1]
-            raise ValueError(
-                f"Energy {quantity} is not available. Please make sure that you have"
-                f" initialized the calculator with `calculate_{quantity}=True` and "
-                f"performed evaluation. This option is only available for PET-MAD "
-                f"version {PET_MAD_UQ_AVAILABILITY_VERSION} or higher."
-            )
-        return (
-            self.additional_outputs[output_name]
-            .block()
-            .values.detach()
-            .numpy()
-            .squeeze()
+        super().calculate(
+            atoms=atoms,
+            properties=properties,
+            system_changes=system_changes,
         )
 
-    def get_energy_uncertainty(self):
-        return self._get_uq_output("energy_uncertainty")
+        self.calculator.calculate(atoms, properties, system_changes)
+        self.results = self.calculator.results
 
-    def get_energy_ensemble(self):
-        return self._get_uq_output("energy_ensemble")
+    def get_energy_uncertainty(
+        self, atoms: Optional[Atoms] = None, per_atom: bool = False
+    ) -> np.ndarray:
+        """
+        Get the energy uncertainty for a given :py:class:`ase.Atoms` object.
+
+        :param atoms: ASE atoms object. If ``None``, the last calculated atoms will be
+            used.
+        :param per_atom: Whether to return the energy uncertainty per atom.
+        :return: Energy uncertainty in numpy.ndarray format.
+        """
+        if self.version < Version(PET_MAD_UQ_AVAILABILITY_VERSION):
+            raise NotImplementedError(
+                f"Energy uncertainty is not available for version {self.version}. "
+                f"Please use PET-MAD v{PET_MAD_UQ_AVAILABILITY_VERSION} or higher."
+            )
+
+        if atoms is None:
+            if self.atoms is None:
+                raise ValueError(
+                    "No `atoms` provided and no previously calculated atoms found."
+                )
+            else:
+                atoms = self.atoms
+
+        outputs = self.calculator.run_model(
+            atoms,
+            outputs={
+                # TODO: handle variants if we have a a model with them
+                "energy_uncertainty": ModelOutput(
+                    quantity="energy", unit="eV", per_atom=per_atom
+                )
+            },
+        )
+
+        return outputs["energy_uncertainty"].block().values.detach().cpu().numpy()
+
+    def get_energy_ensemble(
+        self, atoms: Optional[Atoms] = None, per_atom: bool = False
+    ) -> np.ndarray:
+        """
+        Get the ensemble of energies for a given :py:class:`ase.Atoms` object.
+
+        :param atoms: ASE atoms object. If ``None``, the last calculated atoms will be
+            used.
+        :param per_atom: Whether to return the energies per atom.
+        :return: Energy uncertainty in numpy.ndarray format.
+        """
+        if self.version < Version(PET_MAD_UQ_AVAILABILITY_VERSION):
+            raise NotImplementedError(
+                f"Energy ensemble is not available for version {self.version}. "
+                f"Please use PET-MAD v{PET_MAD_UQ_AVAILABILITY_VERSION} or higher."
+            )
+
+        if atoms is None:
+            if self.atoms is None:
+                raise ValueError(
+                    "No `atoms` provided and no previously calculated atoms found."
+                )
+            else:
+                atoms = self.atoms
+
+        outputs = self.calculator.run_model(
+            atoms,
+            outputs={
+                # TODO: handle variants if we have a a model with them
+                "energy_ensemble": ModelOutput(
+                    quantity="energy", unit="eV", per_atom=per_atom
+                )
+            },
+        )
+
+        return outputs["energy_ensemble"].block().values.detach().cpu().numpy()
 
 
 ENERGY_LOWER_BOUND = -159.6456  # Lower bound of the energy grid for DOS
@@ -266,7 +289,7 @@ ENERGY_GRID_NUM_POINTS_COARSE = 1000
 ENERGY_GRID_NUM_POINTS_FINE = 10000
 
 
-class PETMADDOSCalculator(MetatomicCalculator):
+class PETMADDOSCalculator:
     """
     PET-MAD DOS Calculator
     """
@@ -303,7 +326,7 @@ class PETMADDOSCalculator(MetatomicCalculator):
             version=version, model_path=bandgap_model_path
         )
 
-        super().__init__(
+        self.calculator = MetatomicCalculator(
             model,
             additional_outputs={},
             check_consistency=check_consistency,
@@ -327,7 +350,7 @@ class PETMADDOSCalculator(MetatomicCalculator):
         :param per_atom: Whether to return the density of states per atom.
         :return: Energy grid and corresponding DOS values in torch.Tensor format.
         """
-        results = self.run_model(
+        results = self.calculator.run_model(
             atoms, outputs={"mtt::dos": ModelOutput(per_atom=per_atom)}
         )
         dos = results["mtt::dos"].block().values
