@@ -2,7 +2,7 @@
 
 ## Unreleased changes
 
-## 1.5.0
+## 1.4.4
 
 - Upgraded to metatrain v2025.12
 - `PETMADCalculator.get_energy_uncertainty` and
