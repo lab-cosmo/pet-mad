@@ -2,6 +2,15 @@
 
 ## Unreleased changes
 
+## 1.5.0
+
+- Upgraded to metatrain v2025.12
+- `PETMADCalculator.get_energy_uncertainty` and
+  `PETMADCalculator.get_energy_ensemble` now take an `atoms` parameter (which
+  defaults to the last Atoms used when computing the energy) and a `per_atom`
+  parameter to get either per-atom or per-structuyre energy uncertainty and
+  ensemble.
+
 ## 1.4.3
 
 - Added the rotational averaging feature to `PETMADCalculator`.
