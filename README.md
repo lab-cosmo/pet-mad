@@ -218,29 +218,28 @@ on the data that is far away from the training data. Another important use case
 is a propagation of the uncertainty of the energy prediction to other observables,
 like phase transition temperatures, diffusion coefficients, etc.
 
-To activate the uncertainty quantification, you need to set the
-`calculate_uncertainty` and / or`calculate_ensemble` parameters to `True` when
-initializing the `PETMADCalculator` class. The first feature will calculate the
-uncertainty of the energy prediction, while the second one will calculate the
-ensemble of the energy predictions based on the shallow ensemble of the last
-layers of the model.
+To evaluate the uncertainty of the energy prediction, or to get an ensemble of energy
+predictions, you can use the `get_energy_uncertainty` and `get_energy_ensemble` methods
+of the `PETMADCalculator` class:
 
 ```python
 from pet_mad.calculator import PETMADCalculator
 from ase.build import bulk
 
 atoms = bulk("Si", cubic=True, a=5.43, crystalstructure="diamond")
-pet_mad_calculator = PETMADCalculator(version="latest", device="cpu", calculate_uncertainty=True, calculate_ensemble=True)
+pet_mad_calculator = PETMADCalculator(version="latest", device="cpu")
 atoms.calc = pet_mad_calculator
 energy = atoms.get_potential_energy()
 
-energy_uncertainty = atoms.calc.get_energy_uncertainty()
-energy_ensemble = atoms.calc.get_energy_ensemble()
+energy_uncertainty = pet_mad_calculator.get_energy_uncertainty(atoms, per_atom=False)
+energy_ensemble = pet_mad_calculator.get_energy_ensemble(atoms, per_atom=False)
 ```
 
-More details on the uncertainty quantification and shallow
-ensemble method can be found in [this](https://doi.org/10.1088/2632-2153/ad594a) and [this](https://doi.org/10.1088/2632-2153/ad805f) papers. 
-
+Please note that the uncertainty quantification and ensemble prediction accepts the
+`per_atom` flag, which indicates whether the uncertainty/ensemble should be computed
+per atom or for the whole system. More details on the uncertainty quantification and shallow
+ensemble method can be found in [this](https://doi.org/10.1088/2632-2153/ad594a) and
+[this](https://doi.org/10.1088/2632-2153/ad805f) papers. 
 
 
 ## Running PET-MAD with LAMMPS
