@@ -532,14 +532,14 @@ If you use any of the PET-MAD models in your research, please cite the correspon
 
 ```bibtex
 @misc{PET-MAD-2025,
-  title={PET-MAD as a lightweight universal interatomic potential for advanced materials modeling},
-  author={Mazitov, Arslan and Bigi, Filippo and Kellner, Matthias and Pegolo, Paolo and Tisi, Davide and Fraux, Guillaume and Pozdnyakov, Sergey and Loche, Philip and Ceriotti, Michele},
-  journal={Nature Communications},
-  volume={16},
-  number={1},
-  pages={10653},
-  year={2025},
-  publisher={Nature Publishing Group UK London}
+      title={PET-MAD as a lightweight universal interatomic potential for advanced materials modeling},
+      author={Mazitov, Arslan and Bigi, Filippo and Kellner, Matthias and Pegolo, Paolo and Tisi, Davide and Fraux, Guillaume and Pozdnyakov, Sergey and Loche, Philip and Ceriotti, Michele},
+      journal={Nature Communications},
+      volume={16},
+      number={1},
+      pages={10653},
+      year={2025},
+      publisher={Nature Publishing Group UK London}
 }
 @misc{PET-MAD-DOS-2025,
       title={A universal machine learning model for the electronic density of states}, 
