@@ -89,7 +89,7 @@ def save_pet_mad(*, version: str = "latest", checkpoint_path=None, output=None):
 
     if output is None:
         if checkpoint_path is None:
-            output = f"pet-mad-{version}.pt"
+            output = f"pet-mad-v{version}.pt"
         else:
             raise
 
