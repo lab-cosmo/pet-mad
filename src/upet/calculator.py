@@ -1,12 +1,14 @@
 import logging
 import os
-from typing import Any, Dict, List, Optional, Tuple, Union
+import warnings
+from typing import List, Optional, Tuple, Union
 
+import ase.calculators.calculator
 import numpy as np
 import torch
 from ase import Atoms
 from metatomic.torch import ModelOutput
-from metatomic.torch.ase_calculator import MetatomicCalculator
+from metatomic.torch.ase_calculator import MetatomicCalculator, SymmetrizedCalculator
 from packaging.version import Version
 from platformdirs import user_cache_dir
 
@@ -23,12 +25,8 @@ from ._version import (
     UPET_UQ_SUPPORTED_MODELS,
 )
 from .utils import (
-    AVAILABLE_LEBEDEV_GRID_ORDERS,
-    compute_rotational_average,
     fermi_dirac_distribution,
     get_num_electrons,
-    get_so3_rotations,
-    rotate_atoms,
 )
 
 
@@ -190,7 +188,7 @@ class UPETCalculator(MetatomicCalculator):
         logging.info(f"Exporting checkpoint to TorchScript at {pt_path}")
         loaded_model.save(pt_path, collect_extensions=None)
 
-        super().__init__(
+        self.calculator = MetatomicCalculator(
             pt_path,
             additional_outputs=additional_outputs,
             extensions_directory=None,
@@ -198,6 +196,22 @@ class UPETCalculator(MetatomicCalculator):
             device=device,
             non_conservative=non_conservative,
         )
+        self.implemented_properties = self.calculator.implemented_properties
+
+        if rotational_average_order is not None:
+            if rotational_average_num_additional_rotations != 1:
+                warnings.warn(
+                    "`rotational_average_num_additional_rotations` is deprecated and "
+                    "does nothing.",
+                    stacklevel=2,
+                )
+
+            self.calculator = SymmetrizedCalculator(
+                self.calculator,
+                l_max=rotational_average_order,
+                batch_size=rotational_average_batch_size,
+                store_rotational_std=True,
+            )
 
     def calculate(
         self, atoms: Atoms, properties: List[str], system_changes: List[str]
@@ -280,11 +294,82 @@ class UPETCalculator(MetatomicCalculator):
             .squeeze()
         )
 
-    def get_energy_uncertainty(self):
-        return self._get_uq_output("energy_uncertainty")
+        self.calculator.calculate(atoms, properties, system_changes)
+        self.results = self.calculator.results
 
-    def get_energy_ensemble(self):
-        return self._get_uq_output("energy_ensemble")
+    def get_energy_uncertainty(
+        self, atoms: Optional[Atoms] = None, per_atom: bool = False
+    ) -> np.ndarray:
+        """
+        Get the energy uncertainty for a given :py:class:`ase.Atoms` object.
+
+        :param atoms: ASE atoms object. If ``None``, the last calculated atoms will be
+            used.
+        :param per_atom: Whether to return the energy uncertainty per atom.
+        :return: Energy uncertainty in numpy.ndarray format.
+        """
+        if self.version < Version(PET_MAD_UQ_AVAILABILITY_VERSION):
+            raise NotImplementedError(
+                f"Energy uncertainty is not available for version {self.version}. "
+                f"Please use PET-MAD v{PET_MAD_UQ_AVAILABILITY_VERSION} or higher."
+            )
+
+        if atoms is None:
+            if self.atoms is None:
+                raise ValueError(
+                    "No `atoms` provided and no previously calculated atoms found."
+                )
+            else:
+                atoms = self.atoms
+
+        outputs = self.calculator.run_model(
+            atoms,
+            outputs={
+                # TODO: handle variants if we have a a model with them
+                "energy_uncertainty": ModelOutput(
+                    quantity="energy", unit="eV", per_atom=per_atom
+                )
+            },
+        )
+
+        return outputs["energy_uncertainty"].block().values.detach().cpu().numpy()
+
+    def get_energy_ensemble(
+        self, atoms: Optional[Atoms] = None, per_atom: bool = False
+    ) -> np.ndarray:
+        """
+        Get the ensemble of energies for a given :py:class:`ase.Atoms` object.
+
+        :param atoms: ASE atoms object. If ``None``, the last calculated atoms will be
+            used.
+        :param per_atom: Whether to return the energies per atom.
+        :return: Energy uncertainty in numpy.ndarray format.
+        """
+        if self.version < Version(PET_MAD_UQ_AVAILABILITY_VERSION):
+            raise NotImplementedError(
+                f"Energy ensemble is not available for version {self.version}. "
+                f"Please use PET-MAD v{PET_MAD_UQ_AVAILABILITY_VERSION} or higher."
+            )
+
+        if atoms is None:
+            if self.atoms is None:
+                raise ValueError(
+                    "No `atoms` provided and no previously calculated atoms found."
+                )
+            else:
+                atoms = self.atoms
+
+        outputs = self.calculator.run_model(
+            atoms,
+            outputs={
+                # TODO: handle variants if we have a a model with them
+                "energy_ensemble": ModelOutput(
+                    quantity="energy", unit="eV", per_atom=per_atom
+                )
+            },
+        )
+
+        return outputs["energy_ensemble"].block().values.detach().cpu().numpy()
 
 
 ENERGY_LOWER_BOUND = -159.6456  # Lower bound of the energy grid for DOS
@@ -301,7 +386,7 @@ ENERGY_GRID_NUM_POINTS_COARSE = 1000
 ENERGY_GRID_NUM_POINTS_FINE = 10000
 
 
-class PETMADDOSCalculator(MetatomicCalculator):
+class PETMADDOSCalculator:
     """
     PET-MAD DOS Calculator
     """
@@ -338,7 +423,7 @@ class PETMADDOSCalculator(MetatomicCalculator):
             version=version, model_path=bandgap_model_path
         )
 
-        super().__init__(
+        self.calculator = MetatomicCalculator(
             model,
             additional_outputs={},
             check_consistency=check_consistency,
@@ -362,7 +447,7 @@ class PETMADDOSCalculator(MetatomicCalculator):
         :param per_atom: Whether to return the density of states per atom.
         :return: Energy grid and corresponding DOS values in torch.Tensor format.
         """
-        results = self.run_model(
+        results = self.calculator.run_model(
             atoms, outputs={"mtt::dos": ModelOutput(per_atom=per_atom)}
         )
         dos = results["mtt::dos"].block().values

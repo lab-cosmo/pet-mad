@@ -11,11 +11,11 @@ jobs:
     strategy:
       matrix:
         include:
-          - os: ubuntu-22.04
+          - os: ubuntu-24.04
             python-version: "3.10"
-          - os: ubuntu-22.04
+          - os: ubuntu-24.04
             python-version: "3.13"
-          - os: macos-14
+          - os: macos-15
             python-version: "3.13"
           # To be restored once we figure out the issue with the windows build
           # - os: windows-2019
@@ -24,17 +24,10 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
 
-    - name: Install Zsh
-      if: startsWith(matrix.os, 'ubuntu')
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y zsh libfftw3-dev
-        touch ~/.zshrc
-
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
+    - name: Set up Python
+      uses: actions/setup-python@v6
       with:
         python-version: ${{ matrix.python-version }}
     - run: pip install tox

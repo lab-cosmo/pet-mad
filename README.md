@@ -190,12 +190,9 @@ on the data that is far away from the training data. Another important use case
 is a propagation of the uncertainty of the energy prediction to other observables,
 like phase transition temperatures, diffusion coefficients, etc.
 
-To activate the uncertainty quantification, you need to set the
-`calculate_uncertainty` and / or`calculate_ensemble` parameters to `True` when
-initializing the `PETMADCalculator` class. The first feature will calculate the
-uncertainty of the energy prediction, while the second one will calculate the
-ensemble of the energy predictions based on the shallow ensemble of the last
-layers of the model.
+To evaluate the uncertainty of the energy prediction, or to get an ensemble of energy
+predictions, you can use the `get_energy_uncertainty` and `get_energy_ensemble` methods
+of the `PETMADCalculator` class:
 
 ```python
 from upet.calculator import UPETCalculator
@@ -206,13 +203,15 @@ calculator = UPETCalculator(model="pet-mad-s", version="1.0.2", device="cpu", ca
 atoms.calc = calculator
 energy = atoms.get_potential_energy()
 
-energy_uncertainty = atoms.calc.get_energy_uncertainty()
-energy_ensemble = atoms.calc.get_energy_ensemble()
+energy_uncertainty = pet_mad_calculator.get_energy_uncertainty(atoms, per_atom=False)
+energy_ensemble = pet_mad_calculator.get_energy_ensemble(atoms, per_atom=False)
 ```
 
-More details on the uncertainty quantification and shallow
-ensemble method can be found in [this](https://doi.org/10.1088/2632-2153/ad594a) and [this](https://doi.org/10.1088/2632-2153/ad805f) papers. 
-
+Please note that the uncertainty quantification and ensemble prediction accepts the
+`per_atom` flag, which indicates whether the uncertainty/ensemble should be computed
+per atom or for the whole system. More details on the uncertainty quantification and shallow
+ensemble method can be found in [this](https://doi.org/10.1088/2632-2153/ad594a) and
+[this](https://doi.org/10.1088/2632-2153/ad805f) papers. 
 
 
 ## Running UPET models with LAMMPS
@@ -510,13 +509,14 @@ If you use any of the PET-MAD models in your research, please cite the correspon
 
 ```bibtex
 @misc{PET-MAD-2025,
-      title={PET-MAD, a universal interatomic potential for advanced materials modeling},
-      author={Arslan Mazitov and Filippo Bigi and Matthias Kellner and Paolo Pegolo and Davide Tisi and Guillaume Fraux and Sergey Pozdnyakov and Philip Loche and Michele Ceriotti},
+      title={PET-MAD as a lightweight universal interatomic potential for advanced materials modeling},
+      author={Mazitov, Arslan and Bigi, Filippo and Kellner, Matthias and Pegolo, Paolo and Tisi, Davide and Fraux, Guillaume and Pozdnyakov, Sergey and Loche, Philip and Ceriotti, Michele},
+      journal={Nature Communications},
+      volume={16},
+      number={1},
+      pages={10653},
       year={2025},
-      eprint={2503.14118},
-      archivePrefix={arXiv},
-      primaryClass={cond-mat.mtrl-sci},
-      url={https://arxiv.org/abs/2503.14118}
+      publisher={Nature Publishing Group UK London}
 }
 @misc{PET-MAD-DOS-2025,
       title={A universal machine learning model for the electronic density of states}, 
