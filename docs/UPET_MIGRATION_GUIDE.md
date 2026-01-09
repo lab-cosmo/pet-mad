@@ -4,7 +4,7 @@ This guide provides instructions for users who are transitioning from the
 **PET-MAD** package to the new **UPET** package. The UPET package is a
 successor of PET-MAD, offering enhanced functionalities and a broader scope of
 models for atomistic simulations trained on popular datasets for atomistic machine
-learning. The latest version of the PET-MAD package is `1.4.3`, and users are
+learning. The latest version of the PET-MAD package is `1.4.4`, and users are
 encouraged to migrate to UPET for continued support and new features.
 
 Migrating to UPET involves:
