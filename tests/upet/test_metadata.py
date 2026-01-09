@@ -2,8 +2,8 @@ import pytest
 from huggingface_hub import HfApi
 from packaging.version import Version
 
+from upet._metadata import get_upet_metadata
 from upet._version import UPET_AVAILABLE_MODELS
-from upet.utils import get_upet_metadata
 
 
 @pytest.mark.parametrize("model_name", UPET_AVAILABLE_MODELS)
@@ -57,5 +57,5 @@ def test_get_upet_metadata(model_name):
         assert metadata.authors == authors
         assert metadata.references == {
             "architecture": ["https://arxiv.org/abs/2305.19302v3"],
-            "model": ["http://arxiv.org/abs/2503.14118"],
+            "model": ["https://doi.org/10.1038/s41467-025-65662-7"],
         }

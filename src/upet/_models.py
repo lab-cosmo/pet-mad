@@ -10,12 +10,13 @@ from metatomic.torch import AtomisticModel
 from metatrain.utils.io import load_model as load_metatrain_model
 from packaging.version import Version
 
+from ._metadata import get_pet_mad_dos_metadata, get_upet_metadata
 from ._version import (
     PET_MAD_DOS_AVAILABLE_VERSIONS,
     PET_MAD_DOS_LATEST_STABLE_VERSION,
 )
 from .modules import BandgapModel
-from .utils import get_pet_mad_dos_metadata, get_upet_metadata, hf_hub_download_url
+from .utils import hf_hub_download_url
 
 
 def upet_get_size_to_load(model: str, requested_size: Optional[str] = None) -> str:

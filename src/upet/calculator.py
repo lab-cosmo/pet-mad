@@ -21,7 +21,6 @@ from ._models import (
 from ._version import (
     PET_MAD_DOS_LATEST_STABLE_VERSION,
     UPET_AVAILABLE_MODELS,
-    UPET_UQ_SUPPORTED_MODELS,
 )
 from .utils import (
     fermi_dirac_distribution,
@@ -102,6 +101,8 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
         :param check_consistency: whether internal consistency checks should be
             performed. Mainly for developers, defaults to False.
         """
+        super().__init__()
+
         self._model_name = model.lower()
         if self._model_name not in UPET_AVAILABLE_MODELS:
             raise ValueError(
@@ -130,9 +131,9 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
                 or "non_conservative_stress" not in model_outputs
             ):
                 raise NotImplementedError(
-                    "Non-conservative forces and stresses are not available for this "
-                    "model. Please check the documentation of this class for more "
-                    "information."
+                    "Non-conservative forces and stresses are not available for the "
+                    f"model {self._model_name}. Please check the documentation of this "
+                    "class for more information."
                 )
         if calculate_uncertainty or calculate_ensemble:
             if (
@@ -140,9 +141,9 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
                 or "energy_ensemble" not in model_outputs
             ):
                 raise NotImplementedError(
-                    "Energy uncertainty and ensemble are not available for this "
-                    "model. Please check the documentation of this class for more "
-                    "information."
+                    "Energy uncertainty and ensemble are not available for the "
+                    f"model {self._model_name}. Please check the documentation of this "
+                    "class for more information."
                 )
             self._uq_is_available = True
         else:
@@ -219,13 +220,6 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
         :param per_atom: Whether to return the energy uncertainty per atom.
         :return: Energy uncertainty in numpy.ndarray format.
         """
-        if self._model_name not in UPET_UQ_SUPPORTED_MODELS:
-            raise NotImplementedError(
-                f"Energy uncertainty is not available for a selected model "
-                f"{self._model_name}. In order to use uncertainty quantification, "
-                f"please use one of the following models: {UPET_UQ_SUPPORTED_MODELS}"
-            )
-
         if atoms is None:
             if self.atoms is None:
                 raise ValueError(
@@ -257,12 +251,6 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
         :param per_atom: Whether to return the energies per atom.
         :return: Energy uncertainty in numpy.ndarray format.
         """
-        if self._model_name not in UPET_UQ_SUPPORTED_MODELS:
-            raise NotImplementedError(
-                f"Energy uncertainty is not available for a selected model "
-                f"{self._model_name}. In order to use uncertainty quantification, "
-                f"please use one of the following models: {UPET_UQ_SUPPORTED_MODELS}"
-            )
 
         if atoms is None:
             if self.atoms is None:
