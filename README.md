@@ -9,7 +9,7 @@
 > This repository is a successor of the PET-MAD repository, which is now deprecated.
 > The package has been renamed to **UPET** to reflect the broader scope of the models
 > and functionalities provided, going beyond the original PET-MAD model.
-> Please use the version `1.4.3` of PET-MAD package if you want to use the old API.
+> Please use the version `1.4.4` of PET-MAD package if you want to use the old API.
 > The older version of the README file with documentation is avaiable [here](docs/README_OLD.md).
 > The migration guide from PET-MAD to UPET is available [here](docs/UPET_MIGRATION_GUIDE.md).
   
@@ -160,7 +160,21 @@ to fetch the UPET model from the HuggingFace repository:
 mtt export https://huggingface.co/lab-cosmo/upet/resolve/main/models/pet-mad-s-v1.0.2.ckpt -o model.pt
 ```
 
-This command will download the model and convert it to TorchScript format. Then
+Alternatively, you can fetch and save the model using the UPET Python API:
+
+```py
+import upet
+
+# Saving the latest version of UPET to a TorchScript file
+upet.save_pet_mad(
+    model="pet-mad",
+    size="s",
+    version="v1.0.2",
+    output="model.pt",
+)
+```
+
+Both these commands will download the model and convert it to TorchScript format. Next,
 you need to create the `options.yaml` file and specify the dataset you want to
 evaluate the model on (where the dataset is stored in `extxyz` format):
 
@@ -175,7 +189,7 @@ targets:
 Then, you can use the `mtt eval` command to evaluate the model on a dataset:
 
 ```bash
-mtt eval model.pt options.yaml --batch-size=16 --extensions-dir=extensions --output=predictions.xyz
+mtt eval model.pt options.yaml --batch-size=16 --output=predictions.xyz
 ```
 
 This will create a file called `predictions.xyz` with the predicted energies and
@@ -203,8 +217,8 @@ calculator = UPETCalculator(model="pet-mad-s", version="1.0.2", device="cpu", ca
 atoms.calc = calculator
 energy = atoms.get_potential_energy()
 
-energy_uncertainty = pet_mad_calculator.get_energy_uncertainty(atoms, per_atom=False)
-energy_ensemble = pet_mad_calculator.get_energy_ensemble(atoms, per_atom=False)
+energy_uncertainty = calculator.get_energy_uncertainty(atoms, per_atom=False)
+energy_ensemble = calculator.get_energy_ensemble(atoms, per_atom=False)
 ```
 
 Please note that the uncertainty quantification and ensemble prediction accepts the
@@ -384,7 +398,7 @@ Then you can use the `D3Calculator` class to combine the two calculators:
 ```python
 from torch_dftd.torch_dftd3_calculator import TorchDFTD3Calculator
 from upet.calculator import UPETCalculator
-from  ase.calculators.mixing import SumCalculator
+from ase.calculators.mixing import SumCalculator
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
@@ -487,7 +501,7 @@ Cookbook](https://atomistic-cookbook.org/examples/pet-mad/pet-mad.html).
 
 ## Fine-tuning
 
-PET-MAD can be fine-tuned using the
+UPET models can be fine-tuned using the
 [Metatrain](https://metatensor.github.io/metatrain/latest/advanced-concepts/fine-tuning.html)
 library.
 
@@ -503,9 +517,9 @@ Additional documentation can be found in the
 - [LAMMPS interface](https://docs.metatensor.org/metatomic/latest/engines/lammps.html)
 - [i-PI interface](https://docs.metatensor.org/metatomic/latest/engines/ipi.html)
 
-## Citing PET-MAD Models
+## Citing UPET Models
 
-If you use any of the PET-MAD models in your research, please cite the corresponding articles:
+If you use any of the UPET models in your research, please cite the corresponding articles:
 
 ```bibtex
 @misc{PET-MAD-2025,
@@ -516,7 +530,8 @@ If you use any of the PET-MAD models in your research, please cite the correspon
       number={1},
       pages={10653},
       year={2025},
-      publisher={Nature Publishing Group UK London}
+      publisher={Nature Publishing Group UK London},
+      url={https://doi.org/10.1038/s41467-025-65662-7},
 }
 @misc{PET-MAD-DOS-2025,
       title={A universal machine learning model for the electronic density of states}, 
