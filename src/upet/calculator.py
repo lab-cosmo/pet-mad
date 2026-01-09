@@ -1,6 +1,5 @@
 import logging
 import os
-import warnings
 from typing import List, Optional, Tuple, Union
 
 import ase.calculators.calculator
@@ -40,7 +39,7 @@ DTYPE_TO_STR = {
 }
 
 
-class UPETCalculator(MetatomicCalculator):
+class UPETCalculator(ase.calculators.calculator.Calculator):
     """
     ASE Calculator for universal MLIPs based on the PET architecture.
     """
@@ -54,7 +53,6 @@ class UPETCalculator(MetatomicCalculator):
         calculate_uncertainty: bool = False,
         calculate_ensemble: bool = False,
         rotational_average_order: Optional[int] = None,
-        rotational_average_num_additional_rotations: int = 1,
         rotational_average_batch_size: Optional[int] = None,
         *,
         device: Optional[str] = None,
@@ -104,7 +102,8 @@ class UPETCalculator(MetatomicCalculator):
         :param check_consistency: whether internal consistency checks should be
             performed. Mainly for developers, defaults to False.
         """
-        if model.lower() not in UPET_AVAILABLE_MODELS:
+        self._model_name = model.lower()
+        if self._model_name not in UPET_AVAILABLE_MODELS:
             raise ValueError(
                 f"Model {model} is not available. Please select one of the following: "
                 f"{UPET_AVAILABLE_MODELS}"
@@ -145,16 +144,9 @@ class UPETCalculator(MetatomicCalculator):
                     "model. Please check the documentation of this class for more "
                     "information."
                 )
-
-        additional_outputs = {}
-        if calculate_uncertainty:
-            additional_outputs["energy_uncertainty"] = ModelOutput(
-                quantity="energy", unit="eV", per_atom=True
-            )
-        if calculate_ensemble:
-            additional_outputs["energy_ensemble"] = ModelOutput(
-                quantity="energy", unit="eV", per_atom=True
-            )
+            self._uq_is_available = True
+        else:
+            self._uq_is_available = False
 
         if dtype is not None:
             if isinstance(dtype, str):
@@ -162,24 +154,6 @@ class UPETCalculator(MetatomicCalculator):
                 dtype = STR_TO_DTYPE[dtype]
             loaded_model._capabilities.dtype = DTYPE_TO_STR[dtype]
             loaded_model = loaded_model.to(dtype=dtype, device=device)
-
-        self._rotations: List[np.ndarray] = []
-        if rotational_average_order is not None:
-            assert rotational_average_num_additional_rotations > 0, (
-                "Number of primitive rotations must be greater than 0."
-            )
-            if rotational_average_order not in AVAILABLE_LEBEDEV_GRID_ORDERS:
-                raise ValueError(
-                    f"Lebedev-Laikov grid order {rotational_average_order} is not "
-                    f"available. Please use one of the following orders: "
-                    f"{AVAILABLE_LEBEDEV_GRID_ORDERS}."
-                )
-
-            self._rotations = get_so3_rotations(
-                rotational_average_order,
-                rotational_average_num_additional_rotations,
-            )
-        self._rotational_average_batch_size = rotational_average_batch_size
 
         cache_dir = user_cache_dir("upet", "metatensor")
         os.makedirs(cache_dir, exist_ok=True)
@@ -190,7 +164,6 @@ class UPETCalculator(MetatomicCalculator):
 
         self.calculator = MetatomicCalculator(
             pt_path,
-            additional_outputs=additional_outputs,
             extensions_directory=None,
             check_consistency=check_consistency,
             device=device,
@@ -199,13 +172,6 @@ class UPETCalculator(MetatomicCalculator):
         self.implemented_properties = self.calculator.implemented_properties
 
         if rotational_average_order is not None:
-            if rotational_average_num_additional_rotations != 1:
-                warnings.warn(
-                    "`rotational_average_num_additional_rotations` is deprecated and "
-                    "does nothing.",
-                    stacklevel=2,
-                )
-
             self.calculator = SymmetrizedCalculator(
                 self.calculator,
                 l_max=rotational_average_order,
@@ -233,65 +199,10 @@ class UPETCalculator(MetatomicCalculator):
         errors.
         """
 
-        super().calculate(atoms, properties, system_changes)
-
-        if not all(atoms.get_pbc()) and "stress" in self.results:
-            nan_mask = np.isnan(self.results["stress"]) | np.isinf(
-                self.results["stress"]
-            )
-            self.results["stress"][nan_mask] = 0.0
-
-        if len(self._rotations) > 0:
-            rotated_atoms_list = rotate_atoms(atoms, self._rotations)
-            batch_size = (
-                self._rotational_average_batch_size
-                if self._rotational_average_batch_size is not None
-                else len(rotated_atoms_list)
-            )
-            batches = [
-                rotated_atoms_list[i : i + batch_size]
-                for i in range(0, len(rotated_atoms_list), batch_size)
-            ]
-            results: Dict[str, Any] = {}
-            for batch in batches:
-                try:
-                    batch_results = self.compute_energy(
-                        batch, self.parameters["do_gradients_with_energy"]
-                    )
-                    for key, value in batch_results.items():
-                        results.setdefault(key, [])
-                        results[key].extend(
-                            [value] if isinstance(value, float) else value
-                        )
-                except torch.cuda.OutOfMemoryError as e:
-                    raise RuntimeError(
-                        "Out of memory error encountered during rotational averaging. "
-                        "Please reduce the batch size or use a lower rotational "
-                        "averaging parameters. This can be done by setting the "
-                        "`rotational_average_batch_size`, `rotational_average_order`"
-                        "and `rotational_average_num_additional_rotations` parameters, "
-                        "while initializing the calculator."
-                        f"Full error message: {e}"
-                    )
-
-            results = compute_rotational_average(results, self._rotations)
-            self.results.update(results)
-
-    def _get_uq_output(self, output_name: str):
-        if output_name not in self.additional_outputs:
-            quantity = output_name.split("_")[1]
-            raise ValueError(
-                f"Energy {quantity} is not available. Please make sure that you have"
-                f" initialized the calculator with `calculate_{quantity}=True` and "
-                f"performed evaluation. Uncertainty quantification is only available "
-                f"for the following models: {UPET_UQ_SUPPORTED_MODELS}"
-            )
-        return (
-            self.additional_outputs[output_name]
-            .block()
-            .values.detach()
-            .numpy()
-            .squeeze()
+        super().calculate(
+            atoms=atoms,
+            properties=properties,
+            system_changes=system_changes,
         )
 
         self.calculator.calculate(atoms, properties, system_changes)
@@ -308,10 +219,11 @@ class UPETCalculator(MetatomicCalculator):
         :param per_atom: Whether to return the energy uncertainty per atom.
         :return: Energy uncertainty in numpy.ndarray format.
         """
-        if self.version < Version(PET_MAD_UQ_AVAILABILITY_VERSION):
+        if self._model_name not in UPET_UQ_SUPPORTED_MODELS:
             raise NotImplementedError(
-                f"Energy uncertainty is not available for version {self.version}. "
-                f"Please use PET-MAD v{PET_MAD_UQ_AVAILABILITY_VERSION} or higher."
+                f"Energy uncertainty is not available for a selected model "
+                f"{self._model_name}. In order to use uncertainty quantification, "
+                f"please use one of the following models: {UPET_UQ_SUPPORTED_MODELS}"
             )
 
         if atoms is None:
@@ -345,10 +257,11 @@ class UPETCalculator(MetatomicCalculator):
         :param per_atom: Whether to return the energies per atom.
         :return: Energy uncertainty in numpy.ndarray format.
         """
-        if self.version < Version(PET_MAD_UQ_AVAILABILITY_VERSION):
+        if self._model_name not in UPET_UQ_SUPPORTED_MODELS:
             raise NotImplementedError(
-                f"Energy ensemble is not available for version {self.version}. "
-                f"Please use PET-MAD v{PET_MAD_UQ_AVAILABILITY_VERSION} or higher."
+                f"Energy uncertainty is not available for a selected model "
+                f"{self._model_name}. In order to use uncertainty quantification, "
+                f"please use one of the following models: {UPET_UQ_SUPPORTED_MODELS}"
             )
 
         if atoms is None:
