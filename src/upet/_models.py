@@ -111,7 +111,7 @@ def upet_get_version_to_load(
 def get_upet(
     *, model: str, size: str, version: str, checkpoint_path: Optional[str] = None
 ) -> AtomisticModel:
-    """Get a metatomic ``AtomisticModel`` for a PET MLIP.
+    """Get a metatomic ``AtomisticModel`` for a UPET MLIP.
 
     :param model: name of the UPET model.
     :param size: size of the UPET model.
@@ -140,6 +140,42 @@ def get_upet(
 
     metadata = get_upet_metadata(model, size, version)
     return loaded_model.export(metadata)
+
+
+def save_pet_mad(
+    *,
+    model: str,
+    size: str,
+    version: str,
+    checkpoint_path: Optional[str] = None,
+    output=None,
+):
+    """
+    Save the UPET model to a TorchScript file (``pet-xxx.pt``). These files can
+    be used with LAMMPS and other tools to run simulations without Python.
+
+    :param model: name of the UPET model.
+    :param size: size of the UPET model.
+    :param version: UPET version to use. Defaults to the latest stable version.
+    :param checkpoint_path: path to a checkpoint file to load the model from. If
+        provided, the `version` parameter is ignored.
+    :param output: path to use for the output model, defaults to
+        ``pet-{version}.pt`` when using a version, or the checkpoint path when using
+        a checkpoint.
+    """
+
+    loaded_model = get_upet(
+        model=model, size=size, version=version, checkpoint_path=checkpoint_path
+    )
+
+    if output is None:
+        if checkpoint_path is None:
+            output = "-".join([model, size, f"v{version}"]) + ".pt"
+        else:
+            raise
+
+    loaded_model.save(output)
+    logging.info(f"Saved UPET model to {output}")
 
 
 BASE_URL_PET_MAD_DOS = "https://huggingface.co/lab-cosmo/pet-mad-dos/resolve/{tag}/models/pet-mad-dos-{version}.pt"
