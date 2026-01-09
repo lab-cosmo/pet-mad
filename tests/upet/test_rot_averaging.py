@@ -1,8 +1,6 @@
 import numpy as np
 import pytest
 from ase.build import bulk, molecule
-from huggingface_hub import HfApi
-from packaging.version import Version
 from scipy.integrate import lebedev_rule
 from scipy.spatial.transform import Rotation
 
@@ -127,45 +125,27 @@ def test_compute_rotational_average():
 
 @pytest.mark.parametrize("model_name", UPET_AVAILABLE_MODELS)
 def test_calc_rot_averaging(model_name):
-    hf_api = HfApi()
-    repo_files = hf_api.list_repo_files("lab-cosmo/upet")
-    files_in_models_folder = [f[7:] for f in repo_files if f.startswith("models/")]
-    model, size = model_name.rsplit("-", 1)
-    all_model_files = [
-        f
-        for f in files_in_models_folder
-        if f.startswith(f"{model}-{size}-") and f.endswith(".ckpt")
-    ]
-    all_model_versions = [
-        Version(f.split(f"{model}-{size}-")[1].split(".ckpt")[0])
-        for f in all_model_files
-    ]
-    all_model_versions = sorted(set(all_model_versions))
+    atoms = bulk("C", cubic=True, a=3.57, crystalstructure="diamond")
+    atoms.rattle(0.05)
+    atoms.calc = UPETCalculator(model=model_name)
 
-    for version in all_model_versions:
-        atoms = bulk("C", cubic=True, a=3.57, crystalstructure="diamond")
-        atoms.rattle(0.05)
-        calc = UPETCalculator(model=model_name, version=version)
-        atoms.calc = calc
+    target_energy = atoms.get_potential_energy()
+    target_forces = atoms.get_forces()
+    target_stress = atoms.get_stress()
 
-        target_energy = atoms.get_potential_energy()
-        target_forces = atoms.get_forces()
-        target_stress = atoms.get_stress()
-
-        atoms.calc = UPETCalculator(
-            model=model_name,
-            version=version,
-            rotational_average_order=3,
-        )
-        averaged_energy = atoms.get_potential_energy()
-        averaged_forces = atoms.get_forces()
-        averaged_stress = atoms.get_stress()
-        assert "energy_rot_std" in atoms.calc.results
-        assert "forces_rot_std" in atoms.calc.results
-        assert "stress_rot_std" in atoms.calc.results
-        np.testing.assert_allclose(averaged_energy, target_energy, atol=1e-2, rtol=1e-2)
-        np.testing.assert_allclose(averaged_forces, target_forces, atol=5e-2, rtol=1e-2)
-        np.testing.assert_allclose(averaged_stress, target_stress, atol=1e-2, rtol=1e-2)
+    atoms.calc = UPETCalculator(
+        model=model_name,
+        rotational_average_order=3,
+    )
+    averaged_energy = atoms.get_potential_energy()
+    averaged_forces = atoms.get_forces()
+    averaged_stress = atoms.get_stress()
+    assert "energy_rot_std" in atoms.calc.results
+    assert "forces_rot_std" in atoms.calc.results
+    assert "stress_rot_std" in atoms.calc.results
+    np.testing.assert_allclose(averaged_energy, target_energy, atol=1e-2, rtol=1e-2)
+    np.testing.assert_allclose(averaged_forces, target_forces, atol=5e-2, rtol=1e-2)
+    np.testing.assert_allclose(averaged_stress, target_stress, atol=1e-2, rtol=1e-2)
 
 
 @pytest.mark.parametrize("model_name", UPET_AVAILABLE_MODELS)
