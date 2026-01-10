@@ -81,8 +81,8 @@ Currently, we provide the following pre-trained models:
 | PET-MAD     | PBEsol                  | S                      | materials and molecules | MAD                   |
 | PET-OMAD    | PBEsol                  | L                      | materials and molecules | OMat -> MAD           |
 | PET-OMATPES | r2SCAN                  | L                      | materials               | OMat -> MATPES        |
-| PET-OMat    | PBE                     | XS, S, M, L            | materials               | OMat                  |
-| PET-OAM     | PBE (Materials Project) | L                      | materials               | OMat -> sAlex+MPtrj   |
+| PET-OMat    | PBE                     | XS, S, M, L, XL        | materials               | OMat                  |
+| PET-OAM     | PBE (Materials Project) | L, XL                  | materials               | OMat -> sAlex+MPtrj   |
 | PET-SPICE   | ωB97M-D3                | S, L                   | molecules               | SPICE                 | 
 
 All the checkpoints are available on the HuggingFace [repository](https://huggingface.co/lab-cosmo/upet).
