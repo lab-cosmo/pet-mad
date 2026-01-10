@@ -8,10 +8,10 @@ from upet._version import UPET_AVAILABLE_MODELS
 from upet.calculator import UPETCalculator
 
 
-@pytest.mark.parametrize("size", ["s", "m", "l", "xl", "xs"])
+@pytest.mark.parametrize("size", ["s", "m", "l", "xl", "xs", "xxs"])
 def test_upet_get_size_to_load(size):
     model = "pet-omat"
-    if size in ["l", "m", "s", "xs"]:
+    if size in ["l", "m", "s", "xs", "xl"]:
         returned_size = upet_get_size_to_load(model, requested_size=size)
         assert returned_size == size
     else:
@@ -21,11 +21,11 @@ def test_upet_get_size_to_load(size):
             upet_get_size_to_load(model, requested_size=size)
 
 
-@pytest.mark.parametrize("version", ["0.0.0", "0.1.0", "1.0.0"])
+@pytest.mark.parametrize("version", ["0.0.0", "0.1.0", "0.2.0", "1.0.0"])
 def test_upet_get_version_to_load(version):
     model = "pet-omat"
     size = "l"
-    if version in ["0.1.0", "1.0.0"]:
+    if version in ["0.1.0", "0.2.0", "1.0.0"]:
         returned_version = upet_get_version_to_load(
             model, size, requested_version=version
         )

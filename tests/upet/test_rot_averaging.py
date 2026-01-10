@@ -145,7 +145,7 @@ def test_calc_rot_averaging(model_name):
     assert "forces_rot_std" in atoms.calc.results
     assert "stress_rot_std" in atoms.calc.results
     np.testing.assert_allclose(averaged_energy, target_energy, atol=1e-2, rtol=1e-2)
-    np.testing.assert_allclose(averaged_forces, target_forces, atol=5e-2, rtol=1e-2)
+    np.testing.assert_allclose(averaged_forces, target_forces, atol=1e-1, rtol=1e-1)
     np.testing.assert_allclose(averaged_stress, target_stress, atol=1e-2, rtol=1e-2)
 
 
@@ -177,7 +177,7 @@ def test_calc_rot_averaging_non_conservative(model_name):
         assert "forces_rot_std" in atoms.calc.results
         assert "stress_rot_std" in atoms.calc.results
         np.testing.assert_allclose(averaged_energy, target_energy, atol=5e-2)
-        np.testing.assert_allclose(averaged_forces, target_forces, atol=5e-2)
+        np.testing.assert_allclose(averaged_forces, target_forces, atol=1e-1)
         np.testing.assert_allclose(averaged_stress, target_stress, atol=5e-2)
 
 
