@@ -142,7 +142,7 @@ def get_upet(
     return loaded_model.export(metadata)
 
 
-def save_pet_mad(
+def save_upet(
     *,
     model: str,
     size: str,
