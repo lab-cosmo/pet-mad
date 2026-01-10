@@ -9,7 +9,7 @@ encouraged to migrate to UPET for continued support and new features.
 
 Migrating to UPET involves:
 
-- Updating the package name from `pet_mad` to `upet`.
+- Changing the package name from `pet_mad` to `upet` in your imports.
 - Change in the calculator name from `PETMADCalculator` to `UPETCalculator`.
 - Adjusting the model name while initializing the calculator to reflect the new
   naming conventions in UPET.
