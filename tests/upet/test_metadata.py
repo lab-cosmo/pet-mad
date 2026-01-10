@@ -8,8 +8,8 @@ from upet._version import UPET_AVAILABLE_MODELS
 
 @pytest.mark.parametrize("model_name", UPET_AVAILABLE_MODELS)
 def test_get_upet_metadata(model_name):
-    if "-xl" in model_name:
-        pytest.skip("Skipping XL models (very large).")
+    if "-xl" in model_name or "-l" in model_name:
+        pytest.skip("Skipping XL models and L models due to large size.")
     hf_api = HfApi()
     repo_files = hf_api.list_repo_files("lab-cosmo/upet")
     files_in_models_folder = [f[7:] for f in repo_files if f.startswith("models/")]

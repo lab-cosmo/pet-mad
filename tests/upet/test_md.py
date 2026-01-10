@@ -12,8 +12,8 @@ from upet.calculator import UPETCalculator
 
 @pytest.mark.parametrize("model_name", UPET_AVAILABLE_MODELS)
 def test_md(model_name):
-    if "-xl" in model_name:
-        pytest.skip("Skipping XL models (very large).")
+    if "-xl" in model_name or "-l" in model_name:
+        pytest.skip("Skipping XL models and L models due to large size.")
     atoms = (
         bulk("C", cubic=True, a=5.43, crystalstructure="diamond")
         if "spice" not in model_name
