@@ -166,7 +166,7 @@ Alternatively, you can fetch and save the model using the UPET Python API:
 import upet
 
 # Saving the latest version of UPET to a TorchScript file
-upet.save_pet_mad(
+upet.save_upet(
     model="pet-mad",
     size="s",
     version="v1.0.2",
