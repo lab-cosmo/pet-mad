@@ -136,6 +136,7 @@ def test_calc_rot_averaging(model_name):
     atoms.calc = UPETCalculator(
         model=model_name,
         rotational_average_order=3,
+        rotational_average_batch_size=8,
     )
     averaged_energy = atoms.get_potential_energy()
     averaged_forces = atoms.get_forces()
@@ -167,6 +168,7 @@ def test_calc_rot_averaging_non_conservative(model_name):
             model=model_name,
             non_conservative=True,
             rotational_average_order=3,
+            rotational_average_batch_size=8,
         )
         averaged_energy = atoms.get_potential_energy()
         averaged_forces = atoms.get_forces()
