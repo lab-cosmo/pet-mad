@@ -10,6 +10,8 @@ from upet.calculator import UPETCalculator
 
 @pytest.mark.parametrize("model_name", UPET_AVAILABLE_MODELS)
 def test_uncertainty_quantification(model_name):
+    if "-xl" in model_name:
+        pytest.skip("Skipping XL models (very large).")
     hf_api = HfApi()
     repo_files = hf_api.list_repo_files("lab-cosmo/upet")
     files_in_models_folder = [f[7:] for f in repo_files if f.startswith("models/")]
