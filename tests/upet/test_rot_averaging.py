@@ -125,6 +125,8 @@ def test_compute_rotational_average():
 
 @pytest.mark.parametrize("model_name", UPET_AVAILABLE_MODELS)
 def test_calc_rot_averaging(model_name):
+    if "-xl" in model_name or "-l" in model_name:
+        pytest.skip("Skipping XL models and L models due to large size.")
     atoms = bulk("C", cubic=True, a=3.57, crystalstructure="diamond")
     atoms.rattle(0.05)
     atoms.calc = UPETCalculator(model=model_name)
@@ -151,6 +153,8 @@ def test_calc_rot_averaging(model_name):
 
 @pytest.mark.parametrize("model_name", UPET_AVAILABLE_MODELS)
 def test_calc_rot_averaging_non_conservative(model_name):
+    if "-xl" in model_name or "-l" in model_name:
+        pytest.skip("Skipping XL models and L models due to large size.")
     if model_name in ["pet-spice-s", "pet-spice-l"]:
         msg = "Non-conservative forces and stresses are not available"
         with pytest.raises(NotImplementedError, match=msg):
