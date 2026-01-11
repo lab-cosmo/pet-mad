@@ -521,8 +521,8 @@ Additional documentation can be found in the
 [metatomic](https://docs.metatensor.org/metatomic) and
 [metatrain](https://metatensor.github.io/metatrain/) repositories.
 
-- [Training a model](https://metatensor.github.io/metatrain/latest/getting-started/usage.html#training)
-- [Fine-tuning](https://metatensor.github.io/metatrain/latest/advanced-concepts/fine-tuning.html)
+- [Training a model](https://docs.metatensor.org/metatrain/latest/generated_examples/0-beginner/00-basic-usage.html)
+- [Fine-tuning](https://docs.metatensor.org/metatrain/latest/generated_examples/0-beginner/02-fine-tuning.html)
 - [LAMMPS interface](https://docs.metatensor.org/metatomic/latest/engines/lammps.html)
 - [i-PI interface](https://docs.metatensor.org/metatomic/latest/engines/ipi.html)
 
