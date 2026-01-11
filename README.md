@@ -14,11 +14,14 @@
 > The migration guide from PET-MAD to UPET is available [here](docs/UPET_MIGRATION_GUIDE.md).
 
 > [!NOTE]
-> Are you here to try our matbench model? Here's all you need:
+> Are you here to try our Matbench model? Here's all you need:
 ```py
 from upet.calculator import UPETCalculator
 calculator = UPETCalculator(model="pet-oam-xl", version="1.0.0", device="cuda")
 ```
+> [!NOTE]
+> This model is excellent for convex hull energies, geometry optimization and phonons,
+> but we highly recommend the faster and more universal PET-MAD for molecular dynamics!
   
 # UPET: Universal Models for Advanced Atomistic Simulations
 
