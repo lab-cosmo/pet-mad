@@ -215,7 +215,7 @@ like phase transition temperatures, diffusion coefficients, etc.
 
 To evaluate the uncertainty of the energy prediction, or to get an ensemble of energy
 predictions, you can use the `get_energy_uncertainty` and `get_energy_ensemble` methods
-of the `PETMADCalculator` class:
+of the `UPETCalculator` class:
 
 ```python
 from upet.calculator import UPETCalculator
