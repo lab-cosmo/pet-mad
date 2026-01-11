@@ -1,15 +1,8 @@
-<div align="center" width="600">
-  <picture>
-    <source srcset="https://github.com/lab-cosmo/pet-mad/raw/refs/heads/main/docs/static/pet-mad-logo-with-text-dark.svg" media="(prefers-color-scheme: dark)">
-    <img src="https://github.com/lab-cosmo/pet-mad/raw/refs/heads/main/docs/static/pet-mad-logo-with-text.svg" alt="Figure">
-  </picture>
-</div>
-
 > [!WARNING]
-> This is the REAMDE file compatible with the old PET-MAD package API (versions `<1.5.0`).
-> Breaking change of the PET-MAD API in version `1.5.0` was introduced, and 
-> let to incompatibility with this documentation. Please refer to the new documentation 
-> in the [main README.md](README.md) file.
+> This is the REAMDE file compatible with the old PET-MAD package API (versions `<1.4.4`).
+> Breaking change of the API was introduced upon transition to the UPET package in version
+> `0.1.0`, what led to incompatibility with this documentation. Please refer to the new 
+> documentation in the [main README.md](README.md) file.
 
 # PET-MAD: Universal Models for Advanced Atomistic Simulations
 
