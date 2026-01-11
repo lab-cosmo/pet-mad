@@ -67,7 +67,10 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
             - "pet-omat-s": PET-OMat model (size "s", materials, PBE)
             - "pet-omat-m": PET-OMat model (size "m", materials, PBE)
             - "pet-omat-l": PET-OMat model (size "l", materials, PBE)
+            - "pet-omat-xl": PET-OMat model (size "xl", materials, PBE)
             - "pet-oam-l": PET-OAM model (size "l", materials,
+                Materials-Project-consistent PBE)
+            - "pet-oam-xl": PET-OAM model (size "xl", materials,
                 Materials-Project-consistent PBE)
             - "pet-omatpes-l": PET-OMATPES model (size "l", materials, r2SCAN)
             - "pet-spice-s": PET-SPICE model (size "s", molecules, ωB97M-D3)
