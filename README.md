@@ -509,8 +509,10 @@ Cookbook](https://atomistic-cookbook.org/examples/pet-mad/pet-mad.html).
 ## Fine-tuning
 
 UPET models can be fine-tuned using the
-[Metatrain](https://metatensor.github.io/metatrain/latest/advanced-concepts/fine-tuning.html)
-library.
+[Metatrain](https://docs.metatensor.org/metatrain/latest/generated_examples/0-beginner/02-fine-tuning.html)
+library. At the moment, we recommend fine-tuning from our OMat models, because they are
+pre-trained on a very large dataset and they come in all sizes (from XS to XL, allowing
+you to choose a good trade-off for your application).
 
 ## Documentation
 
