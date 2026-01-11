@@ -12,6 +12,13 @@
 > Please use the version `1.4.4` of PET-MAD package if you want to use the old API.
 > The older version of the README file with documentation is avaiable [here](docs/README_OLD.md).
 > The migration guide from PET-MAD to UPET is available [here](docs/UPET_MIGRATION_GUIDE.md).
+
+> [!NOTE]
+> Are you here to try our matbench model? Here's all you need:
+```py
+from upet.calculator import UPETCalculator
+calculator = UPETCalculator(model="pet-oam-xl", version="1.0.0", device="cuda")
+```
   
 # UPET: Universal Models for Advanced Atomistic Simulations
 
