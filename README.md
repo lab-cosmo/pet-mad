@@ -67,7 +67,7 @@ the density of states (DOS) of materials, as well as their Fermi levels and band
 
 ## Installation
 
-You can install UPET using pip (not available yet):
+You can install UPET using pip:
 
 ```bash
 pip install upet
