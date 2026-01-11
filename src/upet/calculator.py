@@ -106,8 +106,7 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
         """
         super().__init__()
 
-        self._model_name = model.lower()
-        if self._model_name not in UPET_AVAILABLE_MODELS:
+        if model.lower() not in UPET_AVAILABLE_MODELS:
             raise ValueError(
                 f"Model {model} is not available. Please select one of the following: "
                 f"{UPET_AVAILABLE_MODELS}"
@@ -135,7 +134,7 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
             ):
                 raise NotImplementedError(
                     "Non-conservative forces and stresses are not available for the "
-                    f"model {self._model_name}. Please check the documentation of this "
+                    f"model {model.lower()}. Please check the documentation of this "
                     "class for more information."
                 )
         if calculate_uncertainty or calculate_ensemble:
@@ -145,7 +144,7 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
             ):
                 raise NotImplementedError(
                     "Energy uncertainty and ensemble are not available for the "
-                    f"model {self._model_name}. Please check the documentation of this "
+                    f"model {model.lower()}. Please check the documentation of this "
                     "class for more information."
                 )
             self._uq_is_available = True
