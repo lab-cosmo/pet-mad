@@ -1,126 +1,13 @@
 import numpy as np
 import pytest
-from ase.build import bulk, molecule
-from scipy.integrate import lebedev_rule
-from scipy.spatial.transform import Rotation
+from ase.build import bulk
 
 from upet._version import UPET_AVAILABLE_MODELS
 from upet.calculator import UPETCalculator
 
 
 GRID_ORDERS = [3, 5]
-NUM_ROTATIONS = [4, 8, 12]
 BATCH_SIZES = [1, 2, 4, 8]
-
-
-def get_so3_rotations(
-    rotational_average_order: int,
-    num_additional_rotations: int,
-    axis=None,
-):
-    axis = np.array([0, 0, 1]) if axis is None else axis
-    lebedev_grid = lebedev_rule(rotational_average_order)[0].T
-
-    alphas = np.linspace(0, 2 * np.pi, num_additional_rotations, endpoint=False)
-    additional_rotations = [
-        Rotation.from_rotvec(axis * alpha).as_matrix() for alpha in alphas
-    ]
-    lebedev_rotations = [
-        Rotation.align_vectors(rot_vector, [0, 0, 1])[0].as_matrix()
-        for rot_vector in lebedev_grid
-    ]
-    rotations = []
-    for lrot in lebedev_rotations:
-        for prot in additional_rotations:
-            rotations.append(lrot @ prot)
-    return rotations
-
-
-def rotate_atoms(atoms, rotations):
-    rotated_atoms_list = []
-    has_cell = atoms.cell is not None and atoms.cell.rank > 0
-    for rot in rotations:
-        new_atoms = atoms.copy()
-        new_atoms.positions = new_atoms.positions @ rot.T
-        if has_cell:
-            new_atoms.cell = new_atoms.cell @ rot.T
-        rotated_atoms_list.append(new_atoms)
-    return rotated_atoms_list
-
-
-def compute_rotational_average(results, rotations):
-    new_results = {}
-    for key, value in results.items():
-        if "energy" in key:
-            new_results[key] = np.mean(value)
-            new_results[key + "_rot_std"] = np.std(value)
-        elif "forces" in key:
-            rotated_back_values = np.array(
-                [val @ rot for rot, val in zip(rotations, value, strict=False)]
-            )
-            new_results[key] = rotated_back_values.mean(axis=0)
-            new_results[key + "_rot_std"] = rotated_back_values.std(axis=0)
-        elif "stress" in key:
-            rotated_back_values = np.array(
-                [rot.T @ val @ rot for rot, val in zip(rotations, value, strict=False)]
-            )
-            new_results[key] = rotated_back_values.mean(axis=0)
-            new_results[key + "_rot_std"] = rotated_back_values.std(axis=0)
-    return new_results
-
-
-@pytest.mark.parametrize("order", GRID_ORDERS)
-@pytest.mark.parametrize("num_rotations", NUM_ROTATIONS)
-def test_get_rotations(order, num_rotations):
-    rotations = get_so3_rotations(order, num_rotations)
-    random_vector = np.random.rand(3)
-    random_vector = random_vector / np.linalg.norm(random_vector)
-    rotated_vectors = [rotation @ random_vector for rotation in rotations]
-    np.testing.assert_allclose(np.linalg.norm(rotated_vectors, axis=1), 1.0)
-    np.testing.assert_allclose(
-        np.linalg.norm(np.sum(rotated_vectors, axis=0)), 0.0, atol=1e-10, rtol=1e-10
-    )
-
-
-def test_rotate_atoms():
-    atoms = molecule("H2O")
-    rotations = get_so3_rotations(3, 4)
-    rotated_atoms = rotate_atoms(atoms, rotations)
-    assert len(rotated_atoms) == len(rotations)
-    for rotation, item in zip(rotations, rotated_atoms, strict=False):
-        np.testing.assert_allclose(
-            item.get_positions(), atoms.get_positions() @ rotation.T
-        )
-        if atoms.cell is not None:
-            np.testing.assert_allclose(item.get_cell(), atoms.cell.array @ rotation.T)
-
-
-def test_compute_rotational_average():
-    rotations = get_so3_rotations(3, 4)
-    base_forces = np.random.rand(8, 3)  # n_atoms, 3
-    base_stress = np.random.rand(3, 3)  # 3, 3
-    results = {
-        "energy": [1.0, 2.0, 3.0],
-        "forces": [base_forces @ rotation.T for rotation in rotations],
-        "stress": [rotation @ base_stress @ rotation.T for rotation in rotations],
-    }
-    rotations = get_so3_rotations(3, 4)
-    averaged_results = compute_rotational_average(results, rotations)
-    assert "energy_rot_std" in averaged_results
-    assert "forces_rot_std" in averaged_results
-    assert "stress_rot_std" in averaged_results
-    np.testing.assert_allclose(averaged_results["energy"], 2.0)
-    np.testing.assert_allclose(averaged_results["forces"], base_forces)
-    np.testing.assert_allclose(averaged_results["stress"], base_stress)
-    np.testing.assert_allclose(
-        averaged_results["energy_rot_std"], np.std(results["energy"])
-    )
-    np.testing.assert_allclose(
-        averaged_results["forces_rot_std"], 0.0, atol=1e-10, rtol=1e-10
-    )
-    np.testing.assert_allclose(
-        averaged_results["stress_rot_std"], 0.0, atol=1e-10, rtol=1e-10
-    )
 
 
 @pytest.mark.parametrize("model_name", UPET_AVAILABLE_MODELS)
