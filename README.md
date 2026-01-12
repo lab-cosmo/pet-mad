@@ -161,7 +161,7 @@ in the [Atomistic Cookbook](https://atomistic-cookbook.org/examples/pet-mad-nc/p
 
 ### Evaluating UPET models on a dataset
 
-Efficient the evaluation of UPET models on a desired dataset is also available from the
+Efficient evaluation of UPET models on a desired dataset is also available from the
 command line via [`metatrain`](https://github.com/metatensor/metatrain), which
 is installed as a dependency of UPET. To evaluate the model, you first need
 to fetch the UPET model from the HuggingFace repository:
@@ -179,7 +179,7 @@ import upet
 upet.save_upet(
     model="pet-mad",
     size="s",
-    version="v1.0.2",
+    version="1.0.2",
     output="model.pt",
 )
 ```
@@ -210,9 +210,9 @@ can be found in the [Metatrain documentation](https://metatensor.github.io/metat
 
 UPET models can also be used to calculate the uncertainty of the energy prediction.
 This feature is particularly important if you are interested in probing the model
-on the data that is far away from the training data. Another important use case
-is a propagation of the uncertainty of the energy prediction to other observables,
-like phase transition temperatures, diffusion coefficients, etc.
+on the data that is substantially different from the training data. Another important 
+use case is a propagation of the uncertainty of the energy prediction to other
+observables, like phase transition temperatures, diffusion coefficients, etc.
 
 To evaluate the uncertainty of the energy prediction, or to get an ensemble of energy
 predictions, you can use the `get_energy_uncertainty` and `get_energy_ensemble` methods
@@ -477,7 +477,7 @@ fermi_levels = pet_mad_dos_calculator.calculate_efermi([atoms_1, atoms_2], dos=d
 
 ## Dataset visualization with the PET-MAD featurizer
  
-You can use PET-MAD last-layer features together with a pre-trained 
+You can use the last-layer features of the PET-MAD model together with a pre-trained 
 sketch-map dimensionality reduction to obtain 2D and 3D representations
 of a dataset, e.g. to identify structural or chemical motifs.
 This can be used as a stand-alone feature builder, or combined with
