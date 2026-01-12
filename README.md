@@ -12,7 +12,16 @@
 > Please use the version `1.4.4` of PET-MAD package if you want to use the old API.
 > The older version of the README file with documentation is avaiable [here](docs/README_OLD.md).
 > The migration guide from PET-MAD to UPET is available [here](docs/UPET_MIGRATION_GUIDE.md).
-  
+
+> [!NOTE]
+> Are you here to try our **Matbench model? Here's all you need.**
+> This model is excellent for convex hull energies, geometry optimization and phonons,
+> but we highly recommend the faster and more universal PET-MAD for molecular dynamics!
+```py
+from upet.calculator import UPETCalculator
+calculator = UPETCalculator(model="pet-oam-xl", version="1.0.0", device="cuda")
+```
+
 # UPET: Universal Models for Advanced Atomistic Simulations
 
 This repository contains **UPET** models - universal interatomic potentials for
@@ -60,7 +69,7 @@ the density of states (DOS) of materials, as well as their Fermi levels and band
 
 ## Installation
 
-You can install UPET using pip (not available yet):
+You can install UPET using pip:
 
 ```bash
 pip install upet
@@ -207,7 +216,7 @@ like phase transition temperatures, diffusion coefficients, etc.
 
 To evaluate the uncertainty of the energy prediction, or to get an ensemble of energy
 predictions, you can use the `get_energy_uncertainty` and `get_energy_ensemble` methods
-of the `PETMADCalculator` class:
+of the `UPETCalculator` class:
 
 ```python
 from upet.calculator import UPETCalculator
@@ -503,8 +512,10 @@ Cookbook](https://atomistic-cookbook.org/examples/pet-mad/pet-mad.html).
 ## Fine-tuning
 
 UPET models can be fine-tuned using the
-[Metatrain](https://metatensor.github.io/metatrain/latest/advanced-concepts/fine-tuning.html)
-library.
+[Metatrain](https://docs.metatensor.org/metatrain/latest/generated_examples/0-beginner/02-fine-tuning.html)
+library. At the moment, we recommend fine-tuning from our OMat models, because they are
+pre-trained on a very large dataset and they come in all sizes (from XS to XL, allowing
+you to choose a good trade-off for your application).
 
 ## Documentation
 
@@ -513,8 +524,8 @@ Additional documentation can be found in the
 [metatomic](https://docs.metatensor.org/metatomic) and
 [metatrain](https://metatensor.github.io/metatrain/) repositories.
 
-- [Training a model](https://metatensor.github.io/metatrain/latest/getting-started/usage.html#training)
-- [Fine-tuning](https://metatensor.github.io/metatrain/latest/advanced-concepts/fine-tuning.html)
+- [Training a model](https://docs.metatensor.org/metatrain/latest/generated_examples/0-beginner/00-basic-usage.html)
+- [Fine-tuning](https://docs.metatensor.org/metatrain/latest/generated_examples/0-beginner/02-fine-tuning.html)
 - [LAMMPS interface](https://docs.metatensor.org/metatomic/latest/engines/lammps.html)
 - [i-PI interface](https://docs.metatensor.org/metatomic/latest/engines/ipi.html)
 
