@@ -16,7 +16,7 @@
 # UPET: Universal Models for Advanced Atomistic Simulations
 
 This repository contains **UPET** models - universal interatomic potentials for
-advanced materials modeling across the periodic table. This models are based on
+advanced materials modeling across the periodic table. These models are based on
 the **Point Edge Transformer (PET)**  architecture, trained on various popular 
 materials datasets, and are capable of predicting energies and forces in complex
 atomistic simulations.
@@ -103,9 +103,10 @@ UPET integrates with the following atomistic simulation engines:
 
 #### Basic usage
 
-You can use the UPET calculator, which is compatible with the Atomic
+In order to perform a simple evaluation of the UPET models on a desired
+structure, you can use the UPET calculator compatible with the Atomic
 Simulation Environment (ASE). Model name can be obtained from the
-by combining the model name and the size, e.g., `pet-mad-s`, `pet-omat-l`, etc.
+table above by combining the model name and the size, e.g., `pet-mad-s`, `pet-omat-l`, etc.
 
 ```python
 from upet.calculator import UPETCalculator
@@ -124,12 +125,12 @@ perform efficient evaluation in that case, read [here](docs/README_BATCHED.md).
 
 #### Non-conservative (direct) forces and stresses prediction
 
-UPET models also supports the direct prediction of forces and stresses. In that case,
+UPET models also support the direct prediction of forces and stresses. In that case,
 the forces and stresses are predicted as separate targets along with the energy
 target, i.e. not computed as derivatives of the energy using the PyTorch
 automatic differentiation. This approach typically leads to 2-3x speedup in the
 evaluation time, since backward pass is disabled. However, as discussed in [this
-preprint](https://arxiv.org/abs/2412.11569) it requires additional care to avoid
+preprint](https://arxiv.org/abs/2412.11569), the non-conservative forces and stresses require additional care to avoid
 instabilities during the molecular dynamics simulations.
 
 To use the non-conservative forces and stresses, you need to set the `non_conservative` parameter to `True` when initializing the `UPETCalculator` class.
@@ -151,7 +152,7 @@ in the [Atomistic Cookbook](https://atomistic-cookbook.org/examples/pet-mad-nc/p
 
 ### Evaluating UPET models on a dataset
 
-Efficient evaluation of UPET models on a desired dataset is also available from the
+Efficient the evaluation of UPET models on a desired dataset is also available from the
 command line via [`metatrain`](https://github.com/metatensor/metatrain), which
 is installed as a dependency of UPET. To evaluate the model, you first need
 to fetch the UPET model from the HuggingFace repository:

@@ -2,7 +2,7 @@
 > This is the REAMDE file compatible with the old PET-MAD package API (versions `<1.4.4`).
 > Breaking change of the API was introduced upon transition to the UPET package in version
 > `0.1.0`, what led to incompatibility with this documentation. Please refer to the new 
-> documentation in the [main README.md](README.md) file.
+> documentation in the [main README.md](../README.md) file.
 
 # PET-MAD: Universal Models for Advanced Atomistic Simulations
 
