@@ -14,7 +14,7 @@
 > The migration guide from PET-MAD to UPET is available [here](docs/UPET_MIGRATION_GUIDE.md).
 
 > [!NOTE]
-> Are you here to try our **Matbench model? Here's all you need. Do not be scared by
+> Are you here to try our **Matbench model? Here's all you need. Don't be scared by
 > the parameter count: you'll see that our model is much faster than you think.**
 > This model is excellent for convex hull energies, geometry optimization and phonons,
 > but we highly recommend the lighter and more universal PET-MAD for molecular dynamics!
