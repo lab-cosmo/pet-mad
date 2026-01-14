@@ -17,7 +17,7 @@
 > Are you here to try our **Matbench model? Here's all you need. Do not be scared by
 > the parameter count: you'll see that our model is much faster than you think.**
 > This model is excellent for convex hull energies, geometry optimization and phonons,
-> but we highly recommend the faster and more universal PET-MAD for molecular dynamics!
+> but we highly recommend the lighter and more universal PET-MAD for molecular dynamics!
 ```py
 from upet.calculator import UPETCalculator
 calculator = UPETCalculator(model="pet-oam-xl", version="1.0.0", device="cuda")
