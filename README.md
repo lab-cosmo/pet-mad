@@ -549,7 +549,7 @@ Additional documentation can be found in the
 Although our models are unconstrained, they are explicitly trained for equivariance, and the equivariance error
 is, in the vast majority of cases, one to two orders of magnitude smaller than the machine-learning error with
 respect to the target electronic structure method. Hence:
-- Read [this paper](https://arxiv.org/abs/2406.17747) which shows that the impact of non-equivariance on observables is often negligible.
+- Read [this paper](https://iopscience.iop.org/article/10.1088/2632-2153/ad86a0) which shows that the impact of non-equivariance on observables is often negligible.
   Proceed to the next two points **only** if you believe that you're seeing effects due to non-equivariance.
 - For MD, activate random frame averaging (we are working on a tutorial)
 - For geometry optimization, use a symmetrized calculator (see `rotational_average_order` parameter in the ASE calculator)
@@ -558,6 +558,8 @@ respect to the target electronic structure method. Hence:
 There are two aspects to this:
 - The number of parameters is large, but these parameters are used in a very sparse way and the evaluation cost is comparable to, and often lower than, that of other large models in the field.
 - The listed cutoff radius may be large, but the cutoff strategy is adaptive, meaning that the model prunes the neighbor list internally. The effective cutoff for the vast majority of atomic environments in materials ends up being between 4 and 7 A in practice.
+
+**If you are fine-tuning our models, please also see the [metatrain FAQs](https://docs.metatensor.org/metatrain/latest/faq.html)**
 
 ## Citing UPET Models
 
