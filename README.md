@@ -89,16 +89,17 @@ Currently, we provide the following pre-trained models:
 
 | Name        | Level of theory         | Available sizes        | To be used for          | Training set          |
 |:------------|:-----------------------:|:----------------------:|:-----------------------:|:---------------------:|
-| **PET-MAD** | PBEsol                  | S                      | materials and molecules | MAD                   |
-| **PET-OMAD**| PBEsol                  | XS, S, L               | materials and molecules | OMat -> MAD           |
-| **PET-OAM** | PBE (Materials Project) | L, XL                  | materials               | OMat -> sAlex+MPtrj   |
+| PET-MAD     | PBEsol                  | S                      | materials and molecules | MAD                   |
+| PET-OMAD    | PBEsol                  | XS, S, L               | materials and molecules | OMat -> MAD           |
+| PET-OAM     | PBE (Materials Project) | L, XL                  | materials               | OMat -> sAlex+MPtrj   |
 | PET-OMat    | PBE                     | XS, S, M, L, XL        | materials               | OMat                  |
 | PET-OMATPES | r2SCAN                  | L                      | materials               | OMat -> MATPES        |
 | PET-SPICE   | ωB97M-D3                | S, L                   | molecules               | SPICE                 | 
 
-We recommend using the PET-MAD model for molecular dynamics simulations, and PET-OAM models for materials discovery
-tasks (convex hull energies, geometry optimization, phonons, etc). PET-OMAD models are theoretically more accurate
-and potentially faster than PET-MAD, but they were not tested as extensively yet, so we recommend using them with caution.
+We recommend using the PET-MAD model for molecular dynamics simulations of materials, PET-OAM models for materials 
+discovery tasks (convex hull energies, geometry optimization, phonons, etc), and PET-SPICE for simulations of
+biomolecules. PET-OMAD models are theoretically more accurate and potentially faster than PET-MAD, but they were not
+tested as extensively yet, so we recommend using them with caution.
 
 All the checkpoints are available on the HuggingFace [repository](https://huggingface.co/lab-cosmo/upet).
 
@@ -543,6 +544,7 @@ Additional documentation can be found in the
   faster, but they were not tested as extensively yet, so we recommend using them with caution.
 - For materials discovery tasks (convex hull energies, geometry optimization, phonons, etc),
   we recommend using the **PET-OAM** models.
+- For simulations of biomolecules, we recommend using the **PET-SPICE** models.
 - If you want to fine-tune your own model, we recommend starting from the **PET-OMAT** checkpoints,
   and select an appropriate size (from XS to XL) for your needs.
 - In any case, we recommend starting from the smaller models (XS or S) to benchmark your application,
