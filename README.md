@@ -60,6 +60,7 @@ the density of states (DOS) of materials, as well as their Fermi levels and band
     - [Evaluating UPET models on a dataset](#evaluating-upet-models-on-a-dataset)
     - [Running UPET models with LAMMPS](#running-upet-models-with-lammps)
     - [Uncertainty Quantification](#uncertainty-quantification)
+    - [Rotational Averaging](#rotational-averaging)
     - [Running UPET models with empirical dispersion corrections](#running-upet-models-with-empirical-dispersion-corrections)
     - [Calculating the DOS, Fermi levels, and bandgaps](#calculating-the-dos-fermi-levels-and-bandgaps)
     - [Dataset visualization with the PET-MAD featurizer](#dataset-visualization-with-the-pet-mad-featurizer)
@@ -97,9 +98,9 @@ Currently, we provide the following pre-trained models:
 | PET-SPICE   | ωB97M-D3                | S, L                   | molecules               | SPICE                 | 
 
 We recommend using the PET-MAD model for molecular dynamics simulations of materials, PET-OAM models for materials 
-discovery tasks (convex hull energies, geometry optimization, phonons, etc), and PET-SPICE for simulations of
-biomolecules. PET-OMAD models are theoretically more accurate and potentially faster than PET-MAD, but they were not
-tested as extensively yet, so we recommend using them with caution.
+discovery tasks (convex hull energies, geometry optimization, phonons, etc), and PET-SPICE for accurate and fast 
+simulations of biomolecules. PET-OMAD models are theoretically more accurate and potentially faster than PET-MAD,
+but they were not tested as extensively yet, so we recommend using them with caution.
 
 All the checkpoints are available on the HuggingFace [repository](https://huggingface.co/lab-cosmo/upet).
 
@@ -244,6 +245,48 @@ per atom or for the whole system. More details on the uncertainty quantification
 ensemble method can be found in [this](https://doi.org/10.1088/2632-2153/ad594a) and
 [this](https://doi.org/10.1088/2632-2153/ad805f) papers. 
 
+
+### Rotational Averaging
+
+By design, UPET models are not exactly equivariant w.r.t. rotations and reflections. Although
+the equivariance error is typically much smaller than the overall model error, in some cases
+(like geometry optimizations and phonon calculations of highly symmetrical structures)
+it may be beneficial to enforce additional rotational averaging to improve the stability
+of the calculation. This can be done by setting the `rotational_average_order` parameter
+when initializing the `UPETCalculator` class:
+
+```python
+from upet.calculator import UPETCalculator
+from ase.build import bulk
+
+atoms = bulk("Si", cubic=True, a=5.43, crystalstructure="diamond")
+calculator = UPETCalculator(model="pet-mad-s", version="1.0.2", device="cpu", rotational_average_order=3)
+atoms.calc = calculator
+energy = atoms.get_potential_energy()
+forces = atoms.get_forces()
+stresses = atoms.get_stress()
+```
+
+In this case, predictions will be averaged over a quadrature of the O(3) group based on a Lebedev grid of the 
+specified order (here 3). Higher orders lead to more accurate equivariance, but also increase the computational cost.
+
+By default, all the transformed structures are evaluated in a single batch, which may lead to high memory usage
+for large systems. If you want to reduce the memory usage, you can set the `rotational_average_batch_size` 
+parameter to a smaller value (eg. 8), which will evaluate the transformed structures in smaller batches:
+
+```python
+from upet.calculator import UPETCalculator
+calculator = UPETCalculator(model="pet-mad-s", version="1.0.2", device="cpu", rotational_average_order=3, rotational_average_batch_size=8)
+```
+
+Finally, the rotatinal averaging error statistics are stored in the `results` dictionary of the calculator
+after the energy/forces/stresses are computed:
+
+```python
+energy_rot_std = calculator.results['energy_rot_std']
+forces_rot_std = calculator.results['forces_rot_std']
+stresses_rot_std = calculator.results['stresses_rot_std']
+```
 
 ## Running UPET models with LAMMPS
 
@@ -544,7 +587,7 @@ Additional documentation can be found in the
   faster, but they were not tested as extensively yet, so we recommend using them with caution.
 - For materials discovery tasks (convex hull energies, geometry optimization, phonons, etc),
   we recommend using the **PET-OAM** models.
-- For simulations of biomolecules, we recommend using the **PET-SPICE** models.
+- For accurate and fast simulations of biomolecules, we recommend using the **PET-SPICE** models.
 - If you want to fine-tune your own model, we recommend starting from the **PET-OMAT** checkpoints,
   and select an appropriate size (from XS to XL) for your needs.
 - In any case, we recommend starting from the smaller models (XS or S) to benchmark your application,
