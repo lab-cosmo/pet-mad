@@ -248,7 +248,7 @@ ensemble method can be found in [this](https://doi.org/10.1088/2632-2153/ad594a)
 
 ### Rotational Averaging
 
-By design, UPET models are not exactly equivariant w.r.t. rotations and reflections. Although
+By design, UPET models are not exactly equivariant w.r.t. rotations and inversions. Although
 the equivariance error is typically much smaller than the overall model error, in some cases
 (like geometry optimizations and phonon calculations of highly symmetrical structures)
 it may be beneficial to enforce additional rotational averaging to improve the stability
