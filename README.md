@@ -8,7 +8,7 @@
 > [!WARNING]
 > This repository is a successor of the PET-MAD repository, which is now deprecated.
 > The package has been renamed to **UPET** to reflect the broader scope of the models
-> and functionalities provided, going beyond the original PET-MAD model.
+> and functionalities provided, that go beyond the original PET-MAD model.
 > Please use the version `1.4.4` of PET-MAD package if you want to use the old API.
 > The older version of the README file with documentation is avaiable [here](docs/README_OLD.md).
 > The migration guide from PET-MAD to UPET is available [here](docs/UPET_MIGRATION_GUIDE.md).
@@ -89,12 +89,16 @@ Currently, we provide the following pre-trained models:
 
 | Name        | Level of theory         | Available sizes        | To be used for          | Training set          |
 |:------------|:-----------------------:|:----------------------:|:-----------------------:|:---------------------:|
-| PET-MAD     | PBEsol                  | S                      | materials and molecules | MAD                   |
-| PET-OMAD    | PBEsol                  | L                      | materials and molecules | OMat -> MAD           |
-| PET-OMATPES | r2SCAN                  | L                      | materials               | OMat -> MATPES        |
+| **PET-MAD** | PBEsol                  | S                      | materials and molecules | MAD                   |
+| **PET-OMAD**| PBEsol                  | XS, S, L               | materials and molecules | OMat -> MAD           |
+| **PET-OAM** | PBE (Materials Project) | L, XL                  | materials               | OMat -> sAlex+MPtrj   |
 | PET-OMat    | PBE                     | XS, S, M, L, XL        | materials               | OMat                  |
-| PET-OAM     | PBE (Materials Project) | L, XL                  | materials               | OMat -> sAlex+MPtrj   |
+| PET-OMATPES | r2SCAN                  | L                      | materials               | OMat -> MATPES        |
 | PET-SPICE   | ωB97M-D3                | S, L                   | molecules               | SPICE                 | 
+
+We recommend using the PET-MAD model for molecular dynamics simulations, and PET-OAM models for materials discovery
+tasks (convex hull energies, geometry optimization, phonons, etc). PET-OMAD models are theoretically more accurate
+and potentially faster than PET-MAD, but they were not tested as extensively yet, so we recommend using them with caution.
 
 All the checkpoints are available on the HuggingFace [repository](https://huggingface.co/lab-cosmo/upet).
 
@@ -533,6 +537,17 @@ Additional documentation can be found in the
 
 ## FAQs
 
+**What model should I use for my application?**
+- For molecular dynamics simulations, we recommend using the **PET-MAD** model. Alternatively,
+  you can use the **PET-OMAD** models, which are theoretically more accurate and potentially
+  faster, but they were not tested as extensively yet, so we recommend using them with caution.
+- For materials discovery tasks (convex hull energies, geometry optimization, phonons, etc),
+  we recommend using the **PET-OAM** models.
+- If you want to fine-tune your own model, we recommend starting from the **PET-OMAT** checkpoints,
+  and select an appropriate size (from XS to XL) for your needs.
+- In any case, we recommend starting from the smaller models (XS or S) to benchmark your application,
+  and then scaling up to larger models if you need more accuracy.
+
 **The model is slow for my application. What should I do?**
 - Make sure you run it on a GPU
 - Use an S or XS model
@@ -543,6 +558,7 @@ Additional documentation can be found in the
 **My MD ran out of memory. How do I fix that?**
 - Reduce the model size (XS models are the least memory-intensive)
 - Reduce the structure size
+- Try to use LAMMPS (Kokkos-GPU version) and run with multiple MPI tasks to enable domain decomposition
 - As a last resort, use non-conservative forces and stresses
 
 **The model is not fully equivariant. Should I worry?**
