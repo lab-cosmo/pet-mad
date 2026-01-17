@@ -101,7 +101,7 @@ We recommend using the PET-MAD model for molecular dynamics simulations of mater
 discovery tasks (convex hull energies, geometry optimization, phonons, etc), and PET-SPICE for accurate and fast 
 simulations of biomolecules. PET-OMAD models are more accurate and potentially faster than PET-MAD,
 but they were not tested as extensively yet. PET-OMATPES can be a good choice in case the accuracy of the PBE
-functinals is not sufficient for your application.
+functionals are not sufficient for your applications.
 
 All the checkpoints are available on the HuggingFace [repository](https://huggingface.co/lab-cosmo/upet).
 
@@ -280,7 +280,7 @@ from upet.calculator import UPETCalculator
 calculator = UPETCalculator(model="pet-mad-s", version="1.0.2", device="cpu", rotational_average_order=3, rotational_average_batch_size=8)
 ```
 
-Finally, the rotatinal averaging error statistics are stored in the `results` dictionary of the calculator
+Finally, the rotational averaging error statistics are stored in the `results` dictionary of the calculator
 after the energy/forces/stresses are computed:
 
 ```python
