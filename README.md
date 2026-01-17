@@ -99,8 +99,8 @@ Currently, we provide the following pre-trained models:
 
 We recommend using the PET-MAD model for molecular dynamics simulations of materials, PET-OAM models for materials 
 discovery tasks (convex hull energies, geometry optimization, phonons, etc), and PET-SPICE for accurate and fast 
-simulations of biomolecules. PET-OMAD models are theoretically more accurate and potentially faster than PET-MAD,
-but they were not tested as extensively yet, so we recommend using them with caution.
+simulations of biomolecules. PET-OMAD models are more accurate and potentially faster than PET-MAD,
+but they were not tested as extensively yet.
 
 All the checkpoints are available on the HuggingFace [repository](https://huggingface.co/lab-cosmo/upet).
 
@@ -583,8 +583,8 @@ Additional documentation can be found in the
 
 **What model should I use for my application?**
 - For molecular dynamics simulations, we recommend using the **PET-MAD** model. Alternatively,
-  you can use the **PET-OMAD** models, which are theoretically more accurate and potentially
-  faster, but they were not tested as extensively yet, so we recommend using them with caution.
+  you can use the **PET-OMAD** models, which are more accurate and potentially
+  faster, but they were not tested as extensively yet.
 - For materials discovery tasks (convex hull energies, geometry optimization, phonons, etc),
   we recommend using the **PET-OAM** models.
 - For accurate and fast simulations of biomolecules, we recommend using the **PET-SPICE** models.
