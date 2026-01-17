@@ -611,6 +611,7 @@ Additional documentation can be found in the
 - As a last resort, use non-conservative forces and stresses
 
 **The model is not fully equivariant. Should I worry?**
+
 Although our models are unconstrained, they are explicitly trained for equivariance, and the equivariance error
 is, in the vast majority of cases, one to two orders of magnitude smaller than the machine-learning error with
 respect to the target electronic structure method. Hence:
