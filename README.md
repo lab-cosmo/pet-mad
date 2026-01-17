@@ -600,7 +600,8 @@ Additional documentation can be found in the
 - Make sure you run it on a GPU
 - Use an S or XS model
 - Simulate with LAMMPS (Kokkos-GPU version)
-- Use non-conservative forces and stresses, preferably with multiple time stepping: https://atomistic-cookbook.org/examples/pet-mad-nc/pet-mad-nc.html
+- Use non-conservative forces and stresses, preferably with multiple time stepping. Check out 
+  [this example](https://atomistic-cookbook.org/examples/pet-mad-nc/pet-mad-nc.html) for details.
 - Still too slow? Check out [FlashMD](https://github.com/lab-cosmo/flashmd) for a further 30x boost.
 
 **My MD ran out of memory. How do I fix that?**
