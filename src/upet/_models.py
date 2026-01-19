@@ -109,7 +109,11 @@ def upet_get_version_to_load(
 
 
 def get_upet(
-    *, model: str, size: str, version: str, checkpoint_path: Optional[str] = None
+    *,
+    model: str,
+    size: str,
+    version: str = "latest",
+    checkpoint_path: Optional[str] = None,
 ) -> AtomisticModel:
     """Get a metatomic ``AtomisticModel`` for a UPET MLIP.
 
@@ -119,6 +123,10 @@ def get_upet(
     :param checkpoint_path: path to a checkpoint file to load the model from. If
         provided, the `version` parameter is ignored.
     """
+    if version == "latest":
+        version = upet_get_version_to_load(model, size, requested_version=version)
+    if not isinstance(version, Version):
+        version = Version(version)
     if checkpoint_path is not None:
         logging.info(f"Loading model from checkpoint: {checkpoint_path}")
         path = checkpoint_path
@@ -146,7 +154,7 @@ def save_upet(
     *,
     model: str,
     size: str,
-    version: str,
+    version: str = "latest",
     checkpoint_path: Optional[str] = None,
     output=None,
 ):
@@ -172,7 +180,7 @@ def save_upet(
         if checkpoint_path is None:
             output = "-".join([model, size, f"v{version}"]) + ".pt"
         else:
-            raise
+            raise ValueError("Output path must be specified when using a checkpoint.")
 
     loaded_model.save(output)
     logging.info(f"Saved UPET model to {output}")

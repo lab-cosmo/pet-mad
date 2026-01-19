@@ -113,7 +113,8 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
             )
         model, size = model.rsplit("-", 1)
         size = upet_get_size_to_load(model, requested_size=size)
-        version = upet_get_version_to_load(model, size, requested_version=version)
+        if version == "latest":
+            version = upet_get_version_to_load(model, size, requested_version=version)
 
         if not isinstance(version, Version):
             version = Version(version)
