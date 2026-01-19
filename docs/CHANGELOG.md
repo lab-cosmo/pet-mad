@@ -2,6 +2,20 @@
 
 ## Unreleased changes
 
+## 0.1.1
+- Fixed a few bugs in the code, improved documentation and added a support for
+  specifying the "latest" version of the model in the `upet.get_upet` and 
+  `upet.save_upet` functions.
+
+## 0.1.0
+- Initial release of the UPET package, succeeding PET-MAD. Updated package
+  structure, calculator names, and model naming conventions to reflect the new
+  UPET branding and functionalities. 
+- Added a support for new models trained on popular datasets for atomistic machine 
+  learning.
+
+# Legacy Changelog
+
 ## 1.4.4
 
 - Upgraded to metatrain v2025.12
