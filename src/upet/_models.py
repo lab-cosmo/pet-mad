@@ -1,6 +1,9 @@
 import logging
+import os
+import re
 import warnings
-from typing import Optional
+from functools import lru_cache
+from typing import List, Optional, Tuple, Union
 from urllib.parse import urlparse
 from urllib.request import urlretrieve
 
@@ -19,85 +22,120 @@ from .modules import BandgapModel
 from .utils import hf_hub_download_url
 
 
-def upet_get_size_to_load(model: str, requested_size: Optional[str] = None) -> str:
-    """
-    Get the size of a UPET model.
+CHECKPOINT_NAME_PATTERN = re.compile(
+    r"^(?P<model>pet-[\w]+)-(?P<size>xs|s|m|l|xl)-v?(?P<version>\d+\.\d+\.\d+)\.ckpt$"
+)
 
-    :param model: name of the model.
-    :param requested_size: a requested size of the model.
-    :return: If the model has multiple sizes available, the
-        sizes will be chosen based on the following priority: s > m > xs > l > xl,
-        depending on availability.
-    """
-    # We need to inspect the models in https://huggingface.co/lab-cosmo/upet/tree/main/models
-    # and get the available sizes for each model.
+
+@lru_cache(maxsize=1)
+def _get_upet_repo_files() -> List[str]:
+    """Cached listing of files in the lab-cosmo/upet repository models folder."""
     hf_api = HfApi()
     repo_files = hf_api.list_repo_files("lab-cosmo/upet")
-    files_in_models_folder = [f[7:] for f in repo_files if f.startswith("models/")]
-    all_model_files = [
-        f
-        for f in files_in_models_folder
-        if f.startswith(f"{model}-") and f.endswith(".ckpt")
-    ]
-    all_model_sizes = [f.split(f"{model}-")[1].split("-")[0] for f in all_model_files]
-    all_model_sizes = sorted(set(all_model_sizes))
+    return [f[7:] for f in repo_files if f.startswith("models/")]
 
+
+def get_sizes_for_model(model: str) -> List[str]:
+    """Get all available sizes for a given model from the cached repo files.
+
+    :param model: Base model name (e.g., "pet-mad", "pet-omat")
+    :return: Sorted list of available sizes
+    """
+    files = _get_upet_repo_files()
+    prefix = f"{model}-"
+    model_files = [f for f in files if f.startswith(prefix) and f.endswith(".ckpt")]
+    sizes = [f.split(prefix)[1].split("-")[0] for f in model_files]
+    return sorted(set(sizes))
+
+
+def get_versions_for_model(model: str, size: str) -> List[Version]:
+    """Get all available versions for a given model/size from the cached repo files.
+
+    :param model: Base model name (e.g., "pet-mad", "pet-omat")
+    :param size: Model size (e.g., "s", "m", "l")
+    :return: Sorted list of available versions
+    """
+    files = _get_upet_repo_files()
+    prefix = f"{model}-{size}-"
+    model_files = [f for f in files if f.startswith(prefix) and f.endswith(".ckpt")]
+    versions = [Version(f.split(prefix)[1].split(".ckpt")[0]) for f in model_files]
+    return sorted(set(versions))
+
+
+def parse_checkpoint_filename(
+    path: str,
+) -> Union[Tuple[str, str, Version], Tuple[None, None, None]]:
+    """
+    Try to parse model, size, and version from a checkpoint filename.
+
+    Returns (model, size, version) if filename matches standard pattern,
+    (None, None, None) otherwise.
+
+    Examples:
+        "pet-mad-s-v1.0.2.ckpt" -> ("pet-mad", "s", Version("1.0.2"))
+        "model.ckpt" -> (None, None, None)
+    """
+    filename = os.path.basename(path)
+    match = CHECKPOINT_NAME_PATTERN.match(filename)
+    if match:
+        return (
+            match.group("model"),
+            match.group("size"),
+            Version(match.group("version")),
+        )
+    return (None, None, None)
+
+
+def upet_resolve_model(
+    model: str,
+    requested_size: Optional[str] = None,
+    requested_version: Optional[str] = None,
+) -> Tuple[str, Version]:
+    """
+    Resolve size and version for a UPET model in a single operation.
+
+    :param model: Base model name (e.g., "pet-mad", "pet-omat")
+    :param requested_size: Specific size to use, or None for default
+    :param requested_version: Specific version or "latest"/None for newest
+    :return: Tuple of (size, version)
+    """
+    all_model_sizes = get_sizes_for_model(model)
+
+    # Resolve size
     if requested_size is not None:
         if requested_size in all_model_sizes:
-            return requested_size
+            size = requested_size
         else:
             raise ValueError(
                 f"Requested size {requested_size} not available for model {model}. "
                 f"Available sizes are: {all_model_sizes}"
             )
-
-    if "s" in all_model_sizes:
-        return "s"
+    elif "s" in all_model_sizes:
+        size = "s"
     elif "m" in all_model_sizes:
-        return "m"
+        size = "m"
     elif "xs" in all_model_sizes:
-        return "xs"
+        size = "xs"
     elif "l" in all_model_sizes:
-        return "l"
+        size = "l"
     elif "xl" in all_model_sizes:
-        return "xl"
+        size = "xl"
     else:
         raise ValueError(f"No sizes found for model {model}")
 
+    all_model_versions = get_versions_for_model(model, size)
 
-def upet_get_version_to_load(
-    model: str, size: str, requested_version: Optional[Version] = None
-) -> Version:
-    """
-    Get the version of a UPET model.
-
-    :param model: name of the model.
-    :param size: size of the model.
-    :param requested_version: a requested version of the model.
-    :return: the version to load.
-    """
-    if requested_version == "latest":
-        requested_version = None
-
-    hf_api = HfApi()
-    repo_files = hf_api.list_repo_files("lab-cosmo/upet")
-    files_in_models_folder = [f[7:] for f in repo_files if f.startswith("models/")]
-    all_model_files = [
-        f
-        for f in files_in_models_folder
-        if f.startswith(f"{model}-{size}-") and f.endswith(".ckpt")
-    ]
-    all_model_versions = [
-        Version(f.split(f"{model}-{size}-")[1].split(".ckpt")[0])
-        for f in all_model_files
-    ]
-    all_model_versions = sorted(set(all_model_versions))
-
-    if requested_version is not None:
+    # Resolve version
+    if requested_version is None or requested_version == "latest":
+        if model == "pet-mad" and size == "s":
+            version = Version("1.0.2")
+        else:
+            version = max(all_model_versions)
+    else:
         if not isinstance(requested_version, Version):
             requested_version = Version(requested_version)
         if requested_version in all_model_versions:
-            return requested_version
+            version = requested_version
         else:
             raise ValueError(
                 f"Requested version {requested_version} not available for model "
@@ -105,32 +143,44 @@ def upet_get_version_to_load(
                 f"{list(str(v) for v in all_model_versions)}"
             )
 
-    return max(all_model_versions)
+    return size, version
 
 
 def get_upet(
     *,
-    model: str,
-    size: str,
-    version: str = "latest",
+    model: Optional[str] = None,
+    size: Optional[str] = None,
+    version: Optional[Union[str, Version]] = "latest",
     checkpoint_path: Optional[str] = None,
 ) -> AtomisticModel:
     """Get a metatomic ``AtomisticModel`` for a UPET MLIP.
 
-    :param model: name of the UPET model.
-    :param size: size of the UPET model.
+    :param model: name of the UPET model. Required when not using checkpoint_path,
+        or when checkpoint_path has non-standard naming.
+    :param size: size of the UPET model. Required when not using checkpoint_path,
+        or when checkpoint_path has non-standard naming.
     :param version: version of the UPET model.
-    :param checkpoint_path: path to a checkpoint file to load the model from. If
-        provided, the `version` parameter is ignored.
+    :param checkpoint_path: path to a checkpoint file to load the model from.
+        If the filename follows standard naming (e.g., "pet-mad-s-v1.0.2.ckpt"),
+        model/size/version are extracted automatically, while the `model` and
+        `version` parameters are ignored.
     """
-    if version == "latest":
-        version = upet_get_version_to_load(model, size, requested_version=version)
-    if not isinstance(version, Version):
-        version = Version(version)
     if checkpoint_path is not None:
+        # Try to parse info from checkpoint filename
+        model, size, version = parse_checkpoint_filename(checkpoint_path)
         logging.info(f"Loading model from checkpoint: {checkpoint_path}")
         path = checkpoint_path
     else:
+        # Remote loading requires model and size
+        if model is None or size is None:
+            raise ValueError(
+                "'model' and 'size' are required when not using checkpoint_path"
+            )
+
+        # Ensure version is a Version object
+        if not isinstance(version, Version):
+            version = Version(version) if version and version != "latest" else None
+
         model_string = f"{model}-{size}-v{version}.ckpt"
         logging.info(f"Loading pre-trained model: {model_string}")
         path = hf_hub_download(
@@ -146,41 +196,45 @@ def get_upet(
         )
         loaded_model = load_metatrain_model(path)
 
-    metadata = get_upet_metadata(model, size, version)
+    # Generate metadata based on available info
+    metadata = get_upet_metadata(model=model, size=size, version=str(version))
     return loaded_model.export(metadata)
 
 
 def save_upet(
     *,
-    model: str,
-    size: str,
-    version: str = "latest",
+    model: Optional[str] = None,
+    size: Optional[str] = None,
+    version: Optional[str] = "latest",
     checkpoint_path: Optional[str] = None,
-    output=None,
+    output: Optional[str] = None,
 ):
     """
-    Save the UPET model to a TorchScript file (``pet-xxx.pt``). These files can
-    be used with LAMMPS and other tools to run simulations without Python.
+    Save the UPET model to a TorchScript file. These files can be used with
+    LAMMPS and other tools to run simulations without Python.
 
     :param model: name of the UPET model.
     :param size: size of the UPET model.
     :param version: UPET version to use. Defaults to the latest stable version.
-    :param checkpoint_path: path to a checkpoint file to load the model from. If
-        provided, the `version` parameter is ignored.
-    :param output: path to use for the output model, defaults to
-        ``pet-{version}.pt`` when using a version, or the checkpoint path when using
-        a checkpoint.
+    :param checkpoint_path: path to a checkpoint file to load the model from.
+    :param output: path for the output model. Defaults to "{model}-{size}-v{version}.pt"
+        or "model.pt" for non-standard checkpoint names.
     """
-
     loaded_model = get_upet(
         model=model, size=size, version=version, checkpoint_path=checkpoint_path
     )
 
     if output is None:
-        if checkpoint_path is None:
-            output = "-".join([model, size, f"v{version}"]) + ".pt"
+        if checkpoint_path is not None:
+            model, size, version = parse_checkpoint_filename(checkpoint_path)
+            if model and size and version:
+                output = f"{model}-{size}-v{version}.pt"
+            else:
+                output = "model.pt"
+        elif model and size:
+            output = f"{model}-{size}-v{version}.pt"
         else:
-            raise ValueError("Output path must be specified when using a checkpoint.")
+            output = "model.pt"
 
     loaded_model.save(output)
     logging.info(f"Saved UPET model to {output}")

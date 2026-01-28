@@ -1,43 +1,62 @@
+from typing import Optional
+
 from metatomic.torch import ModelMetadata
 
 
-def get_upet_metadata(model: str, size: str, version: str):
+def get_upet_metadata(
+    model: Optional[str] = None,
+    size: Optional[str] = None,
+    version: Optional[str] = None,
+) -> ModelMetadata:
     description = (
         r"A universal interatomic potential for advanced materials modeling "
         r"based on a Point-Edge Transformer (PET) architecture, and trained on "
         r"the {} dataset. Model size: {}"
     )
-    dataset = model.split("-")[1].upper()
+    references = {
+        "architecture": ["https://arxiv.org/abs/2305.19302v3"],
+        "model": [
+            "https://doi.org/10.1038/s41467-025-65662-7",
+            "https://arxiv.org/abs/2601.16195",
+        ],
+    }
 
-    if "mad" in model.lower():
-        authors = [
-            "Arslan Mazitov (arslan.mazitov@epfl.ch)",
-            "Filippo Bigi",
-            "Matthias Kellner",
-            "Paolo Pegolo",
-            "Davide Tisi",
-            "Guillaume Fraux",
-            "Sergey Pozdnyakov",
-            "Philip Loche",
-            "Michele Ceriotti (michele.ceriotti@epfl.ch)",
-        ]
+    if model and size and version:
+        dataset = model.split("-")[1].upper()
+        if "mad" in model.lower():
+            authors = [
+                "Arslan Mazitov (arslan.mazitov@epfl.ch)",
+                "Filippo Bigi",
+                "Matthias Kellner",
+                "Paolo Pegolo",
+                "Davide Tisi",
+                "Guillaume Fraux",
+                "Sergey Pozdnyakov",
+                "Philip Loche",
+                "Michele Ceriotti (michele.ceriotti@epfl.ch)",
+            ]
+        else:
+            authors = [
+                "Filippo Bigi (filippo.bigi@epfl.ch)",
+                "Arslan Mazitov (arslan.mazitov@epfl.ch)",
+                "Paolo Pegolo",
+                "Michele Ceriotti (michele.ceriotti@epfl.ch)",
+            ]
+        metadata = ModelMetadata(
+            name=f"{model.upper()}-{size.upper()} v{version}",
+            description=description.format(dataset, size),
+            authors=authors,
+            references=references,
+        )
     else:
-        authors = [
-            "Filippo Bigi (filippo.bigi@epfl.ch)",
-            "Arslan Mazitov (arslan.mazitov@epfl.ch)",
-            "Paolo Pegolo",
-            "Michele Ceriotti (michele.ceriotti@epfl.ch)",
-        ]
+        metadata = ModelMetadata(
+            name="Custom UPET",
+            description=description.format("custom", "unknown"),
+            authors=[],
+            references=references,
+        )
 
-    return ModelMetadata(
-        name=f"{model.upper()}-{size.upper()} v{version}",
-        description=description.format(dataset, size),
-        authors=authors,
-        references={
-            "architecture": ["https://arxiv.org/abs/2305.19302v3"],
-            "model": ["https://doi.org/10.1038/s41467-025-65662-7"],
-        },
-    )
+    return metadata
 
 
 def get_pet_mad_dos_metadata(version: str):

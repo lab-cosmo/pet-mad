@@ -1,8 +1,7 @@
 import pytest
-from huggingface_hub import HfApi
-from packaging.version import Version
 
 from upet._metadata import get_upet_metadata
+from upet._models import get_versions_for_model
 from upet._version import UPET_AVAILABLE_MODELS
 
 
@@ -10,20 +9,8 @@ from upet._version import UPET_AVAILABLE_MODELS
 def test_get_upet_metadata(model_name):
     if "-xl" in model_name or "-l" in model_name:
         pytest.skip("Skipping XL models and L models due to large size.")
-    hf_api = HfApi()
-    repo_files = hf_api.list_repo_files("lab-cosmo/upet")
-    files_in_models_folder = [f[7:] for f in repo_files if f.startswith("models/")]
     model, size = model_name.rsplit("-", 1)
-    all_model_files = [
-        f
-        for f in files_in_models_folder
-        if f.startswith(f"{model}-{size}-") and f.endswith(".ckpt")
-    ]
-    all_model_versions = [
-        Version(f.split(f"{model}-{size}-")[1].split(".ckpt")[0])
-        for f in all_model_files
-    ]
-    all_model_versions = sorted(set(all_model_versions))
+    all_model_versions = get_versions_for_model(model, size)
 
     for version in all_model_versions:
         model, size = model_name.rsplit("-", 1)
@@ -59,5 +46,8 @@ def test_get_upet_metadata(model_name):
         assert metadata.authors == authors
         assert metadata.references == {
             "architecture": ["https://arxiv.org/abs/2305.19302v3"],
-            "model": ["https://doi.org/10.1038/s41467-025-65662-7"],
+            "model": [
+                "https://doi.org/10.1038/s41467-025-65662-7",
+                "https://arxiv.org/abs/2601.16195",
+            ],
         }

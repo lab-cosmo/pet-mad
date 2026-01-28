@@ -42,7 +42,7 @@ def test_calc_rot_averaging(model_name):
 def test_calc_rot_averaging_non_conservative(model_name):
     if "-xl" in model_name or "-l" in model_name:
         pytest.skip("Skipping XL models and L models due to large size.")
-    if model_name in ["pet-spice-s", "pet-spice-l"]:
+    if model_name in ["pet-spice-s", "pet-spice-l", "pet-mad-s"]:
         msg = "Non-conservative forces and stresses are not available"
         with pytest.raises(NotImplementedError, match=msg):
             _ = UPETCalculator(model=model_name, non_conservative=True)
