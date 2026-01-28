@@ -82,7 +82,7 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
             default dtype.
         :param checkpoint_path: path to a checkpoint file to load the model from.
             If the filename follows standard naming (e.g., "pet-mad-s-v1.0.2.ckpt"),
-            model/size/version are extracted automatically, while the `model` and
+            model/size/version are extracted automatically, and the `model`, `size`, and
             `version` parameters are ignored.
         :param calculate_uncertainty: whether to calculate energy uncertainty.
             Defaults to False. Only available for PET-MAD version 1.0.2.
