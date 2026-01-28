@@ -127,7 +127,10 @@ def upet_resolve_model(
 
     # Resolve version
     if requested_version is None or requested_version == "latest":
-        version = max(all_model_versions)
+        if model == "pet-mad" and size == "s":
+            version = Version("1.0.2")
+        else:
+            version = max(all_model_versions)
     else:
         if not isinstance(requested_version, Version):
             requested_version = Version(requested_version)
