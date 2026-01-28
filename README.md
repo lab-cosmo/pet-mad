@@ -666,7 +666,7 @@ If you use any of the UPET models in your research, please cite the appropriate 
 ```
 
 For a general citation for the PET architecture, you can use
-```
+```bibtex
 @misc{PET-ECSE-2023,
   title = {Smooth, Exact Rotational Symmetrization for Deep Learning on Point Clouds},
   journal = {Advances in {{Neural Information Processing Systems}}},
