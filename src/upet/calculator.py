@@ -47,7 +47,7 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
     def __init__(
         self,
         model: Optional[str] = None,
-        version: str = "latest",
+        version: Optional[str] = "latest",
         dtype: Optional[torch.dtype] = None,
         checkpoint_path: Optional[str] = None,
         calculate_uncertainty: bool = False,

@@ -2,7 +2,7 @@ import logging
 import os
 import re
 import warnings
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Union
 from urllib.parse import urlparse
 from urllib.request import urlretrieve
 
@@ -26,7 +26,9 @@ CHECKPOINT_NAME_PATTERN = re.compile(
 )
 
 
-def parse_checkpoint_filename(path: str) -> Tuple[str, str, Version]:
+def parse_checkpoint_filename(
+    path: str,
+) -> Union[Tuple[str, str, Version], Tuple[None, None, None]]:
     """
     Try to parse model, size, and version from a checkpoint filename.
 
@@ -141,7 +143,7 @@ def get_upet(
     *,
     model: Optional[str] = None,
     size: Optional[str] = None,
-    version: str = "latest",
+    version: Optional[str] = "latest",
     checkpoint_path: Optional[str] = None,
 ) -> AtomisticModel:
     """Get a metatomic ``AtomisticModel`` for a UPET MLIP.
@@ -197,7 +199,7 @@ def save_upet(
     *,
     model: Optional[str] = None,
     size: Optional[str] = None,
-    version: str = "latest",
+    version: Optional[str] = "latest",
     checkpoint_path: Optional[str] = None,
     output: Optional[str] = None,
 ):
@@ -218,13 +220,12 @@ def save_upet(
 
     if output is None:
         if checkpoint_path is not None:
-            parsed = parse_checkpoint_filename(checkpoint_path)
-            if parsed is not None:
-                model, size, version = parsed
+            model, size, version = parse_checkpoint_filename(checkpoint_path)
+            if model and size and version:
                 output = f"{model}-{size}-v{version}.pt"
             else:
                 output = "model.pt"
-        elif model is not None and size is not None:
+        elif model and size:
             output = f"{model}-{size}-v{version}.pt"
         else:
             output = "model.pt"
