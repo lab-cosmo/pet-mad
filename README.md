@@ -634,8 +634,8 @@ There are two aspects to this:
 ## Known Issues
 
 **Simulation blows up with lammps-metatomic 2025.9.10.mta2**
-While running upet models with a mentioned version we observe that the simulation blows up. 
-This is most likely a bug introduced in a recent PR in lammps metatomic. For now, we recommend using
+While running upet models with the version above, we observe that simulations blow up. 
+This is most likely a bug introduced in a recent PR in lammps-metatomic. For now, we recommend using
 `lammps-metatomic==2025.9.10.mta1`. 
 
 
