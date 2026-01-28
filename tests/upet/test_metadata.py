@@ -46,5 +46,8 @@ def test_get_upet_metadata(model_name):
         assert metadata.authors == authors
         assert metadata.references == {
             "architecture": ["https://arxiv.org/abs/2305.19302v3"],
-            "model": ["https://doi.org/10.1038/s41467-025-65662-7"],
+            "model": [
+                "https://doi.org/10.1038/s41467-025-65662-7",
+                "https://arxiv.org/abs/2601.16195",
+            ],
         }
