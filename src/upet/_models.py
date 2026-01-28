@@ -162,12 +162,12 @@ def get_upet(
     :param version: version of the UPET model.
     :param checkpoint_path: path to a checkpoint file to load the model from.
         If the filename follows standard naming (e.g., "pet-mad-s-v1.0.2.ckpt"),
-        model/size/version are extracted automatically.
+        model/size/version are extracted automatically, while the `model` and
+        `version` parameters are ignored.
     """
     if checkpoint_path is not None:
         # Try to parse info from checkpoint filename
-        if not (model and size and version):
-            model, size, version = parse_checkpoint_filename(checkpoint_path)
+        model, size, version = parse_checkpoint_filename(checkpoint_path)
         logging.info(f"Loading model from checkpoint: {checkpoint_path}")
         path = checkpoint_path
     else:

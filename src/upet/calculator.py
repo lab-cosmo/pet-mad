@@ -82,7 +82,8 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
             default dtype.
         :param checkpoint_path: path to a checkpoint file to load the model from.
             If the filename follows standard naming (e.g., "pet-mad-s-v1.0.2.ckpt"),
-            model/size/version are extracted automatically.
+            model/size/version are extracted automatically, while the `model` and
+            `version` parameters are ignored.
         :param calculate_uncertainty: whether to calculate energy uncertainty.
             Defaults to False. Only available for PET-MAD version 1.0.2.
         :param calculate_ensemble: whether to calculate energy ensemble.
@@ -125,7 +126,7 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
                     version = Version(version)
                 cache_name = f"{model_name}-{size}-v{version}"
             else:
-                cache_name = "model"
+                cache_name = os.path.split(checkpoint_path)[-1].replace(".ckpt", "")
 
         # Branch 2: Loading from HuggingFace
         else:
