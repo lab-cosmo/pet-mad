@@ -68,7 +68,8 @@ the density of states (DOS) of materials, as well as their Fermi levels and band
 6. [Fine-tuning](#fine-tuning)
 7. [Further Documentation](#further-documentation)
 8. [FAQs](#faqs)
-9. [Citing PET-MAD](#citing-pet-mad)
+9. [Known Issues](#known-issues)
+10. [Citing UPET Models](#citing-upet-models)
 
 ## Installation
 
@@ -629,6 +630,14 @@ There are two aspects to this:
 - The listed cutoff radius may be large, but the cutoff strategy is adaptive, meaning that the model prunes the neighbor list internally. The effective cutoff for the vast majority of atomic environments in materials ends up being between 4 and 7 A in practice.
 
 **If you are fine-tuning our models, please also see the [metatrain FAQs](https://docs.metatensor.org/metatrain/latest/faq.html)**
+
+## Known Issues
+
+**Simulation blows up with lammps-metatomic 2025.9.10.mta2**
+While running upet models with the version above, we observe that simulations blow up. 
+This is most likely a bug introduced in a recent PR in lammps-metatomic. For now, we recommend using
+`lammps-metatomic==2025.9.10.mta1`. 
+
 
 ## Citing UPET Models
 
