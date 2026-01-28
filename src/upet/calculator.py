@@ -15,6 +15,7 @@ from ._models import (
     _get_bandgap_model,
     get_pet_mad_dos,
     get_upet,
+    parse_checkpoint_filename,
     upet_get_size_to_load,
     upet_get_version_to_load,
 )
@@ -45,7 +46,7 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
 
     def __init__(
         self,
-        model: str,
+        model: Optional[str] = None,
         version: str = "latest",
         dtype: Optional[torch.dtype] = None,
         checkpoint_path: Optional[str] = None,
@@ -59,7 +60,8 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
         check_consistency: bool = False,
     ):
         """
-        :param model: PET-MLIP model to use. Can be one of the following:
+        :param model: PET-MLIP model to use. Required when not using checkpoint_path.
+            Can be one of the following:
             - "pet-mad-s": PET-MAD model (size "s', materials and molecules, PBEsol)
             - "pet-omad-l": PET-OMAD model (size "l", materials and molecules, PBEsol,
                 slower and more accurate)
@@ -79,8 +81,9 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
             version.
         :param dtype: dtype to use for the calculations. If `None`, we will use the
             default dtype.
-        :param checkpoint_path: checkpoint path to a checkpoint file to load the model
-            from. Mainly designed for loading fine-tuned models.
+        :param checkpoint_path: path to a checkpoint file to load the model from.
+            If the filename follows standard naming (e.g., "pet-mad-s-v1.0.2.ckpt"),
+            model/size/version are extracted automatically.
         :param calculate_uncertainty: whether to calculate energy uncertainty.
             Defaults to False. Only available for PET-MAD version 1.0.2.
         :param calculate_ensemble: whether to calculate energy ensemble.
@@ -106,25 +109,54 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
         """
         super().__init__()
 
-        if model.lower() not in UPET_AVAILABLE_MODELS:
-            raise ValueError(
-                f"Model {model} is not available. Please select one of the following: "
-                f"{UPET_AVAILABLE_MODELS}"
+        # Branch 1: Loading from a local checkpoint
+        if checkpoint_path is not None:
+            model_name, size, version = parse_checkpoint_filename(checkpoint_path)
+
+            loaded_model = get_upet(
+                model=model_name,
+                size=size,
+                version=version,
+                checkpoint_path=checkpoint_path,
             )
-        model, size = model.rsplit("-", 1)
-        size = upet_get_size_to_load(model, requested_size=size)
-        if version == "latest":
-            version = upet_get_version_to_load(model, size, requested_version=version)
 
-        if not isinstance(version, Version):
-            version = Version(version)
+            # Determine cache name
+            if model_name and size and version:
+                if not isinstance(version, Version):
+                    version = Version(version)
+                cache_name = f"{model_name}-{size}-v{version}"
+            else:
+                cache_name = "model"
 
-        loaded_model = get_upet(
-            model=model,
-            size=size,  # type: ignore
-            version=version,
-            checkpoint_path=checkpoint_path,
-        )
+        # Branch 2: Loading from HuggingFace
+        else:
+            if model is None:
+                raise ValueError(
+                    "'model' parameter is required when not using checkpoint_path"
+                )
+
+            if model.lower() not in UPET_AVAILABLE_MODELS:
+                raise ValueError(
+                    f"Model {model} is not available. Please select one of the "
+                    f"following: {UPET_AVAILABLE_MODELS}"
+                )
+
+            model_name, size = model.rsplit("-", 1)
+            size = upet_get_size_to_load(model_name, requested_size=size)
+            if version == "latest":
+                version = upet_get_version_to_load(
+                    model_name, size, requested_version=version
+                )
+
+            if not isinstance(version, Version):
+                version = Version(version)
+
+            loaded_model = get_upet(
+                model=model_name,
+                size=size,
+                version=version,
+            )
+            cache_name = f"{model_name}-{size}-v{version}"
 
         model_outputs = loaded_model.capabilities().outputs
         if non_conservative:
@@ -135,7 +167,7 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
             ):
                 raise NotImplementedError(
                     "Non-conservative forces and stresses are not available for the "
-                    f"model {model.lower()}. Please check the documentation of this "
+                    f"model {model_name}. Please check the documentation of this "
                     "class for more information."
                 )
         if calculate_uncertainty or calculate_ensemble:
@@ -145,7 +177,7 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
             ):
                 raise NotImplementedError(
                     "Energy uncertainty and ensemble are not available for the "
-                    f"model {model.lower()}. Please check the documentation of this "
+                    f"model {model_name}. Please check the documentation of this "
                     "class for more information."
                 )
             self._uq_is_available = True
@@ -162,7 +194,7 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
         cache_dir = user_cache_dir("upet", "metatensor")
         os.makedirs(cache_dir, exist_ok=True)
 
-        pt_path = cache_dir + f"/{model}-{size}-v{version}.pt"
+        pt_path = os.path.join(cache_dir, f"{cache_name}.pt")
         logging.info(f"Exporting checkpoint to TorchScript at {pt_path}")
         loaded_model.save(pt_path, collect_extensions=None)
 

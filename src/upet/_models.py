@@ -1,6 +1,8 @@
 import logging
+import os
+import re
 import warnings
-from typing import Optional
+from typing import Optional, Tuple
 from urllib.parse import urlparse
 from urllib.request import urlretrieve
 
@@ -17,6 +19,33 @@ from ._version import (
 )
 from .modules import BandgapModel
 from .utils import hf_hub_download_url
+
+
+CHECKPOINT_NAME_PATTERN = re.compile(
+    r"^(?P<model>pet-[\w]+)-(?P<size>xs|s|m|l|xl)-v?(?P<version>\d+\.\d+\.\d+)\.ckpt$"
+)
+
+
+def parse_checkpoint_filename(path: str) -> Tuple[str, str, Version]:
+    """
+    Try to parse model, size, and version from a checkpoint filename.
+
+    Returns (model, size, version) if filename matches standard pattern,
+    (None, None, None) otherwise.
+
+    Examples:
+        "pet-mad-s-v1.0.2.ckpt" -> ("pet-mad", "s", Version("1.0.2"))
+        "model.ckpt" -> (None, None, None)
+    """
+    filename = os.path.basename(path)
+    match = CHECKPOINT_NAME_PATTERN.match(filename)
+    if match:
+        return (
+            match.group("model"),
+            match.group("size"),
+            Version(match.group("version")),
+        )
+    return (None, None, None)
 
 
 def upet_get_size_to_load(model: str, requested_size: Optional[str] = None) -> str:
@@ -110,27 +139,40 @@ def upet_get_version_to_load(
 
 def get_upet(
     *,
-    model: str,
-    size: str,
+    model: Optional[str] = None,
+    size: Optional[str] = None,
     version: str = "latest",
     checkpoint_path: Optional[str] = None,
 ) -> AtomisticModel:
     """Get a metatomic ``AtomisticModel`` for a UPET MLIP.
 
-    :param model: name of the UPET model.
-    :param size: size of the UPET model.
+    :param model: name of the UPET model. Required when not using checkpoint_path,
+        or when checkpoint_path has non-standard naming.
+    :param size: size of the UPET model. Required when not using checkpoint_path,
+        or when checkpoint_path has non-standard naming.
     :param version: version of the UPET model.
-    :param checkpoint_path: path to a checkpoint file to load the model from. If
-        provided, the `version` parameter is ignored.
+    :param checkpoint_path: path to a checkpoint file to load the model from.
+        If the filename follows standard naming (e.g., "pet-mad-s-v1.0.2.ckpt"),
+        model/size/version are extracted automatically.
     """
-    if version == "latest":
-        version = upet_get_version_to_load(model, size, requested_version=version)
-    if not isinstance(version, Version):
-        version = Version(version)
     if checkpoint_path is not None:
+        # Try to parse info from checkpoint filename
+        if not (model and size and version):
+            model, size, version = parse_checkpoint_filename(checkpoint_path)
         logging.info(f"Loading model from checkpoint: {checkpoint_path}")
         path = checkpoint_path
     else:
+        # Remote loading requires model and size
+        if model is None or size is None:
+            raise ValueError(
+                "'model' and 'size' are required when not using checkpoint_path"
+            )
+
+        if version == "latest":
+            version = upet_get_version_to_load(model, size, requested_version=version)
+        if not isinstance(version, Version):
+            version = Version(version)
+
         model_string = f"{model}-{size}-v{version}.ckpt"
         logging.info(f"Loading pre-trained model: {model_string}")
         path = hf_hub_download(
@@ -146,41 +188,46 @@ def get_upet(
         )
         loaded_model = load_metatrain_model(path)
 
-    metadata = get_upet_metadata(model, size, version)
+    # Generate metadata based on available info
+    metadata = get_upet_metadata(model=model, size=size, version=str(version))
     return loaded_model.export(metadata)
 
 
 def save_upet(
     *,
-    model: str,
-    size: str,
+    model: Optional[str] = None,
+    size: Optional[str] = None,
     version: str = "latest",
     checkpoint_path: Optional[str] = None,
-    output=None,
+    output: Optional[str] = None,
 ):
     """
-    Save the UPET model to a TorchScript file (``pet-xxx.pt``). These files can
-    be used with LAMMPS and other tools to run simulations without Python.
+    Save the UPET model to a TorchScript file. These files can be used with
+    LAMMPS and other tools to run simulations without Python.
 
     :param model: name of the UPET model.
     :param size: size of the UPET model.
     :param version: UPET version to use. Defaults to the latest stable version.
-    :param checkpoint_path: path to a checkpoint file to load the model from. If
-        provided, the `version` parameter is ignored.
-    :param output: path to use for the output model, defaults to
-        ``pet-{version}.pt`` when using a version, or the checkpoint path when using
-        a checkpoint.
+    :param checkpoint_path: path to a checkpoint file to load the model from.
+    :param output: path for the output model. Defaults to "{model}-{size}-v{version}.pt"
+        or "model.pt" for non-standard checkpoint names.
     """
-
     loaded_model = get_upet(
         model=model, size=size, version=version, checkpoint_path=checkpoint_path
     )
 
     if output is None:
-        if checkpoint_path is None:
-            output = "-".join([model, size, f"v{version}"]) + ".pt"
+        if checkpoint_path is not None:
+            parsed = parse_checkpoint_filename(checkpoint_path)
+            if parsed is not None:
+                model, size, version = parsed
+                output = f"{model}-{size}-v{version}.pt"
+            else:
+                output = "model.pt"
+        elif model is not None and size is not None:
+            output = f"{model}-{size}-v{version}.pt"
         else:
-            raise ValueError("Output path must be specified when using a checkpoint.")
+            output = "model.pt"
 
     loaded_model.save(output)
     logging.info(f"Saved UPET model to {output}")
