@@ -16,8 +16,7 @@ from ._models import (
     get_pet_mad_dos,
     get_upet,
     parse_checkpoint_filename,
-    upet_get_size_to_load,
-    upet_get_version_to_load,
+    upet_resolve_model,
 )
 from ._version import (
     PET_MAD_DOS_LATEST_STABLE_VERSION,
@@ -142,14 +141,11 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
                 )
 
             model_name, size = model.rsplit("-", 1)
-            size = upet_get_size_to_load(model_name, requested_size=size)
-            if version == "latest":
-                version = upet_get_version_to_load(
-                    model_name, size, requested_version=version
-                )
-
-            if not isinstance(version, Version):
-                version = Version(version)
+            size, version = upet_resolve_model(
+                model_name,
+                requested_size=size,
+                requested_version=version if version != "latest" else None,
+            )
 
             loaded_model = get_upet(
                 model=model_name,

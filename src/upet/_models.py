@@ -2,7 +2,8 @@ import logging
 import os
 import re
 import warnings
-from typing import Optional, Tuple, Union
+from functools import lru_cache
+from typing import List, Optional, Tuple, Union
 from urllib.parse import urlparse
 from urllib.request import urlretrieve
 
@@ -24,6 +25,41 @@ from .utils import hf_hub_download_url
 CHECKPOINT_NAME_PATTERN = re.compile(
     r"^(?P<model>pet-[\w]+)-(?P<size>xs|s|m|l|xl)-v?(?P<version>\d+\.\d+\.\d+)\.ckpt$"
 )
+
+
+@lru_cache(maxsize=1)
+def _get_upet_repo_files() -> List[str]:
+    """Cached listing of files in the lab-cosmo/upet repository models folder."""
+    hf_api = HfApi()
+    repo_files = hf_api.list_repo_files("lab-cosmo/upet")
+    return [f[7:] for f in repo_files if f.startswith("models/")]
+
+
+def get_sizes_for_model(model: str) -> List[str]:
+    """Get all available sizes for a given model from the cached repo files.
+
+    :param model: Base model name (e.g., "pet-mad", "pet-omat")
+    :return: Sorted list of available sizes
+    """
+    files = _get_upet_repo_files()
+    prefix = f"{model}-"
+    model_files = [f for f in files if f.startswith(prefix) and f.endswith(".ckpt")]
+    sizes = [f.split(prefix)[1].split("-")[0] for f in model_files]
+    return sorted(set(sizes))
+
+
+def get_versions_for_model(model: str, size: str) -> List[Version]:
+    """Get all available versions for a given model/size from the cached repo files.
+
+    :param model: Base model name (e.g., "pet-mad", "pet-omat")
+    :param size: Model size (e.g., "s", "m", "l")
+    :return: Sorted list of available versions
+    """
+    files = _get_upet_repo_files()
+    prefix = f"{model}-{size}-"
+    model_files = [f for f in files if f.startswith(prefix) and f.endswith(".ckpt")]
+    versions = [Version(f.split(prefix)[1].split(".ckpt")[0]) for f in model_files]
+    return sorted(set(versions))
 
 
 def parse_checkpoint_filename(
@@ -50,85 +86,53 @@ def parse_checkpoint_filename(
     return (None, None, None)
 
 
-def upet_get_size_to_load(model: str, requested_size: Optional[str] = None) -> str:
+def upet_resolve_model(
+    model: str,
+    requested_size: Optional[str] = None,
+    requested_version: Optional[str] = None,
+) -> Tuple[str, Version]:
     """
-    Get the size of a UPET model.
+    Resolve size and version for a UPET model in a single operation.
 
-    :param model: name of the model.
-    :param requested_size: a requested size of the model.
-    :return: If the model has multiple sizes available, the
-        sizes will be chosen based on the following priority: s > m > xs > l > xl,
-        depending on availability.
+    :param model: Base model name (e.g., "pet-mad", "pet-omat")
+    :param requested_size: Specific size to use, or None for default
+    :param requested_version: Specific version or "latest"/None for newest
+    :return: Tuple of (size, version)
     """
-    # We need to inspect the models in https://huggingface.co/lab-cosmo/upet/tree/main/models
-    # and get the available sizes for each model.
-    hf_api = HfApi()
-    repo_files = hf_api.list_repo_files("lab-cosmo/upet")
-    files_in_models_folder = [f[7:] for f in repo_files if f.startswith("models/")]
-    all_model_files = [
-        f
-        for f in files_in_models_folder
-        if f.startswith(f"{model}-") and f.endswith(".ckpt")
-    ]
-    all_model_sizes = [f.split(f"{model}-")[1].split("-")[0] for f in all_model_files]
-    all_model_sizes = sorted(set(all_model_sizes))
+    all_model_sizes = get_sizes_for_model(model)
 
+    # Resolve size
     if requested_size is not None:
         if requested_size in all_model_sizes:
-            return requested_size
+            size = requested_size
         else:
             raise ValueError(
                 f"Requested size {requested_size} not available for model {model}. "
                 f"Available sizes are: {all_model_sizes}"
             )
-
-    if "s" in all_model_sizes:
-        return "s"
+    elif "s" in all_model_sizes:
+        size = "s"
     elif "m" in all_model_sizes:
-        return "m"
+        size = "m"
     elif "xs" in all_model_sizes:
-        return "xs"
+        size = "xs"
     elif "l" in all_model_sizes:
-        return "l"
+        size = "l"
     elif "xl" in all_model_sizes:
-        return "xl"
+        size = "xl"
     else:
         raise ValueError(f"No sizes found for model {model}")
 
+    all_model_versions = get_versions_for_model(model, size)
 
-def upet_get_version_to_load(
-    model: str, size: str, requested_version: Optional[Version] = None
-) -> Version:
-    """
-    Get the version of a UPET model.
-
-    :param model: name of the model.
-    :param size: size of the model.
-    :param requested_version: a requested version of the model.
-    :return: the version to load.
-    """
-    if requested_version == "latest":
-        requested_version = None
-
-    hf_api = HfApi()
-    repo_files = hf_api.list_repo_files("lab-cosmo/upet")
-    files_in_models_folder = [f[7:] for f in repo_files if f.startswith("models/")]
-    all_model_files = [
-        f
-        for f in files_in_models_folder
-        if f.startswith(f"{model}-{size}-") and f.endswith(".ckpt")
-    ]
-    all_model_versions = [
-        Version(f.split(f"{model}-{size}-")[1].split(".ckpt")[0])
-        for f in all_model_files
-    ]
-    all_model_versions = sorted(set(all_model_versions))
-
-    if requested_version is not None:
+    # Resolve version
+    if requested_version is None or requested_version == "latest":
+        version = max(all_model_versions)
+    else:
         if not isinstance(requested_version, Version):
             requested_version = Version(requested_version)
         if requested_version in all_model_versions:
-            return requested_version
+            version = requested_version
         else:
             raise ValueError(
                 f"Requested version {requested_version} not available for model "
@@ -136,14 +140,14 @@ def upet_get_version_to_load(
                 f"{list(str(v) for v in all_model_versions)}"
             )
 
-    return max(all_model_versions)
+    return size, version
 
 
 def get_upet(
     *,
     model: Optional[str] = None,
     size: Optional[str] = None,
-    version: Optional[str] = "latest",
+    version: Optional[Union[str, Version]] = "latest",
     checkpoint_path: Optional[str] = None,
 ) -> AtomisticModel:
     """Get a metatomic ``AtomisticModel`` for a UPET MLIP.
@@ -170,10 +174,9 @@ def get_upet(
                 "'model' and 'size' are required when not using checkpoint_path"
             )
 
-        if version == "latest":
-            version = upet_get_version_to_load(model, size, requested_version=version)
+        # Ensure version is a Version object
         if not isinstance(version, Version):
-            version = Version(version)
+            version = Version(version) if version and version != "latest" else None
 
         model_string = f"{model}-{size}-v{version}.ckpt"
         logging.info(f"Loading pre-trained model: {model_string}")
