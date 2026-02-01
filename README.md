@@ -575,7 +575,7 @@ energy and non-conservative forces/stresses heads provided with the pre-trained 
 If you fine-tune the model and create a new head for your energy target, you should 
 explicitly select the corresponding energy variant on runtime (same for non-conservative
 forces/stresses). Let's consider an example, where you fine-tune the energy head
-and call it "energy/finetune" in the `options.yaml` file, while running `mtt train` command.
+and call it `"energy/finetune"` in the `options.yaml` file, while running `mtt train` command.
 
 #### ASE Interface
 
