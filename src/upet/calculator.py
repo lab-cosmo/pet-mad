@@ -1,6 +1,6 @@
 import logging
 import os
-from typing import List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 import ase.calculators.calculator
 import numpy as np
@@ -21,6 +21,7 @@ from ._models import (
 from ._version import (
     PET_MAD_DOS_LATEST_STABLE_VERSION,
     UPET_AVAILABLE_MODELS,
+    UPET_UQ_SUPPORTED_MODELS,
 )
 from .utils import (
     fermi_dirac_distribution,
@@ -49,8 +50,7 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
         version: Optional[str] = "latest",
         dtype: Optional[torch.dtype] = None,
         checkpoint_path: Optional[str] = None,
-        calculate_uncertainty: bool = False,
-        calculate_ensemble: bool = False,
+        variants: Optional[Dict[str, Optional[str]]] = None,
         rotational_average_order: Optional[int] = None,
         rotational_average_batch_size: Optional[int] = None,
         *,
@@ -84,10 +84,21 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
             If the filename follows standard naming (e.g., "pet-mad-s-v1.0.2.ckpt"),
             model/size/version are extracted automatically, and the `model`, `size`, and
             `version` parameters are ignored.
-        :param calculate_uncertainty: whether to calculate energy uncertainty.
-            Defaults to False. Only available for PET-MAD version 1.0.2.
-        :param calculate_ensemble: whether to calculate energy ensemble.
-            Defaults to False. Only available for PET-MAD version 1.0.2.
+        :param variants: dictionary specifying which variant to use for each output.
+            This option allows to choose the evaluation head when multiple variants
+            are available for a given output. For example, if both ``energy/pbe`` and
+            ``energy/r2scan`` variants are available for ``energy`` target, one can
+            select which one to use by setting the ``variants`` parameter to
+            ``{"energy": "r2scan"}``. If ``energy`` is set to a variant also the
+            uncertainty and non-conservative outputs will be taken from this variant.
+            If not provided, the default variant for each output will be used
+            (for example: ``energy`` with no variant specification).
+        dictionary mapping output names to a variant that should be
+            used for the calculations (e.g. ``{"energy": "PBE"}``). If ``"energy"`` is
+            set to a variant also the uncertainty and non-conservative outputs will be
+            taken from this variant. This behaviour can be overriden by setting the
+            corresponding keys explicitly to ``None`` or to another value (e.g.
+            ``{"energy_uncertainty": "r2scan"}``).
         :param rotational_average_order: order of the Lebedev-Laikov grid used for
             averaging the prediction over rotations.
         :param rotational_average_num_additional_rotations: the number of additional
@@ -157,29 +168,16 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
 
         model_outputs = loaded_model.capabilities().outputs
         if non_conservative:
-            # Check for "non_conservative_{forces/stress} availability"
-            if (
-                "non_conservative_forces" not in model_outputs
-                or "non_conservative_stress" not in model_outputs
-            ):
+            selected_variant = None if variants is None else variants.get("energy")
+            variant_postfix = f"/{selected_variant}" if selected_variant else ""
+            nc_forces_key = "non_conservative_forces" + variant_postfix
+            nc_stress_key = "non_conservative_stress" + variant_postfix
+            if nc_forces_key not in model_outputs or nc_stress_key not in model_outputs:
                 raise NotImplementedError(
                     "Non-conservative forces and stresses are not available for the "
-                    f"model {model_name}. Please check the documentation of this "
-                    "class for more information."
+                    f"model {cache_name}. Please run without non_conservative=True, "
+                    "or choose another model."
                 )
-        if calculate_uncertainty or calculate_ensemble:
-            if (
-                "energy_uncertainty" not in model_outputs
-                or "energy_ensemble" not in model_outputs
-            ):
-                raise NotImplementedError(
-                    "Energy uncertainty and ensemble are not available for the "
-                    f"model {model_name}. Please check the documentation of this "
-                    "class for more information."
-                )
-            self._uq_is_available = True
-        else:
-            self._uq_is_available = False
 
         if dtype is not None:
             if isinstance(dtype, str):
@@ -200,6 +198,7 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
             extensions_directory=None,
             check_consistency=check_consistency,
             device=device,
+            variants=variants,
             non_conservative=non_conservative,
         )
         self.implemented_properties = self.calculator.implemented_properties
@@ -241,6 +240,34 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
         self.calculator.calculate(atoms, properties, system_changes)
         self.results = self.calculator.results
 
+    def _run_uq(
+        self,
+        atoms: Optional[Atoms] = None,
+        per_atom: bool = False,
+        key: str = "energy_uncertainty",
+    ) -> np.ndarray:
+        if not self.calculator._calculate_uncertainty:
+            raise NotImplementedError(
+                "Energy uncertainty and ensemble are not available for a selected "
+                "model. Please use one of the following models: "
+                f"{UPET_UQ_SUPPORTED_MODELS}",
+            )
+
+        if atoms is None:
+            if self.atoms is None:
+                raise ValueError(
+                    "No `atoms` provided and no previously calculated atoms found."
+                )
+            else:
+                atoms = self.atoms
+
+        outputs = self.calculator.run_model(
+            atoms,
+            outputs={key: ModelOutput(quantity="energy", unit="eV", per_atom=per_atom)},
+        )
+
+        return outputs[key].block().values.detach().cpu().numpy()
+
     def get_energy_uncertainty(
         self, atoms: Optional[Atoms] = None, per_atom: bool = False
     ) -> np.ndarray:
@@ -252,25 +279,8 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
         :param per_atom: Whether to return the energy uncertainty per atom.
         :return: Energy uncertainty in numpy.ndarray format.
         """
-        if atoms is None:
-            if self.atoms is None:
-                raise ValueError(
-                    "No `atoms` provided and no previously calculated atoms found."
-                )
-            else:
-                atoms = self.atoms
-
-        outputs = self.calculator.run_model(
-            atoms,
-            outputs={
-                # TODO: handle variants if we have a a model with them
-                "energy_uncertainty": ModelOutput(
-                    quantity="energy", unit="eV", per_atom=per_atom
-                )
-            },
-        )
-
-        return outputs["energy_uncertainty"].block().values.detach().cpu().numpy()
+        key = self.calculator._energy_uq_key
+        return self._run_uq(atoms=atoms, per_atom=per_atom, key=key)
 
     def get_energy_ensemble(
         self, atoms: Optional[Atoms] = None, per_atom: bool = False
@@ -283,26 +293,8 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
         :param per_atom: Whether to return the energies per atom.
         :return: Energy uncertainty in numpy.ndarray format.
         """
-
-        if atoms is None:
-            if self.atoms is None:
-                raise ValueError(
-                    "No `atoms` provided and no previously calculated atoms found."
-                )
-            else:
-                atoms = self.atoms
-
-        outputs = self.calculator.run_model(
-            atoms,
-            outputs={
-                # TODO: handle variants if we have a a model with them
-                "energy_ensemble": ModelOutput(
-                    quantity="energy", unit="eV", per_atom=per_atom
-                )
-            },
-        )
-
-        return outputs["energy_ensemble"].block().values.detach().cpu().numpy()
+        key = self.calculator._energy_uq_key.replace("_uncertainty", "_ensemble")
+        return self._run_uq(atoms=atoms, per_atom=per_atom, key=key)
 
 
 ENERGY_LOWER_BOUND = -159.6456  # Lower bound of the energy grid for DOS
