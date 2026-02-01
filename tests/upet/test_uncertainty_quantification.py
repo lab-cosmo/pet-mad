@@ -14,24 +14,18 @@ def test_uncertainty_quantification(model_name):
     model, size = model_name.rsplit("-", 1)
     all_model_versions = get_versions_for_model(model, size)
 
+    atoms = bulk("Si", cubic=True, a=5.43, crystalstructure="diamond")
+
     for version in all_model_versions:
+        calc = UPETCalculator(
+            model=model_name,
+            version=version,
+        )
         if f"{model_name}-v{version}" not in UPET_UQ_SUPPORTED_MODELS:
             msg = "Energy uncertainty and ensemble are not available "
             with pytest.raises(NotImplementedError, match=msg):
-                _ = UPETCalculator(
-                    model=model_name,
-                    version=version,
-                    calculate_uncertainty=True,
-                    calculate_ensemble=True,
-                )
+                calc.get_energy_uncertainty(atoms)
         else:
-            atoms = bulk("Si", cubic=True, a=5.43, crystalstructure="diamond")
-            calc = UPETCalculator(
-                model=model_name,
-                version=version,
-                calculate_uncertainty=True,
-                calculate_ensemble=True,
-            )
             energy_uncertainty = calc.get_energy_uncertainty(atoms)
             energy_ensemble = calc.get_energy_ensemble(atoms)
 
@@ -53,8 +47,6 @@ def test_error_model_not_evaluated():
     calc = UPETCalculator(
         model="pet-mad-s",
         version="1.0.2",
-        calculate_uncertainty=True,
-        calculate_ensemble=True,
     )
     atoms.calc = calc
 
