@@ -216,91 +216,17 @@ This will create a file called `predictions.xyz` with the predicted energies and
 forces for each structure in the dataset. More details on how to use `metatrain`
 can be found in the [Metatrain documentation](https://metatensor.github.io/metatrain/latest/getting-started/usage.html#evaluation).
 
-### Uncertainty Quantification
+### Running UPET models with LAMMPS
 
-UPET models can also be used to calculate the uncertainty of the energy prediction.
-This feature is particularly important if you are interested in probing the model
-on the data that is substantially different from the training data. Another important 
-use case is a propagation of the uncertainty of the energy prediction to other
-observables, like phase transition temperatures, diffusion coefficients, etc.
-
-To evaluate the uncertainty of the energy prediction, or to get an ensemble of energy
-predictions, you can use the `get_energy_uncertainty` and `get_energy_ensemble` methods
-of the `UPETCalculator` class:
-
-```python
-from upet.calculator import UPETCalculator
-from ase.build import bulk
-
-atoms = bulk("Si", cubic=True, a=5.43, crystalstructure="diamond")
-calculator = UPETCalculator(model="pet-mad-s", version="1.0.2", device="cpu", calculate_uncertainty=True, calculate_ensemble=True)
-atoms.calc = calculator
-energy = atoms.get_potential_energy()
-
-energy_uncertainty = calculator.get_energy_uncertainty(atoms, per_atom=False)
-energy_ensemble = calculator.get_energy_ensemble(atoms, per_atom=False)
-```
-
-Please note that the uncertainty quantification and ensemble prediction accepts the
-`per_atom` flag, which indicates whether the uncertainty/ensemble should be computed
-per atom or for the whole system. More details on the uncertainty quantification and shallow
-ensemble method can be found in [this](https://doi.org/10.1088/2632-2153/ad594a) and
-[this](https://doi.org/10.1088/2632-2153/ad805f) papers. 
-
-
-### Rotational Averaging
-
-By design, UPET models are not exactly equivariant w.r.t. rotations and inversions. Although
-the equivariance error is typically much smaller than the overall model error, in some cases
-(like geometry optimizations and phonon calculations of highly symmetrical structures)
-it may be beneficial to enforce additional rotational averaging to improve the stability
-of the calculation. This can be done by setting the `rotational_average_order` parameter
-when initializing the `UPETCalculator` class:
-
-```python
-from upet.calculator import UPETCalculator
-from ase.build import bulk
-
-atoms = bulk("Si", cubic=True, a=5.43, crystalstructure="diamond")
-calculator = UPETCalculator(model="pet-mad-s", version="1.0.2", device="cpu", rotational_average_order=3)
-atoms.calc = calculator
-energy = atoms.get_potential_energy()
-forces = atoms.get_forces()
-stresses = atoms.get_stress()
-```
-
-In this case, predictions will be averaged over a quadrature of the O(3) group based on a Lebedev grid of the 
-specified order (here 3). Higher orders lead to more accurate equivariance, but also increase the computational cost.
-
-By default, all the transformed structures are evaluated in a single batch, which may lead to high memory usage
-for large systems. If you want to reduce the memory usage, you can set the `rotational_average_batch_size` 
-parameter to a smaller value (eg. 8), which will evaluate the transformed structures in smaller batches:
-
-```python
-from upet.calculator import UPETCalculator
-calculator = UPETCalculator(model="pet-mad-s", version="1.0.2", device="cpu", rotational_average_order=3, rotational_average_batch_size=8)
-```
-
-Finally, the rotational averaging error statistics are stored in the `results` dictionary of the calculator
-after the energy/forces/stresses are computed:
-
-```python
-energy_rot_std = calculator.results['energy_rot_std']
-forces_rot_std = calculator.results['forces_rot_std']
-stresses_rot_std = calculator.results['stresses_rot_std']
-```
-
-## Running UPET models with LAMMPS
-
-### 1. Install LAMMPS with metatomic support
+#### 1. Install LAMMPS with metatomic support
 
 To use UPET with LAMMPS, follow the instructions
 [here](https://docs.metatensor.org/metatomic/latest/engines/lammps.html#how-to-install-the-code) 
 to install lammps-metatomic. We recomend you also use conda to install prebuilt lammps binaries.
 
-### 2. Run LAMMPS with UPET
+#### 2. Run LAMMPS with UPET
 
-#### 2.1. CPU version
+##### 2.1. CPU version
 
 Fetch the UPET checkpoint from the HuggingFace repository:
 
@@ -380,7 +306,7 @@ lmp -in lammps.in  # For serial version
 mpirun -np 1 lmp -in lammps.in  # For MPI version
 ```
 
-#### 2.2. KOKKOS-enabled GPU version
+##### 2.2. KOKKOS-enabled GPU version
 
 Running LAMMPS with KOKKOS and GPU support is similar to the CPU version, but
 you need to change the `lammps.in` slightly and run `lmp` binary with a few
@@ -431,7 +357,7 @@ simulation is parallelized over, so if running the large systems on two or more
 GPUs, this number should be adjusted accordingly.
 
 
-### 3. Important Notes
+#### Important Notes
 
 - For **CPU calculations**, use a single MPI task unless simulating large
   systems (30+ Å box size). Multi-threading can be enabled via:
@@ -442,9 +368,83 @@ GPUs, this number should be adjusted accordingly.
 
 - For **GPU calculations**, use **one MPI task per GPU**.
 
-## Running UPET models with empirical dispersion corrections
+### Uncertainty Quantification
 
-### In **ASE**:
+UPET models can also be used to calculate the uncertainty of the energy prediction.
+This feature is particularly important if you are interested in probing the model
+on the data that is substantially different from the training data. Another important 
+use case is a propagation of the uncertainty of the energy prediction to other
+observables, like phase transition temperatures, diffusion coefficients, etc.
+
+To evaluate the uncertainty of the energy prediction, or to get an ensemble of energy
+predictions, you can use the `get_energy_uncertainty` and `get_energy_ensemble` methods
+of the `UPETCalculator` class:
+
+```python
+from upet.calculator import UPETCalculator
+from ase.build import bulk
+
+atoms = bulk("Si", cubic=True, a=5.43, crystalstructure="diamond")
+calculator = UPETCalculator(model="pet-mad-s", version="1.0.2", device="cpu", calculate_uncertainty=True, calculate_ensemble=True)
+atoms.calc = calculator
+energy = atoms.get_potential_energy()
+
+energy_uncertainty = calculator.get_energy_uncertainty(atoms, per_atom=False)
+energy_ensemble = calculator.get_energy_ensemble(atoms, per_atom=False)
+```
+
+Please note that the uncertainty quantification and ensemble prediction accepts the
+`per_atom` flag, which indicates whether the uncertainty/ensemble should be computed
+per atom or for the whole system. More details on the uncertainty quantification and shallow
+ensemble method can be found in [this](https://doi.org/10.1088/2632-2153/ad594a) and
+[this](https://doi.org/10.1088/2632-2153/ad805f) papers. 
+
+
+### Rotational Averaging
+
+By design, UPET models are not exactly equivariant w.r.t. rotations and inversions. Although
+the equivariance error is typically much smaller than the overall model error, in some cases
+(like geometry optimizations and phonon calculations of highly symmetrical structures)
+it may be beneficial to enforce additional rotational averaging to improve the stability
+of the calculation. This can be done by setting the `rotational_average_order` parameter
+when initializing the `UPETCalculator` class:
+
+```python
+from upet.calculator import UPETCalculator
+from ase.build import bulk
+
+atoms = bulk("Si", cubic=True, a=5.43, crystalstructure="diamond")
+calculator = UPETCalculator(model="pet-mad-s", version="1.0.2", device="cpu", rotational_average_order=3)
+atoms.calc = calculator
+energy = atoms.get_potential_energy()
+forces = atoms.get_forces()
+stresses = atoms.get_stress()
+```
+
+In this case, predictions will be averaged over a quadrature of the O(3) group based on a Lebedev grid of the 
+specified order (here 3). Higher orders lead to more accurate equivariance, but also increase the computational cost.
+
+By default, all the transformed structures are evaluated in a single batch, which may lead to high memory usage
+for large systems. If you want to reduce the memory usage, you can set the `rotational_average_batch_size` 
+parameter to a smaller value (eg. 8), which will evaluate the transformed structures in smaller batches:
+
+```python
+from upet.calculator import UPETCalculator
+calculator = UPETCalculator(model="pet-mad-s", version="1.0.2", device="cpu", rotational_average_order=3, rotational_average_batch_size=8)
+```
+
+Finally, the rotational averaging error statistics are stored in the `results` dictionary of the calculator
+after the energy/forces/stresses are computed:
+
+```python
+energy_rot_std = calculator.results['energy_rot_std']
+forces_rot_std = calculator.results['forces_rot_std']
+stresses_rot_std = calculator.results['stresses_rot_std']
+```
+
+### Running UPET models with empirical dispersion corrections
+
+#### In **ASE**:
 
 You can combine the UPET calculator with the torch based implementation of
 the D3 dispersion correction of `pfnet-research` - `torch-dftd`:
@@ -475,7 +475,7 @@ atoms.calc = combined_calc
 ```
 
 
-## Calculating the DOS, Fermi levels, and bandgaps
+### Calculating the DOS, Fermi levels, and bandgaps
 
 UPET package also allows the use of the **PET-MAD-DOS** model to predict
 electronic density of states of materials, as well as their Fermi levels and
@@ -526,8 +526,7 @@ bandgaps = pet_mad_dos_calculator.calculate_bandgap([atoms_1, atoms_2], dos=dos)
 fermi_levels = pet_mad_dos_calculator.calculate_efermi([atoms_1, atoms_2], dos=dos)
 ```
 
-
-## Dataset visualization with the PET-MAD featurizer
+### Dataset visualization with the PET-MAD featurizer
  
 You can use the last-layer features of the PET-MAD model together with a pre-trained 
 sketch-map dimensionality reduction to obtain 2D and 3D representations
@@ -563,11 +562,60 @@ Cookbook](https://atomistic-cookbook.org/examples/pet-mad/pet-mad.html).
 
 ## Fine-tuning
 
+### General Information
 UPET models can be fine-tuned using the
 [Metatrain](https://docs.metatensor.org/metatrain/latest/generated_examples/0-beginner/02-fine-tuning.html)
 library. At the moment, we recommend fine-tuning from our OMat models, because they are
 pre-trained on a very large dataset and they come in all sizes (from XS to XL, allowing
 you to choose a good trade-off for your application).
+
+### Heads Selection
+It's important to note, that by default the `UPETCalculator` class uses the default 
+energy and non-conservative forces/stresses heads provided with the pre-trained models.
+If you fine-tune the model and create a new head for your energy target, you should 
+explicitly select the corresponding energy variant on runtime (same for non-conservative
+forces/stresses). Let's consider an example, where you fine-tune the energy head
+and call it `"energy/finetune"` in the `options.yaml` file, while running `mtt train` command.
+
+#### ASE Interface
+
+In ASE, running the model with a variant selection can be done by loading your trained 
+checkpoint and initializing the `UPETCalculator` class with the `variants` parameter:
+
+```python
+from upet.calculator import UPETCalculator
+
+# For the new energy head called "energy/finetune"
+calc = UPETCalculator(checkpoint_name="finetuned.ckpt", variants={'energy': 'finetune'})
+```
+
+Same applies to non-conservative forces and stresses, if you created new heads
+for them during fine-tuning. 
+
+#### Metatrain Interface
+
+Similarly to ASE calculator, you can select the new head for evaluation with `metatrain`
+while running `mtt eval` command by specifying the head in the `options.yaml` file:
+
+```yaml
+systems: your-test-dataset.xyz
+targets:
+  energy/finetune:
+    key: "energy"
+    unit: "eV"
+```
+
+#### LAMMPS Interface
+
+In LAMMPS, you can select the new head by specifying the `variant/energy` parameter in the
+`pair_style metatomic` command:
+
+```bash
+read_data silicon.data
+
+pair_style metatomic model.pt variant/energy finetune
+pair_coeff * * 14
+```
 
 ## Further Documentation
 
@@ -625,6 +673,7 @@ respect to the target electronic structure method. Hence:
 - For geometry optimization, use a symmetrized calculator (see `rotational_average_order` parameter in the ASE calculator)
 
 **The XL models are huge!**
+
 There are two aspects to this:
 - The number of parameters is large, but these parameters are used in a very sparse way and the evaluation cost is comparable to, and often lower than, that of other large models in the field.
 - The listed cutoff radius may be large, but the cutoff strategy is adaptive, meaning that the model prunes the neighbor list internally. The effective cutoff for the vast majority of atomic environments in materials ends up being between 4 and 7 A in practice.
@@ -634,6 +683,7 @@ There are two aspects to this:
 ## Known Issues
 
 **Simulation blows up with lammps-metatomic 2025.9.10.mta2**
+
 While running upet models with the version above, we observe that simulations blow up. 
 This is most likely a bug introduced in a recent PR in lammps-metatomic. For now, we recommend using
 `lammps-metatomic==2025.9.10.mta1`. 
