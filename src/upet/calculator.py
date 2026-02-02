@@ -249,8 +249,8 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
         if not self.calculator._calculate_uncertainty:
             raise NotImplementedError(
                 "Energy uncertainty and ensemble are not available for the selected "
-                "model. For uncertainty estimates, please use one of the following models: "
-                f"{UPET_UQ_SUPPORTED_MODELS}",
+                "model. For uncertainty estimates, please use one of the following "
+                f"models: {UPET_UQ_SUPPORTED_MODELS}"
             )
 
         if atoms is None:
