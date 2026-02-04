@@ -385,7 +385,7 @@ from upet.calculator import UPETCalculator
 from ase.build import bulk
 
 atoms = bulk("Si", cubic=True, a=5.43, crystalstructure="diamond")
-calculator = UPETCalculator(model="pet-mad-s", version="1.0.2", device="cpu", calculate_uncertainty=True, calculate_ensemble=True)
+calculator = UPETCalculator(model="pet-mad-s", version="1.0.2", device="cpu")
 atoms.calc = calculator
 energy = atoms.get_potential_energy()
 
