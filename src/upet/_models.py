@@ -198,7 +198,14 @@ def get_upet(
 
     # Generate metadata based on available info
     metadata = get_upet_metadata(model=model, size=size, version=str(version))
-    return loaded_model.export(metadata)
+    exported_model = loaded_model.export(metadata)
+
+    # TorchScript the model
+    for parameter in exported_model.parameters():
+        parameter.requires_grad = False
+    exported_model = exported_model.eval()
+    exported_model = torch.jit.script(exported_model)
+    return exported_model
 
 
 def save_upet(
@@ -236,7 +243,7 @@ def save_upet(
         else:
             output = "model.pt"
 
-    loaded_model.save(output)
+    torch.jit.save(loaded_model.to("cpu"), output)
     logging.info(f"Saved UPET model to {output}")
 
 
