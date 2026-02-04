@@ -23,6 +23,7 @@ maintainers = [
 ]
 
 dependencies = [
+    "torch<2.10.0",
     "metatrain==2026.1",
     "huggingface_hub",
     "hf_xet",
