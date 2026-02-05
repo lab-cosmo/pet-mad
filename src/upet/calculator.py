@@ -1,3 +1,4 @@
+import warnings
 from typing import Dict, List, Optional, Tuple, Union
 
 import ase.calculators.calculator
@@ -120,14 +121,6 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
         # Branch 1: Loading from a local checkpoint
         if checkpoint_path is not None:
             model_name, size, version = parse_checkpoint_filename(checkpoint_path)
-
-            loaded_model = get_upet(
-                model=model_name,
-                size=size,
-                version=version,
-                checkpoint_path=checkpoint_path,
-            )
-
         # Branch 2: Loading from HuggingFace
         else:
             if model is None:
@@ -148,10 +141,15 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
                 requested_version=version if version != "latest" else None,
             )
 
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=DeprecationWarning)
+            warnings.simplefilter("ignore", category=UserWarning)
+
             loaded_model = get_upet(
                 model=model_name,
                 size=size,
                 version=version,
+                checkpoint_path=checkpoint_path,
             )
 
         model_outputs = loaded_model.capabilities().outputs
