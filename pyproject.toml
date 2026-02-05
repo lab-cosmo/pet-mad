@@ -23,7 +23,6 @@ maintainers = [
 ]
 
 dependencies = [
-    "torch<2.10.0",
     "metatrain==2026.1",
     "huggingface_hub",
     "hf_xet",
@@ -115,5 +114,7 @@ filterwarnings = [
     # deprecation warnings from torch_geometric
     "ignore:`torch_geometric.distributed` has been deprecated since 2.7.0 and will no longer be maintained",
     # metatrain checkpoint upgrade warning
-    "ignore: trying to upgrade an old model checkpoint with unknown version, this might fail and require manual modifications"
+    "ignore: trying to upgrade an old model checkpoint with unknown version, this might fail and require manual modifications",
+    # TorchScript deprecation warning
+    "ignore: `torch.jit.script` is deprecated. Please switch to `torch.compile` or `torch.export`."
 ]
