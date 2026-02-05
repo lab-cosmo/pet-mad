@@ -1,5 +1,4 @@
-import logging
-import os
+import warnings
 from typing import Dict, List, Optional, Tuple, Union
 
 import ase.calculators.calculator
@@ -9,7 +8,6 @@ from ase import Atoms
 from metatomic.torch import ModelOutput
 from metatomic.torch.ase_calculator import MetatomicCalculator, SymmetrizedCalculator
 from packaging.version import Version
-from platformdirs import user_cache_dir
 
 from ._models import (
     _get_bandgap_model,
@@ -123,22 +121,6 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
         # Branch 1: Loading from a local checkpoint
         if checkpoint_path is not None:
             model_name, size, version = parse_checkpoint_filename(checkpoint_path)
-
-            loaded_model = get_upet(
-                model=model_name,
-                size=size,
-                version=version,
-                checkpoint_path=checkpoint_path,
-            )
-
-            # Determine cache name
-            if model_name and size and version:
-                if not isinstance(version, Version):
-                    version = Version(version)
-                cache_name = f"{model_name}-{size}-v{version}"
-            else:
-                cache_name = os.path.split(checkpoint_path)[-1].replace(".ckpt", "")
-
         # Branch 2: Loading from HuggingFace
         else:
             if model is None:
@@ -159,12 +141,16 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
                 requested_version=version if version != "latest" else None,
             )
 
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=DeprecationWarning)
+            warnings.simplefilter("ignore", category=UserWarning)
+
             loaded_model = get_upet(
                 model=model_name,
                 size=size,
                 version=version,
+                checkpoint_path=checkpoint_path,
             )
-            cache_name = f"{model_name}-{size}-v{version}"
 
         model_outputs = loaded_model.capabilities().outputs
         if non_conservative:
@@ -175,8 +161,8 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
             if nc_forces_key not in model_outputs or nc_stress_key not in model_outputs:
                 raise NotImplementedError(
                     "Non-conservative forces and stresses are not available for the "
-                    f"model {cache_name}. Please run without non_conservative=True, "
-                    "or choose another model."
+                    f"model {model}, v{version}. Please run without "
+                    "non_conservative=True, or choose another model."
                 )
 
         if dtype is not None:
@@ -186,15 +172,8 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
             loaded_model._capabilities.dtype = DTYPE_TO_STR[dtype]
             loaded_model = loaded_model.to(dtype=dtype, device=device)
 
-        cache_dir = user_cache_dir("upet", "metatensor")
-        os.makedirs(cache_dir, exist_ok=True)
-
-        pt_path = os.path.join(cache_dir, f"{cache_name}.pt")
-        logging.info(f"Exporting checkpoint to TorchScript at {pt_path}")
-        loaded_model.save(pt_path, collect_extensions=None)
-
         self.calculator = MetatomicCalculator(
-            pt_path,
+            loaded_model,
             extensions_directory=None,
             check_consistency=check_consistency,
             device=device,
