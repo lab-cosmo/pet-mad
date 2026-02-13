@@ -2,6 +2,13 @@
 
 ## Unreleased changes
 
+## 0.1.2
+- Added speed benchmarks for the UPET models
+- Added a support for loading the local checkpoints
+- Added variants selection for running different heads of the model
+- Modifyed the internal TorchScript exporting mechanism, so it saves 
+  a temporary model file on the disk. 
+
 ## 0.1.1
 - Fixed a few bugs in the code, improved documentation and added a support for
   specifying the "latest" version of the model in the `upet.get_upet` and 
