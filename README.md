@@ -586,7 +586,7 @@ checkpoint and initializing the `UPETCalculator` class with the `variants` param
 from upet.calculator import UPETCalculator
 
 # For the new energy head called "energy/finetune"
-calc = UPETCalculator(checkpoint_name="finetuned.ckpt", variants={'energy': 'finetune'})
+calc = UPETCalculator(checkpoint_path="finetuned.ckpt", variants={'energy': 'finetune'})
 ```
 
 Same applies to non-conservative forces and stresses, if you created new heads
