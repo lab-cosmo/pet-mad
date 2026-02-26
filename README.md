@@ -13,7 +13,7 @@
 > The older version of the README file with documentation is avaiable [here](docs/README_OLD.md).
 > The migration guide from PET-MAD to UPET is available [here](docs/UPET_MIGRATION_GUIDE.md).
 
-> [!INFO]
+> [!NOTE]
 > PET-MAD-1.5 models trained on for 102 elements at the r2SCAN level of theory are 
 > now available! These models are more robust, more accurate and faster than the 
 > previous PET-MAD models. We highly recommend using these models for all applications,
