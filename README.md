@@ -112,7 +112,7 @@ discovery tasks (convex hull energies, geometry optimization, phonons, etc), and
 simulations of biomolecules. PET-OMATPES can be a good choice in case the accuracy of the PBE
 functionals are not sufficient for your applications.
 
-Deprecated models:
+**Deprecated models**:
 - PET-MAD v1.0.2 and v1.1.0 models are deprecated in favor of a newer PET-MAD v1.5.0 
 - PET-OMAD v0.1.0 and v1.0 models are deprecated in favor of a newer PET-MAD v1.5.0 
 
