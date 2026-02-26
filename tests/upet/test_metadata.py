@@ -40,7 +40,7 @@ def test_get_upet_metadata(model_name):
         assert metadata.description == (
             r"A universal interatomic potential for advanced materials modeling "
             r"based on a Point-Edge Transformer (PET) architecture, and trained on "
-            r"the {} dataset. Model size: {}. Model version {}".format(
+            r"the {} dataset. Model size: {}. Model version: {}.".format(
                 model.split("-")[1].upper(), size, version
             )
         )
