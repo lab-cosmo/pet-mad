@@ -2,6 +2,11 @@
 
 ## Unreleased changes
 
+## 0.2.0
+- Added PET-MAD v1.5.0 model.
+- Deprecated the PET-MAD and PET-OMAD models trained on the original
+  MAD-1 dataset. 
+
 ## 0.1.2
 - Added speed benchmarks for the UPET models
 - Added a support for loading the local checkpoints
