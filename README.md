@@ -5,21 +5,15 @@
   </picture>
 </div>
 
-> [!WARNING]
-> This repository is a successor of the PET-MAD repository, which is now deprecated.
-> The package has been renamed to **UPET** to reflect the broader scope of the models
-> and functionalities provided, that go beyond the original PET-MAD model.
-> Please use the version `1.4.4` of PET-MAD package if you want to use the old API.
-> The older version of the README file with documentation is avaiable [here](docs/README_OLD.md).
-> The migration guide from PET-MAD to UPET is available [here](docs/UPET_MIGRATION_GUIDE.md).
-
 > [!NOTE]
 > PET-MAD-1.5 models trained on for 102 elements at the r2SCAN level of theory are 
 > now available! These models are more robust, more accurate and faster than the 
 > previous PET-MAD models. We highly recommend using these models for all applications,
-> especially molecular dynamics simulations. The previous PET-MAD models trained at the
-> PBEsol level of theory are now deprecated, but they will still be available for 
-> reference and reproducibility purposes.
+> especially molecular dynamics simulations. Try them out and let us know what you think!
+```py
+from upet.calculator import UPETCalculator
+calculator = UPETCalculator(model="pet-mad-s", version="1.5.0", device="cuda")
+```
 
 > [!NOTE]
 > Are you here to try our **Matbench model? Here's all you need. Don't be scared by
@@ -30,6 +24,14 @@
 from upet.calculator import UPETCalculator
 calculator = UPETCalculator(model="pet-oam-xl", version="1.0.0", device="cuda")
 ```
+
+> [!WARNING]
+> This repository is a successor of the PET-MAD repository, which is now deprecated.
+> The package has been renamed to **UPET** to reflect the broader scope of the models
+> and functionalities provided, that go beyond the original PET-MAD model.
+> Please use the version `1.4.4` of PET-MAD package if you want to use the old API.
+> The older version of the README file with documentation is avaiable [here](docs/README_OLD.md).
+> The migration guide from PET-MAD to UPET is available [here](docs/UPET_MIGRATION_GUIDE.md).
 
 # UPET: Universal Models for Advanced Atomistic Simulations
 
