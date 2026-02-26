@@ -59,9 +59,9 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
         """
         :param model: PET-MLIP model to use. Required when not using checkpoint_path.
             Can be one of the following:
-            - "pet-mad-s": PET-MAD model (size "s', materials and molecules, PBEsol)
-            - "pet-omad-l": PET-OMAD model (size "l", materials and molecules, PBEsol,
-                slower and more accurate)
+            - "pet-mad-xs": PET-MAD-1.5 model (size "xs", materials and molecules,
+                r2SCAN)
+            - "pet-mad-s": PET-MAD-1.5 model (size "s", materials and molecules, r2SCAN)
             - "pet-omat-xs": PET-OMat model (size "xs", materials, PBE)
             - "pet-omat-s": PET-OMat model (size "s", materials, PBE)
             - "pet-omat-m": PET-OMat model (size "m", materials, PBE)
@@ -76,6 +76,15 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
             - "pet-spice-l": PET-SPICE model (size "l", molecules, ωB97M-D3)
         :param version: version of the model to use. Defaults to the latest stable
             version.
+            Deprecated model versions:
+            - "pet-mad-s-v1.0.2": PET-MAD-1 model (size "s", materials and molecules,
+                PBEsol)
+            - "pet-omad-xs-v1.0.0": PET-OMAD model (size "xs", materials and molecules,
+                PBEsol)
+            - "pet-omad-s-v1.0.0": PET-OMAD model (size "s", materials and molecules,
+                PBEsol)
+            - "pet-omad-l-v0.1.0": PET-OMAD model (size "l", materials and molecules,
+                PBEsol)
         :param dtype: dtype to use for the calculations. If `None`, we will use the
             default dtype.
         :param checkpoint_path: path to a checkpoint file to load the model from.
@@ -142,7 +151,6 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
             )
 
         with warnings.catch_warnings():
-            warnings.simplefilter("ignore", category=DeprecationWarning)
             warnings.simplefilter("ignore", category=UserWarning)
 
             loaded_model = get_upet(

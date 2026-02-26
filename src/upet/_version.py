@@ -23,6 +23,16 @@ UPET_NO_NC_SUPPORT_MODELS = [
 
 UPET_UQ_SUPPORTED_MODELS = [
     "pet-mad-s-v1.0.2",
+    "pet-mad-xs-v1.5.0",
+    "pet-mad-s-v1.5.0",
+]
+
+DEPRECATED_MODELS = [
+    "pet-mad-s-v1.0.2",
+    "pet-mad-s-v1.1.0",
+    "pet-omad-xs-v1.0.0",
+    "pet-omad-s-v1.0.0",
+    "pet-omad-l-v0.1.0",
 ]
 
 # PET-MAD DOS
