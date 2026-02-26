@@ -6,7 +6,7 @@
 </div>
 
 > [!NOTE]
-> PET-MAD-1.5 models trained on for 102 elements at the r2SCAN level of theory are 
+> PET-MAD-1.5 models trained for 102 elements at the r2SCAN level of theory are 
 > now available! These models are more robust, more accurate and faster than the 
 > previous PET-MAD models. We highly recommend using these models for all applications,
 > especially molecular dynamics simulations. Try them out and let us know what you think!
