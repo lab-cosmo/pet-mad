@@ -23,7 +23,7 @@ maintainers = [
 ]
 
 dependencies = [
-    "metatrain==2026.1",
+    "metatrain==2026.2",
     "huggingface_hub",
     "hf_xet",
     "packaging",
@@ -118,4 +118,6 @@ filterwarnings = [
     # TorchScript deprecation warnings
     "ignore: `torch.jit.script` is deprecated. Please switch to `torch.compile` or `torch.export`.",
     "ignore: `torch.jit.load` is deprecated. Please switch to `torch.export`.",
+    # PET-MAD v1.0 deprecation warning
+    "ignore:.*is deprecated in favor of a newer PET-MAD-1.5.*:DeprecationWarning",
 ]

@@ -11,7 +11,7 @@ def get_upet_metadata(
     description = (
         r"A universal interatomic potential for advanced materials modeling "
         r"based on a Point-Edge Transformer (PET) architecture, and trained on "
-        r"the {} dataset. Model size: {}"
+        r"the {} dataset. Model size: {}. Model version: {}."
     )
     references = {
         "architecture": ["https://arxiv.org/abs/2305.19302v3"],
@@ -44,14 +44,14 @@ def get_upet_metadata(
             ]
         metadata = ModelMetadata(
             name=f"{model.upper()}-{size.upper()} v{version}",
-            description=description.format(dataset, size),
+            description=description.format(dataset, size, version),
             authors=authors,
             references=references,
         )
     else:
         metadata = ModelMetadata(
             name="Custom UPET",
-            description=description.format("custom", "unknown"),
+            description=description.format("custom", "unknown", "unknown"),
             authors=[],
             references=references,
         )

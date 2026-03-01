@@ -5,13 +5,15 @@
   </picture>
 </div>
 
-> [!WARNING]
-> This repository is a successor of the PET-MAD repository, which is now deprecated.
-> The package has been renamed to **UPET** to reflect the broader scope of the models
-> and functionalities provided, that go beyond the original PET-MAD model.
-> Please use the version `1.4.4` of PET-MAD package if you want to use the old API.
-> The older version of the README file with documentation is avaiable [here](docs/README_OLD.md).
-> The migration guide from PET-MAD to UPET is available [here](docs/UPET_MIGRATION_GUIDE.md).
+> [!NOTE]
+> PET-MAD-1.5 models trained for 102 elements at the r2SCAN level of theory are 
+> now available! These models are more robust, more accurate and faster than the 
+> previous PET-MAD models. We highly recommend using these models for all applications,
+> especially molecular dynamics simulations. Try them out and let us know what you think!
+```py
+from upet.calculator import UPETCalculator
+calculator = UPETCalculator(model="pet-mad-s", version="1.5.0", device="cuda")
+```
 
 > [!NOTE]
 > Are you here to try our **Matbench model? Here's all you need. Don't be scared by
@@ -22,6 +24,14 @@
 from upet.calculator import UPETCalculator
 calculator = UPETCalculator(model="pet-oam-xl", version="1.0.0", device="cuda")
 ```
+
+> [!WARNING]
+> This repository is a successor of the PET-MAD repository, which is now deprecated.
+> The package has been renamed to **UPET** to reflect the broader scope of the models
+> and functionalities provided, that go beyond the original PET-MAD model.
+> Please use the version `1.4.4` of PET-MAD package if you want to use the old API.
+> The older version of the README file with documentation is avaiable [here](docs/README_OLD.md).
+> The migration guide from PET-MAD to UPET is available [here](docs/UPET_MIGRATION_GUIDE.md).
 
 # UPET: Universal Models for Advanced Atomistic Simulations
 
@@ -64,8 +74,8 @@ the density of states (DOS) of materials, as well as their Fermi levels and band
     - [Running UPET models with empirical dispersion corrections](#running-upet-models-with-empirical-dispersion-corrections)
     - [Calculating the DOS, Fermi levels, and bandgaps](#calculating-the-dos-fermi-levels-and-bandgaps)
     - [Dataset visualization with the PET-MAD featurizer](#dataset-visualization-with-the-pet-mad-featurizer)
-5. [Examples](#examples)
-6. [Fine-tuning](#fine-tuning)
+5. [Fine-tuning](#fine-tuning)
+6. [Examples](#examples)
 7. [Further Documentation](#further-documentation)
 8. [FAQs](#faqs)
 9. [Known Issues](#known-issues)
@@ -82,7 +92,7 @@ pip install upet
 Or directly from the GitHub repository:
 
 ```bash
-pip install git+https://github.com/lab-cosmo/upet.git
+pip install upet@git+https://github.com/lab-cosmo/upet.git
 ```
 
 ## Pre-trained Models
@@ -91,20 +101,23 @@ Currently, we provide the following pre-trained models:
 
 | Name        | Level of theory         | Available sizes        | To be used for          | Training set          |
 |:------------|:-----------------------:|:----------------------:|:-----------------------:|:---------------------:|
-| PET-MAD     | PBEsol                  | S                      | materials and molecules | MAD                   |
-| PET-OMAD    | PBEsol                  | XS, S, L               | materials and molecules | OMat -> MAD           |
+| PET-MAD     | r2SCAN                  | XS, S                  | materials and molecules | OMat -> MAD-1.5       |
 | PET-OAM     | PBE (Materials Project) | L, XL                  | materials               | OMat -> sAlex+MPtrj   |
 | PET-OMat    | PBE                     | XS, S, M, L, XL        | materials               | OMat                  |
 | PET-OMATPES | r2SCAN                  | L                      | materials               | OMat -> MATPES        |
 | PET-SPICE   | ωB97M-D3                | S, L                   | molecules               | SPICE                 | 
 
-We recommend using the PET-MAD model for molecular dynamics simulations of materials, PET-OAM models for materials 
+We recommend using the PET-MAD v1.5.0 model for molecular dynamics simulations of materials, PET-OAM models for materials 
 discovery tasks (convex hull energies, geometry optimization, phonons, etc), and PET-SPICE for accurate and fast 
-simulations of biomolecules. PET-OMAD models are more accurate and potentially faster than PET-MAD,
-but they were not tested as extensively yet. PET-OMATPES can be a good choice in case the accuracy of the PBE
+simulations of biomolecules. PET-OMATPES can be a good choice in case the accuracy of the PBE
 functionals are not sufficient for your applications.
 
-All the checkpoints are available on the HuggingFace [repository](https://huggingface.co/lab-cosmo/upet).
+**Deprecated models**:
+- PET-MAD v1.0.2 and v1.1.0 models are deprecated in favor of a newer PET-MAD v1.5.0 
+- PET-OMAD v0.1.0 and v1.0 models are deprecated in favor of a newer PET-MAD v1.5.0 
+
+
+All the checkpoints are available on the [HuggingFace repository](https://huggingface.co/lab-cosmo/upet).
 
 ## Interfaces for Atomistic Simulations
 
@@ -132,10 +145,24 @@ from upet.calculator import UPETCalculator
 from ase.build import bulk
 
 atoms = bulk("Si", cubic=True, a=5.43, crystalstructure="diamond")
-calculator = UPETCalculator(model="pet-mad-s", version="1.0.2", device="cpu")
+calculator = UPETCalculator(model="pet-mad-s", version="1.5.0", device="cpu")
 atoms.calc = calculator
 energy = atoms.get_potential_energy()
 forces = atoms.get_forces()
+```
+
+Additionally, you can download the download the model checkpoint from our
+[HuggingFace repository](https://huggingface.co/lab-cosmo/upet) and load
+the model from a local file:
+
+```bash
+wget https://huggingface.co/lab-cosmo/upet/resolve/main/models/pet-mad-s-v1.5.0.ckpt
+```
+
+```python
+from upet.calculator import UPETCalculator
+
+calculator = UPETCalculator(checkpoint_path="pet-mad-s-v1.5.0.ckpt", device="cpu")
 ```
 
 These ASE methods are ideal for single-structure evaluations, but they are
@@ -159,7 +186,7 @@ from upet.calculator import UPETCalculator
 from ase.build import bulk
 
 atoms = bulk("Si", cubic=True, a=5.43, crystalstructure="diamond")
-calculator = UPETCalculator(model="pet-mad-s", version="1.1.0", device="cpu", non_conservative=True)
+calculator = UPETCalculator(model="pet-mad-s", version="1.5.0", device="cpu", non_conservative=True)
 atoms.calc = calculator
 energy = atoms.get_potential_energy() # energy is computed as usual
 forces = atoms.get_forces() # forces now are predicted as a separate target
@@ -177,7 +204,7 @@ is installed as a dependency of UPET. To evaluate the model, you first need
 to fetch the UPET model from the HuggingFace repository:
 
 ```bash
-mtt export https://huggingface.co/lab-cosmo/upet/resolve/main/models/pet-mad-s-v1.0.2.ckpt -o model.pt
+mtt export https://huggingface.co/lab-cosmo/upet/resolve/main/models/pet-mad-s-v1.5.0.ckpt -o model.pt
 ```
 
 Alternatively, you can fetch and save the model using the UPET Python API:
@@ -189,7 +216,7 @@ import upet
 upet.save_upet(
     model="pet-mad",
     size="s",
-    version="1.0.2",
+    version="1.5.0",
     output="model.pt",
 )
 ```
@@ -231,7 +258,7 @@ to install lammps-metatomic. We recomend you also use conda to install prebuilt 
 Fetch the UPET checkpoint from the HuggingFace repository:
 
 ```bash
-mtt export https://huggingface.co/lab-cosmo/upet/resolve/main/models/pet-mad-s-v1.0.2.ckpt -o model.pt
+mtt export https://huggingface.co/lab-cosmo/upet/resolve/main/models/pet-mad-s-v1.5.0.ckpt -o model.pt
 ```
 
 This will download the model and convert it to TorchScript format compatible
@@ -385,7 +412,7 @@ from upet.calculator import UPETCalculator
 from ase.build import bulk
 
 atoms = bulk("Si", cubic=True, a=5.43, crystalstructure="diamond")
-calculator = UPETCalculator(model="pet-mad-s", version="1.0.2", device="cpu")
+calculator = UPETCalculator(model="pet-mad-s", version="1.5.0", device="cpu")
 atoms.calc = calculator
 energy = atoms.get_potential_energy()
 
@@ -414,7 +441,7 @@ from upet.calculator import UPETCalculator
 from ase.build import bulk
 
 atoms = bulk("Si", cubic=True, a=5.43, crystalstructure="diamond")
-calculator = UPETCalculator(model="pet-mad-s", version="1.0.2", device="cpu", rotational_average_order=3)
+calculator = UPETCalculator(model="pet-mad-s", version="1.5.0", device="cpu", rotational_average_order=3)
 atoms.calc = calculator
 energy = atoms.get_potential_energy()
 forces = atoms.get_forces()
@@ -430,7 +457,7 @@ parameter to a smaller value (eg. 8), which will evaluate the transformed struct
 
 ```python
 from upet.calculator import UPETCalculator
-calculator = UPETCalculator(model="pet-mad-s", version="1.0.2", device="cpu", rotational_average_order=3, rotational_average_batch_size=8)
+calculator = UPETCalculator(model="pet-mad-s", version="1.5.0", device="cpu", rotational_average_order=3, rotational_average_batch_size=8)
 ```
 
 Finally, the rotational averaging error statistics are stored in the `results` dictionary of the calculator
@@ -464,16 +491,15 @@ from ase.calculators.mixing import SumCalculator
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
-calc_MAD = UPETCalculator(model="pet-mad-s", version="1.0.2", device=device)
-dft_d3 = TorchDFTD3Calculator(device=device, xc="pbesol", damping="bj")
+calc_upet = UPETCalculator(model="pet-mad-s", version="1.5.0", device=device)
+dft_d3 = TorchDFTD3Calculator(device=device, xc="r2scan", damping="bj")
 
-combined_calc = SumCalculator([calc_MAD, dft_d3])
+combined_calc = SumCalculator([calc_upet, dft_d3])
 
 # assign the calculator to the atoms object
 atoms.calc = combined_calc
 
 ```
-
 
 ### Calculating the DOS, Fermi levels, and bandgaps
 
@@ -555,11 +581,6 @@ chemiscope.explore(
 )
 ```
 
-## Examples
-
-More examples for **ASE, i-PI, and LAMMPS** are available in the [Atomistic
-Cookbook](https://atomistic-cookbook.org/examples/pet-mad/pet-mad.html).
-
 ## Fine-tuning
 
 ### General Information
@@ -617,6 +638,11 @@ pair_style metatomic model.pt variant/energy finetune
 pair_coeff * * 14
 ```
 
+## Examples
+
+More examples for **ASE, i-PI, and LAMMPS** are available in the [Atomistic
+Cookbook](https://atomistic-cookbook.org/examples/pet-mad/pet-mad.html).
+
 ## Further Documentation
 
 Additional documentation can be found in the
@@ -632,9 +658,8 @@ Additional documentation can be found in the
 ## FAQs
 
 **What model should I use for my application?**
-- For molecular dynamics simulations, we recommend using the **PET-MAD** model. Alternatively,
-  you can use the **PET-OMAD** models, which are more accurate and potentially
-  faster, but they were not tested as extensively yet.
+
+- For molecular dynamics simulations, we recommend using the **PET-MAD v1.5.0** model. 
 - For materials discovery tasks (convex hull energies, geometry optimization, phonons, etc),
   we recommend using the **PET-OAM** models.
 - For accurate and fast simulations of biomolecules, we recommend using the **PET-SPICE** models.
@@ -646,6 +671,7 @@ Additional documentation can be found in the
   and then scaling up to larger models if you need more accuracy.
 
 **The model is slow for my application. What should I do?**
+
 - Make sure you run it on a GPU
 - Use an S or XS model
 - Simulate with LAMMPS (Kokkos-GPU version)
@@ -654,6 +680,7 @@ Additional documentation can be found in the
 - Still too slow? Check out [FlashMD](https://github.com/lab-cosmo/flashmd) for a further 30x boost.
 
 **My MD ran out of memory. How do I fix that?**
+
 - Reduce the model size (XS models are the least memory-intensive)
 - Reduce the structure size
 - Try to use LAMMPS (Kokkos-GPU version) and run with multiple MPI tasks to enable domain decomposition
