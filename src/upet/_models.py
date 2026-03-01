@@ -15,6 +15,7 @@ from packaging.version import Version
 
 from ._metadata import get_pet_mad_dos_metadata, get_upet_metadata
 from ._version import (
+    DEPRECATED_MODELS,
     PET_MAD_DOS_AVAILABLE_VERSIONS,
     PET_MAD_DOS_LATEST_STABLE_VERSION,
 )
@@ -156,10 +157,39 @@ def _get_upet_exported_atomistic_model(
     in the public API function.
     """
     if checkpoint_path is not None:
+        # Try to parse info from checkpoint filename
+        model, size, version = parse_checkpoint_filename(checkpoint_path)
         logging.info(f"Loading model from checkpoint: {checkpoint_path}")
         path = checkpoint_path
     else:
-        model_string = f"{model}-{size}-v{version}.ckpt"
+        # Remote loading requires model and size
+        if model is None or size is None:
+            raise ValueError(
+                "'model' and 'size' are required when not using checkpoint_path"
+            )
+
+        # Ensure version is a Version object
+        if not isinstance(version, Version):
+            version = Version(version) if version and version != "latest" else None
+
+        model_name = f"{model}-{size}-v{version}"
+        if model_name in DEPRECATED_MODELS:
+            if "mad" in model_name:
+                warn_msg = (
+                    f"Model {model_name} is deprecated in favor of a newer PET-MAD-1.5 "
+                    "version. Please use the latest PET-MAD-1.5 model "
+                    "(e.g., pet-mad-s-v1.5.0) for better performance and accuracy "
+                    "across 102 elements at the r2SCAN level of theory."
+                )
+            else:
+                warn_msg = (
+                    f"Model {model_name} is deprecated and may not be supported in "
+                    "future versions. Please switch to a newer model for better "
+                    "performance and support."
+                )
+            warnings.warn(warn_msg, category=DeprecationWarning, stacklevel=2)
+
+        model_string = f"{model_name}.ckpt"
         logging.info(f"Loading pre-trained model: {model_string}")
         path = hf_hub_download(
             repo_id="lab-cosmo/upet",
