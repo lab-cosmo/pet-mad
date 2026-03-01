@@ -6,7 +6,7 @@
 </div>
 
 > [!NOTE]
-> PET-MAD-1.5 models trained for 102 elements at the r2SCAN level of theory are 
+> The PET-MAD-1.5 models trained for 102 elements at the r2SCAN level of theory are 
 > now available! These models are more robust, more accurate and faster than the 
 > previous PET-MAD models. We highly recommend using these models for all applications,
 > especially molecular dynamics simulations. Try them out and let us know what you think!
@@ -29,7 +29,7 @@ calculator = UPETCalculator(model="pet-oam-xl", version="1.0.0", device="cuda")
 > This repository is a successor of the PET-MAD repository, which is now deprecated.
 > The package has been renamed to **UPET** to reflect the broader scope of the models
 > and functionalities provided, that go beyond the original PET-MAD model.
-> Please use the version `1.4.4` of PET-MAD package if you want to use the old API.
+> Please use version `1.4.4` of PET-MAD package if you want to use the old API.
 > The older version of the README file with documentation is avaiable [here](docs/README_OLD.md).
 > The migration guide from PET-MAD to UPET is available [here](docs/UPET_MIGRATION_GUIDE.md).
 
@@ -37,24 +37,24 @@ calculator = UPETCalculator(model="pet-oam-xl", version="1.0.0", device="cuda")
 
 This repository contains **UPET** models - universal interatomic potentials for
 advanced materials modeling across the periodic table. These models are based on
-the **Point Edge Transformer (PET)**  architecture, trained on various popular 
-materials datasets, and are capable of predicting energies and forces in complex
-atomistic simulations.
+the **Point Edge Transformer (PET)**  architecture trained on various popular 
+atomistic datasets, and they are capable of predicting energies and forces in complex
+atomistic workflows.
 
 In addition, it contains **PET-MAD-DOS** - a universal model for predicting
-the density of states (DOS) of materials, as well as their Fermi levels and bandgaps.
-**PET-MAD-DOS** is using a slightly modified **PET** architecture, and the **MAD** dataset. 
+the density of states (DOS) of materials and molecules, as well as their Fermi levels
+and bandgaps. **PET-MAD-DOS** uses a slightly modified **PET** architecture and it is
+trained on the **MAD** dataset. 
 
 ## Key Features
 
 - **Universality**: UPET models are generally-applicable, and can be used for
   predicting energies and forces, as well as the density of states, Fermi levels,
   and bandgaps for a wide range of materials and molecules.
-- **Accuracy**: UPET models achieve high accuracy in various types of atomistic
-  simulations of organic and inorganic systems, comparable with system-specific
-  models, while being fast and efficient.
+- **Accuracy**: UPET models achieve excellent accuracies in various types of atomistic
+  simulations of organic and inorganic systems.
 - **Efficiency**: UPET models are highly computationally efficient and have low
-  memory usage, what makes them suitable for large-scale simulations.
+  memory usage, which makes them suitable for large-scale simulations.
 - **Infrastructure**: Various MD engines are available for diverse research and
   application needs.
 - **HPC Compatibility**: Efficient in HPC environments for extensive simulations.
@@ -107,15 +107,14 @@ Currently, we provide the following pre-trained models:
 | PET-OMATPES | r2SCAN                  | L                      | materials               | OMat -> MATPES        |
 | PET-SPICE   | ωB97M-D3                | S, L                   | molecules               | SPICE                 | 
 
-We recommend using the PET-MAD v1.5.0 model for molecular dynamics simulations of materials, PET-OAM models for materials 
+We recommend using the PET-MAD v1.5.0 model for molecular dynamics simulations of materials, surfaces, interfaces,
+solutions, metal complexes and other challenging systems, PET-OAM models for material 
 discovery tasks (convex hull energies, geometry optimization, phonons, etc), and PET-SPICE for accurate and fast 
-simulations of biomolecules. PET-OMATPES can be a good choice in case the accuracy of the PBE
-functionals are not sufficient for your applications.
+simulations of molecules and biomolecules.
 
 **Deprecated models**:
 - PET-MAD v1.0.2 and v1.1.0 models are deprecated in favor of a newer PET-MAD v1.5.0 
 - PET-OMAD v0.1.0 and v1.0 models are deprecated in favor of a newer PET-MAD v1.5.0 
-
 
 All the checkpoints are available on the [HuggingFace repository](https://huggingface.co/lab-cosmo/upet).
 
@@ -124,8 +123,9 @@ All the checkpoints are available on the [HuggingFace repository](https://huggin
 UPET integrates with the following atomistic simulation engines:
 
 - **Atomic Simulation Environment (ASE)**
-- **LAMMPS** (including the KOKKOS support)
+- **LAMMPS** (including KOKKOS support)
 - **i-PI**
+- **TorchSim**
 - **OpenMM** (coming soon)
 - **GROMACS** (coming soon)
 
@@ -135,9 +135,9 @@ UPET integrates with the following atomistic simulation engines:
 
 #### Basic usage
 
-In order to perform a simple evaluation of the UPET models on a desired
-structure, you can use the UPET calculator compatible with the Atomic
-Simulation Environment (ASE). Model name can be obtained from the
+In order to perform simple evaluations of the UPET models on a desired
+structure, you can use the UPET calculator, which is compatible with the Atomic
+Simulation Environment (ASE). The model name can be obtained from the
 table above by combining the model name and the size, e.g., `pet-mad-s`, `pet-omat-l`, etc.
 
 ```python
@@ -151,9 +151,9 @@ energy = atoms.get_potential_energy()
 forces = atoms.get_forces()
 ```
 
-Additionally, you can download the download the model checkpoint from our
+Additionally, you can download the download model checkpoints from our
 [HuggingFace repository](https://huggingface.co/lab-cosmo/upet) and load
-the model from a local file:
+the model from local checkpoint files (including after fine-tuning):
 
 ```bash
 wget https://huggingface.co/lab-cosmo/upet/resolve/main/models/pet-mad-s-v1.5.0.ckpt
@@ -167,17 +167,16 @@ calculator = UPETCalculator(checkpoint_path="pet-mad-s-v1.5.0.ckpt", device="cpu
 
 These ASE methods are ideal for single-structure evaluations, but they are
 inefficient for the evaluation on a large number of pre-defined structures. To
-perform efficient evaluation in that case, read [here](docs/README_BATCHED.md).
+perform efficient batched evaluation in that case, read [here](docs/README_BATCHED.md).
 
 #### Non-conservative (direct) forces and stresses prediction
 
 UPET models also support the direct prediction of forces and stresses. In that case,
 the forces and stresses are predicted as separate targets along with the energy
-target, i.e. not computed as derivatives of the energy using the PyTorch
-automatic differentiation. This approach typically leads to 2-3x speedup in the
-evaluation time, since backward pass is disabled. However, as discussed in [this
-preprint](https://arxiv.org/abs/2412.11569), the non-conservative forces and stresses require additional care to avoid
-instabilities during the molecular dynamics simulations.
+target, and not as derivatives of the energy using automatic differentiation.
+This approach typically leads to 2-3x speedups in the evaluation time. However, as discussed in [this
+preprint](https://arxiv.org/abs/2412.11569), non-conservative forces and stresses require
+additional care to avoid undesired effects during the molecular dynamics simulations.
 
 To use the non-conservative forces and stresses, you need to set the `non_conservative` parameter to `True` when initializing the `UPETCalculator` class.
 
@@ -193,7 +192,7 @@ forces = atoms.get_forces() # forces now are predicted as a separate target
 stresses = atoms.get_stress() # stresses now are predicted as a separate target
 ```
 
-More details on how to make the direct forces MD simulations reliable are provided 
+More details on how to make direct-force MD simulations reliable are provided 
 in the [Atomistic Cookbook](https://atomistic-cookbook.org/examples/pet-mad-nc/pet-mad-nc.html).
 
 ### Evaluating UPET models on a dataset
@@ -249,7 +248,7 @@ can be found in the [Metatrain documentation](https://metatensor.github.io/metat
 
 To use UPET with LAMMPS, follow the instructions
 [here](https://docs.metatensor.org/metatomic/latest/engines/lammps.html#how-to-install-the-code) 
-to install lammps-metatomic. We recomend you also use conda to install prebuilt lammps binaries.
+to install lammps-metatomic. We recomend you use conda to install pre-built lammps binaries.
 
 #### 2. Run LAMMPS with UPET
 
@@ -261,8 +260,8 @@ Fetch the UPET checkpoint from the HuggingFace repository:
 mtt export https://huggingface.co/lab-cosmo/upet/resolve/main/models/pet-mad-s-v1.5.0.ckpt -o model.pt
 ```
 
-This will download the model and convert it to TorchScript format compatible
-with LAMMPS, using the `metatomic` and `metatrain` libraries, which UPET is
+This will download the model and convert it to a TorchScript format compatible
+with LAMMPS, using the `metatomic` and `metatrain` libraries which UPET is
 based on.
 
 Other pre-trained UPET models can be prepared in the same way, e.g.,
@@ -271,9 +270,9 @@ mtt export https://huggingface.co/lab-cosmo/upet/resolve/main/models/pet-omat-xs
 mtt export https://huggingface.co/lab-cosmo/upet/resolve/main/models/pet-omatpes-l-v0.1.0.ckpt -o model.pt
 ```
 
-Prepare a lammps input file using `pair_style metatomic` and defining the
+Prepare a LAMMPS input file using `pair_style metatomic` and defining the
 mapping from LAMMPS types in the data file to elements UPET can handle using
-`pair_coeff` syntax. Here we indicate that lammps atom type 1 is Silicon (atomic
+`pair_coeff` syntax. Here we indicate that LAMMPS atom type 1 is Silicon (atomic
 number 14).
 
 ```
@@ -329,59 +328,28 @@ Atoms # atomic
 ```
 
 ```bash
-lmp -in lammps.in  # For serial version
-mpirun -np 1 lmp -in lammps.in  # For MPI version
+lmp -in lammps.in  # serial version
+mpirun -np 1 lmp -in lammps.in  # MPI version
 ```
 
 ##### 2.2. KOKKOS-enabled GPU version
 
 Running LAMMPS with KOKKOS and GPU support is similar to the CPU version, but
-you need to change the `lammps.in` slightly and run `lmp` binary with a few
-additional flags.
+you need to run the `lmp` binary with a few additional flags.
 
-The updated `lammps.in` file looks like this:
-
-```
-package kokkos newton on neigh half
-
-units metal
-atom_style atomic/kk
-
-read_data silicon.data
-
-pair_style metatomic/kk model.pt # This will use the same device as the kokkos simulation
-pair_coeff * * 14
-
-neighbor 2.0 bin
-timestep 0.001
-
-dump myDump all xyz 10 trajectory.xyz
-dump_modify myDump element Si
-
-thermo_style multi
-thermo 1
-
-velocity all create 300 87287 mom yes rot yes
-
-fix 1 all nvt temp 300 300 0.10
-
-run_style verlet/kk
-run 100
-```
-
-The **silicon.data** file remains the same.
+The **lammps.in** and **silicon.data** files remain the same.
 
 To run the KOKKOS-enabled version of LAMMPS, you need to run
 
 ```bash
-lmp -in lammps.in -k on g 1 -sf kk # For serial version
-mpirun -np 1 lmp -in lammps.in -k on g 1 -sf kk # For MPI version
+lmp -in in.lammps -k on g 1 -pk kokkos newton on neigh half -sf kk  # serial version
+mpirun -np 1 lmp -in in.lammps -k on g 1 -pk kokkos newton on neigh half -sf kk  # MPI version
 ```
 
 Here, the `-k on g 1 -sf kk` flags are used to activate the KOKKOS
-subroutines. Specifically `g 1` is used to specify, how many GPUs are the
-simulation is parallelized over, so if running the large systems on two or more
-GPUs, this number should be adjusted accordingly.
+subroutines. Specifically `g 1` is used to specify how many GPUs the
+simulation is parallelized over, so this number should be adjusted accordingly if you're
+running a large system on multiple GPUs.
 
 
 #### Important Notes
@@ -399,11 +367,11 @@ GPUs, this number should be adjusted accordingly.
 
 UPET models can also be used to calculate the uncertainty of the energy prediction.
 This feature is particularly important if you are interested in probing the model
-on the data that is substantially different from the training data. Another important 
-use case is a propagation of the uncertainty of the energy prediction to other
+on data that could be substantially different from the training data. Another important 
+use case is propagation of uncertainties in the energy predictions to other
 observables, like phase transition temperatures, diffusion coefficients, etc.
 
-To evaluate the uncertainty of the energy prediction, or to get an ensemble of energy
+To evaluate the uncertainty of energy predictions, or to get an ensemble of energy
 predictions, you can use the `get_energy_uncertainty` and `get_energy_ensemble` methods
 of the `UPETCalculator` class:
 
@@ -422,9 +390,9 @@ energy_ensemble = calculator.get_energy_ensemble(atoms, per_atom=False)
 
 Please note that the uncertainty quantification and ensemble prediction accepts the
 `per_atom` flag, which indicates whether the uncertainty/ensemble should be computed
-per atom or for the whole system. More details on the uncertainty quantification and shallow
-ensemble method can be found in [this](https://doi.org/10.1088/2632-2153/ad594a) and
-[this](https://doi.org/10.1088/2632-2153/ad805f) papers. 
+per atom or for the whole system. More details on the LLPR uncertainty quantification and shallow
+ensemble methods can be found in [this](https://doi.org/10.1088/2632-2153/ad594a) and
+[this](https://doi.org/10.1088/2632-2153/ad805f) papers respectively. 
 
 
 ### Rotational Averaging
@@ -432,8 +400,8 @@ ensemble method can be found in [this](https://doi.org/10.1088/2632-2153/ad594a)
 By design, UPET models are not exactly equivariant w.r.t. rotations and inversions. Although
 the equivariance error is typically much smaller than the overall model error, in some cases
 (like geometry optimizations and phonon calculations of highly symmetrical structures)
-it may be beneficial to enforce additional rotational averaging to improve the stability
-of the calculation. This can be done by setting the `rotational_average_order` parameter
+it may be beneficial to enforce additional rotational averaging to improve the symmetry
+of the predictions. This can be done by setting the `rotational_average_order` parameter
 when initializing the `UPETCalculator` class:
 
 ```python
@@ -473,7 +441,7 @@ stresses_rot_std = calculator.results['stresses_rot_std']
 
 #### In **ASE**:
 
-You can combine the UPET calculator with the torch based implementation of
+You can combine the UPET calculator with the torch-based implementation of
 the D3 dispersion correction of `pfnet-research` - `torch-dftd`:
 
 Within the UPET environment you can install `torch-dftd` via:
@@ -503,9 +471,9 @@ atoms.calc = combined_calc
 
 ### Calculating the DOS, Fermi levels, and bandgaps
 
-UPET package also allows the use of the **PET-MAD-DOS** model to predict
+The UPET package also allows the use of the **PET-MAD-DOS** model to predict
 electronic density of states of materials, as well as their Fermi levels and
-bandgaps. The **PET-MAD-DOS** model is also available in the **ASE** interface.
+bandgaps. The **PET-MAD-DOS** model is available from its **ASE** interface.
 
 ```python
 from upet.calculator import PETMADDOSCalculator
@@ -586,13 +554,13 @@ chemiscope.explore(
 ### General Information
 UPET models can be fine-tuned using the
 [Metatrain](https://docs.metatensor.org/metatrain/latest/generated_examples/0-beginner/02-fine-tuning.html)
-library. At the moment, we recommend fine-tuning from our OMat models, because they are
+library. At the moment, we recommend fine-tuning from our OMat models, as they are
 pre-trained on a very large dataset and they come in all sizes (from XS to XL, allowing
 you to choose a good trade-off for your application).
 
-### Heads Selection
-It's important to note, that by default the `UPETCalculator` class uses the default 
-energy and non-conservative forces/stresses heads provided with the pre-trained models.
+### Head Selection
+It's important to note that by default the `UPETCalculator` class uses the 
+energy and non-conservative forces/stresses heads **provided with the pre-trained models**.
 If you fine-tune the model and create a new head for your energy target, you should 
 explicitly select the corresponding energy variant on runtime (same for non-conservative
 forces/stresses). Let's consider an example, where you fine-tune the energy head
@@ -659,13 +627,11 @@ Additional documentation can be found in the
 
 **What model should I use for my application?**
 
-- For molecular dynamics simulations, we recommend using the **PET-MAD v1.5.0** model. 
+- For molecular dynamics simulations, we recommend using the **PET-MAD v1.5.0** models. 
 - For materials discovery tasks (convex hull energies, geometry optimization, phonons, etc),
   we recommend using the **PET-OAM** models.
 - For accurate and fast simulations of biomolecules, we recommend using the **PET-SPICE** models.
-- In case the accuracy of the PBE functionals is not sufficient for your application,
-  you can try the **PET-OMATPES** model for simulations of materials.
-- If you want to fine-tune your own model, we recommend starting from the **PET-OMAT** checkpoints,
+- If you want to fine-tune your own model, we recommend starting from the **PET-OMat** checkpoints,
   and select an appropriate size (from XS to XL) for your needs.
 - In any case, we recommend starting from the smaller models (XS or S) to benchmark your application,
   and then scaling up to larger models if you need more accuracy.
