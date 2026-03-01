@@ -148,7 +148,10 @@ def upet_resolve_model(
 
 
 def _get_upet_exported_atomistic_model(
-    model: str, size: str, version: Version, checkpoint_path: Optional[str] = None
+    model: Optional[str] = None,
+    size: Optional[str] = None,
+    version: Optional[Union[str, Version]] = "latest",
+    checkpoint_path: Optional[str] = None,
 ) -> AtomisticModel:
     """
     Internal helper to load a UPET AtomisticModel without caching or TorchScript.
