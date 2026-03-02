@@ -113,8 +113,8 @@ discovery tasks (convex hull energies, geometry optimization, phonons, etc), and
 simulations of molecules and biomolecules.
 
 **Deprecated models**:
-- PET-MAD v1.0.2 and v1.1.0 models are deprecated in favor of a newer PET-MAD v1.5.0 
-- PET-OMAD v0.1.0 and v1.0 models are deprecated in favor of a newer PET-MAD v1.5.0 
+- PET-MAD v1.0.2 and v1.1.0 models are deprecated in favor of the newer PET-MAD v1.5.0 
+- PET-OMAD v0.1.0 and v1.0 models are deprecated in favor of the newer PET-MAD v1.5.0 
 
 All the checkpoints are available on the [HuggingFace repository](https://huggingface.co/lab-cosmo/upet).
 
