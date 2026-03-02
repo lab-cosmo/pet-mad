@@ -1,7 +1,7 @@
 [project]
 name = "upet"
 dynamic = ["version"]
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 
 readme = "README.md"
 license = {"text" = "BSD-3-Clause"}
@@ -24,6 +24,7 @@ maintainers = [
 
 dependencies = [
     "metatrain>=2026.2,<2026.3",
+    "nvalchemi-toolkit-ops",
     "huggingface_hub",
     "hf_xet",
     "packaging",
@@ -108,6 +109,7 @@ filterwarnings = [
     # TorchScript deprecation warnings
     "ignore: `torch.jit.script` is deprecated. Please switch to `torch.compile` or `torch.export`.",
     "ignore: `torch.jit.load` is deprecated. Please switch to `torch.export`.",
+    "ignore: `torch.jit.script_method` is deprecated. Please switch to `torch.compile` or `torch.export`.",
     # PET-MAD v1.0 deprecation warning
-    "ignore:.*is deprecated in favor of a newer PET-MAD-1.5.*:DeprecationWarning",
+    "ignore:.*is deprecated in favor of the newer PET-MAD-1.5.*:DeprecationWarning",
 ]

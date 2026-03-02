@@ -183,8 +183,8 @@ def _get_upet_exported_atomistic_model(
         if model_name in DEPRECATED_MODELS:
             if "mad" in model_name:
                 warn_msg = (
-                    f"Model {model_name} is deprecated in favor of a newer PET-MAD-1.5 "
-                    "version. Please use the latest PET-MAD-1.5 model "
+                    f"Model {model_name} is deprecated in favor of the newer "
+                    "PET-MAD-1.5 version. Please use the latest PET-MAD-1.5 model "
                     "(e.g., pet-mad-s-v1.5.0) for better performance and accuracy "
                     "across 102 elements at the r2SCAN level of theory."
                 )
