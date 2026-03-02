@@ -278,7 +278,7 @@ def save_upet(
         else:
             output = "model.pt"
 
-    exported_model.save(output)
+    exported_model.to("cpu").save(output)
     logging.info(f"Saved UPET model to {output}")
 
 
