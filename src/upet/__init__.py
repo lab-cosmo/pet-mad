@@ -7,6 +7,7 @@ import torch
 from ._models import get_upet, save_upet
 
 
+# hides a harmless warning from nvalchemi's neighbor list implmentation
 warnings.filterwarnings(
     "ignore",
     category=UserWarning,
