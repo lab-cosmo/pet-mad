@@ -1,9 +1,17 @@
 __version__ = "0.2.0"
 
+import warnings
+
 import torch
 
 from ._models import get_upet, save_upet
 
+
+warnings.filterwarnings(
+    "ignore",
+    category=UserWarning,
+    message="The .grad attribute of a Tensor that is not a leaf Tensor",
+)
 
 # Disable static fusion. Besides the fact that atomistic batches have variable
 # sizes, statically fused CUDA kernels cannot allocate new tensors at runtime,
