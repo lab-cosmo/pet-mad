@@ -120,7 +120,7 @@ expected to have worse performance than the models listed above.
 | Name        | Level of theory         | Available sizes        | To be used for          | Training set          |
 |:------------|:-----------------------:|:----------------------:|:-----------------------:|:---------------------:|
 | PET-MAD-1   | PBESol                  | S                      | materials and molecules | MAD-1.0               |
-| PET-OMAD    | PBESol                  | XS, S, M, L, XL        | materials               | OMat -> MAD-1.0       |
+| PET-OMAD    | PBESol                  | XS, S, L               | materials               | OMat -> MAD-1.0       |
 
 All the checkpoints are available on the [HuggingFace repository](https://huggingface.co/lab-cosmo/upet).
 
