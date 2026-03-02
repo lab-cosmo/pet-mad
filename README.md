@@ -112,9 +112,15 @@ solutions, metal complexes and other challenging systems, PET-OAM models for mat
 discovery tasks (convex hull energies, geometry optimization, phonons, etc), and PET-SPICE for accurate and fast 
 simulations of molecules and biomolecules.
 
-**Deprecated models**:
-- PET-MAD v1.0.2 and v1.1.0 models are deprecated in favor of the newer PET-MAD v1.5.0 
-- PET-OMAD v0.1.0 and v1.0 models are deprecated in favor of the newer PET-MAD v1.5.0 
+**Legacy models**:
+
+For reproducibility or to cover specific use case we also provide a few additional models, even though they are 
+expected to have worse performance than the models listed above. 
+
+| Name        | Level of theory         | Available sizes        | To be used for          | Training set          |
+|:------------|:-----------------------:|:----------------------:|:-----------------------:|:---------------------:|
+| PET-MAD-1   | PBESol                  | S                      | materials and molecules | MAD-1.0               |
+| PET-OMAD    | PBESol                  | XS, S, L               | materials               | OMat -> MAD-1.0       |
 
 All the checkpoints are available on the [HuggingFace repository](https://huggingface.co/lab-cosmo/upet).
 

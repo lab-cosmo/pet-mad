@@ -27,13 +27,7 @@ UPET_UQ_SUPPORTED_MODELS = [
     "pet-mad-s-v1.5.0",
 ]
 
-DEPRECATED_MODELS = [
-    "pet-mad-s-v1.0.2",
-    "pet-mad-s-v1.1.0",
-    "pet-omad-xs-v1.0.0",
-    "pet-omad-s-v1.0.0",
-    "pet-omad-l-v0.1.0",
-]
+DEPRECATED_MODELS: list[str] = []
 
 # PET-MAD DOS
 PET_MAD_DOS_LATEST_STABLE_VERSION = "1.0"
