@@ -165,15 +165,22 @@ def _get_upet_exported_atomistic_model(
         logging.info(f"Loading model from checkpoint: {checkpoint_path}")
         path = checkpoint_path
     else:
-        # Remote loading requires model and size
-        if model is None or size is None:
-            raise ValueError(
-                "'model' and 'size' are required when not using checkpoint_path"
-            )
+        if model is None:
+            raise ValueError("'model' is required when not using checkpoint_path")
 
-        # Ensure version is a Version object
-        if not isinstance(version, Version):
-            version = Version(version) if version and version != "latest" else None
+        # Resolve size and version via upet_resolve_model, which handles
+        # defaults (prefers 's'), validates against available checkpoints,
+        # and correctly resolves "latest" to an actual version number.
+        # Previously, passing version="latest" would reach hf_hub_download
+        # as None and produce a broken "pet-mad-s-vNone" filename.
+        requested_version = (
+            None if (version is None or version == "latest") else str(version)
+        )
+        size, version = upet_resolve_model(
+            model=model,
+            requested_size=size,
+            requested_version=requested_version,
+        )
 
         model_name = f"{model}-{size}-v{version}"
         if model_name in DEPRECATED_MODELS:
