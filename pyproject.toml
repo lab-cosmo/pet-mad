@@ -23,7 +23,7 @@ maintainers = [
 ]
 
 dependencies = [
-    "metatrain==2026.2",
+    "metatrain>=2026.2,<2026.3",
     "nvalchemi-toolkit-ops",
     "huggingface_hub",
     "hf_xet",
@@ -62,16 +62,6 @@ requires = [
     "wheel",
 ]
 build-backend = "setuptools.build_meta"
-
-[project.optional-dependencies]
-deprecated = [
-    "pet-neighbors-convert",
-    "torch-geometric",
-    "matscipy",
-    "scikit-learn",
-    "pathos",
-    "scipy",
-]
 
 [tool.setuptools.packages.find]
 where = ["src"]
