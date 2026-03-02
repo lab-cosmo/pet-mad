@@ -147,24 +147,17 @@ def upet_resolve_model(
     return size, version
 
 
-def get_upet(
-    *,
+def _get_upet_exported_atomistic_model(
     model: Optional[str] = None,
     size: Optional[str] = None,
     version: Optional[Union[str, Version]] = "latest",
     checkpoint_path: Optional[str] = None,
 ) -> AtomisticModel:
-    """Get a metatomic ``AtomisticModel`` for a UPET MLIP.
+    """
+    Internal helper to load a UPET AtomisticModel without caching or TorchScript.
 
-    :param model: name of the UPET model. Required when not using checkpoint_path,
-        or when checkpoint_path has non-standard naming.
-    :param size: size of the UPET model. Required when not using checkpoint_path,
-        or when checkpoint_path has non-standard naming.
-    :param version: version of the UPET model.
-    :param checkpoint_path: path to a checkpoint file to load the model from.
-        If the filename follows standard naming (e.g., "pet-mad-s-v1.0.2.ckpt"),
-        model/size/version are extracted automatically, while the `model` and
-        `version` parameters are ignored.
+    This function is separate from get_upet() to allow for caching and post-processing
+    in the public API function.
     """
     if checkpoint_path is not None:
         # Try to parse info from checkpoint filename
@@ -214,9 +207,33 @@ def get_upet(
         )
         loaded_model = load_metatrain_model(path)
 
-    # Generate metadata based on available info
     metadata = get_upet_metadata(model=model, size=size, version=str(version))
     exported_model = loaded_model.export(metadata)
+    return exported_model
+
+
+def get_upet(
+    *,
+    model: Optional[str] = None,
+    size: Optional[str] = None,
+    version: Optional[Union[str, Version]] = "latest",
+    checkpoint_path: Optional[str] = None,
+) -> AtomisticModel:
+    """Get a metatomic ``AtomisticModel`` for a UPET MLIP.
+
+    :param model: name of the UPET model. Required when not using checkpoint_path,
+        or when checkpoint_path has non-standard naming.
+    :param size: size of the UPET model. Required when not using checkpoint_path,
+        or when checkpoint_path has non-standard naming.
+    :param version: version of the UPET model.
+    :param checkpoint_path: path to a checkpoint file to load the model from.
+        If the filename follows standard naming (e.g., "pet-mad-s-v1.0.2.ckpt"),
+        model/size/version are extracted automatically, while the `model` and
+        `version` parameters are ignored.
+    """
+    exported_model = _get_upet_exported_atomistic_model(
+        model=model, size=size, version=version, checkpoint_path=checkpoint_path
+    )
 
     # TorchScript the model
     for parameter in exported_model.parameters():
@@ -245,7 +262,7 @@ def save_upet(
     :param output: path for the output model. Defaults to "{model}-{size}-v{version}.pt"
         or "model.pt" for non-standard checkpoint names.
     """
-    loaded_model = get_upet(
+    exported_model = _get_upet_exported_atomistic_model(
         model=model, size=size, version=version, checkpoint_path=checkpoint_path
     )
 
@@ -261,7 +278,7 @@ def save_upet(
         else:
             output = "model.pt"
 
-    torch.jit.save(loaded_model.to("cpu"), output)
+    exported_model.to("cpu").save(output)
     logging.info(f"Saved UPET model to {output}")
 
 
