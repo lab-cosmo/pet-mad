@@ -690,8 +690,22 @@ This is most likely a bug introduced in a recent PR in lammps-metatomic. For now
 
 ## Citing UPET Models
 
-If you use any of the UPET models in your research, please cite the appropriate article:
+If you found our models useful, you can cite the corresponding articles.
 
+PET-MAD-1.5:
+```bibtex
+@misc{PET-MAD-1.5-2026,
+      title={High-quality, high-information datasets for universal atomistic machine learning}, 
+      author={Cesare Malosso and Filippo Bigi and Paolo Pegolo and Joseph W. Abbott and Philip Loche and Mariana Rossi and Michele Ceriotti and Arslan Mazitov},
+      year={2026},
+      eprint={2603.02089},
+      archivePrefix={arXiv},
+      primaryClass={cond-mat.mtrl-sci},
+      url={https://arxiv.org/abs/2603.02089}, 
+}
+```
+
+Current UPET architecture, PET-OAM, PET-OMat, PET-OMAD, PET-OMATPES, PET-SPICE:
 ```bibtex
 @misc{pushing-unconstrained-2026,
       title={Pushing the limits of unconstrained machine-learned interatomic potentials}, 
@@ -702,6 +716,10 @@ If you use any of the UPET models in your research, please cite the appropriate 
       primaryClass={physics.chem-ph},
       url={https://arxiv.org/abs/2601.16195}, 
 }
+```
+
+PET-MAD:
+```bibtex
 @misc{PET-MAD-2025,
       title={PET-MAD as a lightweight universal interatomic potential for advanced materials modeling},
       author={Mazitov, Arslan and Bigi, Filippo and Kellner, Matthias and Pegolo, Paolo and Tisi, Davide and Fraux, Guillaume and Pozdnyakov, Sergey and Loche, Philip and Ceriotti, Michele},
@@ -712,6 +730,10 @@ If you use any of the UPET models in your research, please cite the appropriate 
       year={2025},
       url={https://doi.org/10.1038/s41467-025-65662-7},
 }
+```
+
+PET-MAD-DOS:
+```bibtex
 @misc{PET-MAD-DOS-2025,
       title={A universal machine learning model for the electronic density of states}, 
       author={Wei Bin How and Pol Febrer and Sanggyu Chong and Arslan Mazitov and Filippo Bigi and Matthias Kellner and Sergey Pozdnyakov and Michele Ceriotti},
