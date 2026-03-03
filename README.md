@@ -287,7 +287,7 @@ atom_style atomic
 
 read_data silicon.data
 
-pair_style metatomic model.pt device cpu # Change device to 'cuda' evaluate UPET on GPU
+pair_style metatomic model.pt device cuda  # change device to 'cpu' to use the CPU instead
 pair_coeff * * 14
 
 neighbor 2.0 bin
