@@ -342,6 +342,16 @@ lmp -in lammps.in  # serial version
 mpirun -np 1 lmp -in lammps.in  # MPI version
 ```
 
+> [!WARNING]
+> Please note that `neigh_modify` setting is particularly important
+> for running PET-MAD v1.5 models, especially for dense systems with
+> a large number of neighbors. This is due to the adaptive cutoff strategy
+> that requires a large initial buffer of neighbors before truncation. 
+> If your system is extremely dense, you may need to increase the `one`
+> and `page` parameters even further to avoid the neighborlist overflow.
+> Finally, the `binsize` parameter is important for KOKKOS version of the
+> code to avoid a bug with an empty neighborlist. 
+
 ##### 2.2. KOKKOS-enabled GPU version
 
 Running LAMMPS with KOKKOS and GPU support is similar to the CPU version, but
@@ -635,6 +645,14 @@ Additional documentation can be found in the
 
 ## FAQs
 
+In general, if you see that something doens't work as you expect, please update
+to the latest version of the UPET package (and simulation engines like `lammps-metatomic`),
+before spending hours on debugging or reporting the issue immediately. Our codebase evolves quickly,
+and chances are your issue has been already fixed in a recent update. If you still see
+the issue after updating, please follow the FAQs below, and open an [issue](https://github.com/lab-cosmo/upet/issues) 
+or a [discussion](https://github.com/lab-cosmo/upet/discussions) in case you didn't find the
+answer. 
+
 **What model should I use for my application?**
 
 - For molecular dynamics simulations, we recommend using the **PET-MAD v1.5.0** models. 
@@ -688,8 +706,9 @@ There are two aspects to this:
 **Simulation blows up with lammps-metatomic 2025.9.10.mta2**
 
 While running upet models with the version above, we observe that simulations blow up. 
-This is most likely a bug introduced in a recent PR in lammps-metatomic. For now, we recommend using
-`lammps-metatomic==2025.9.10.mta1`. 
+This is most likely a bug introduced in a recent PR in lammps-metatomic. Please
+update to the latest version of lammps-metatomic, `2025.9.10.mta3` or later, to fix this 
+issue.
 
 
 ## Citing UPET Models
