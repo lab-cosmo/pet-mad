@@ -291,6 +291,8 @@ pair_style metatomic model.pt device cpu # Change device to 'cuda' evaluate UPET
 pair_coeff * * 14
 
 neighbor 2.0 bin
+neigh_modify one 100000 page 1000000 binsize 5.5
+
 timestep 0.001
 
 dump myDump all xyz 10 trajectory.xyz
@@ -302,6 +304,8 @@ thermo 1
 velocity all create 300 87287 mom yes rot yes
 
 fix 1 all nvt temp 300 300 0.10
+run_style verlet
+
 
 run 100
 ```
