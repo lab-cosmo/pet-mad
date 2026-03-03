@@ -1,4 +1,5 @@
 UPET_AVAILABLE_MODELS = [
+    "pet-mad-xs",
     "pet-mad-s",
     "pet-omat-xs",
     "pet-omat-s",
