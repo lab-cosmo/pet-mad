@@ -17,9 +17,8 @@ jobs:
             python-version: "3.13"
           - os: macos-15
             python-version: "3.13"
-          # To be restored once we figure out the issue with the windows build
-          # - os: windows-2019
-          #   python-version: "3.13"
+          - os: windows-2022
+            python-version: "3.13"
 
     runs-on: ${{ matrix.os }}
 
