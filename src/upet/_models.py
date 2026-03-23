@@ -36,6 +36,20 @@ def _get_upet_repo_files() -> List[str]:
     return [f[7:] for f in repo_files if f.startswith("models/")]
 
 
+def get_available_models() -> List[str]:
+    """Get all available base model names from the HuggingFace repository.
+
+    :return: Sorted list of base model names (e.g., ["pet-mad", "pet-omat", ...])
+    """
+    files = _get_upet_repo_files()
+    models = set()
+    for f in files:
+        match = CHECKPOINT_NAME_PATTERN.match(f)
+        if match:
+            models.add(match.group("model"))
+    return sorted(models)
+
+
 def get_sizes_for_model(model: str) -> List[str]:
     """Get all available sizes for a given model from the cached repo files.
 
@@ -276,6 +290,64 @@ def save_upet(
 
     exported_model.to("cpu").save(output)
     logging.info(f"Saved UPET model to {output}")
+
+
+def list_upet(
+    *,
+    model: Optional[str] = None,
+    size: Optional[str] = None,
+    print_summary: bool = True,
+) -> dict:
+    """List available UPET models, sizes, and versions.
+
+    When called without arguments, returns the available base model names.
+    When ``model`` is given, returns the available sizes and versions for that model.
+    When both ``model`` and ``size`` are given, returns the available versions for
+    that specific model/size combination.
+
+    :param model: Base model name (e.g., "pet-mad", "pet-omat"). If ``None``,
+        lists all available models.
+    :param size: Model size (e.g., "s", "m", "l"). If ``None`` and ``model`` is
+        given, lists all sizes and their versions for that model.
+    :param print_summary: Whether to print a human-readable summary to stdout.
+        Defaults to ``True``.
+    :return: A dictionary with the available information. The keys depend on the
+        arguments:
+
+        - No arguments: ``{"models": ["pet-mad", ...]}``
+        - ``model`` only: ``{"model": "pet-mad", "sizes": {"xs": [...], "s": [...]}}``
+          where values are lists of version strings.
+        - ``model`` and ``size``:
+          ``{"model": "pet-mad", "size": "s", "versions": ["1.0.2", "1.5.0"]}``
+    """
+    if model is None:
+        models = get_available_models()
+        result = {"models": models}
+        if print_summary:
+            print("Available UPET models:")
+            for m in models:
+                print(f"  - {m}")
+        return result
+
+    if size is None:
+        sizes = get_sizes_for_model(model)
+        size_versions = {
+            s: [str(v) for v in get_versions_for_model(model, s)] for s in sizes
+        }
+        result = {"model": model, "sizes": size_versions}
+        if print_summary:
+            print(f"Available sizes and versions for {model}:")
+            for s, versions in size_versions.items():
+                print(f"  - {s}: {', '.join(versions)}")
+        return result
+
+    versions = [str(v) for v in get_versions_for_model(model, size)]
+    result = {"model": model, "size": size, "versions": versions}
+    if print_summary:
+        print(f"Available versions for {model} (size {size}):")
+        for v in versions:
+            print(f"  - {v}")
+    return result
 
 
 BASE_URL_PET_MAD_DOS = "https://huggingface.co/lab-cosmo/pet-mad-dos/resolve/{tag}/models/pet-mad-dos-{version}.pt"
