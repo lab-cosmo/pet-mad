@@ -68,9 +68,12 @@ def list_available_models(model: Optional[str] = None, size: Optional[str] = Non
     List available models in the Hugging Face repository, optionally filtered by
     model and size.
 
-    :param model: Base model name to filter by (e.g., "pet-mad"). If None, includes all models.
-    :param size: Model size to filter by (e.g., "s", "m"). If None, includes all sizes for the specified model(s).
-    :return: List of available model identifiers (without .ckpt extension) matching the specified filters.
+    :param model: Base model name to filter by (e.g., "pet-mad"). If None,
+        includes all models.
+    :param size: Model size to filter by (e.g., "s", "m"). If None, includes
+        all sizes for the specified model(s).
+    :return: List of available model identifiers (without .ckpt extension)
+        matching the specified filters.
     """
     files = _get_upet_repo_files()
     if model is None:

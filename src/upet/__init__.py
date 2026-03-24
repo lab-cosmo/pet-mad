@@ -33,4 +33,4 @@ wp_utils.warn = _warn_filtered
 # causing "Global alloc not supported yet" errors (cuda 13+) at the time of writing
 torch.jit.set_fusion_strategy([("DYNAMIC", 10)])
 
-__all__ = ["get_upet", "save_upet"]
+__all__ = ["get_upet", "save_upet", "list_available_models"]
