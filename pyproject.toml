@@ -30,7 +30,6 @@ dependencies = [
     "packaging",
     "platformdirs",
     "tqdm",
-    "scipy>=1.15.0,<1.17.0",
 ]
 
 keywords = ["machine learning", "molecular modeling"]
