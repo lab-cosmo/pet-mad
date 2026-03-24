@@ -79,7 +79,6 @@ def list_available_models(model: Optional[str] = None, size: Optional[str] = Non
         prefix = f"{model}-"
     else:
         prefix = f"{model}-{size}"
-    sizes_order = ["xs", "s", "m", "l", "xl"]
     return [f.rstrip(".ckpt") for f in files if f.startswith(prefix)]
 
 
