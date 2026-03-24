@@ -111,4 +111,7 @@ filterwarnings = [
     "ignore: `torch.jit.script_method` is deprecated. Please switch to `torch.compile` or `torch.export`.",
     # PET-MAD v1.0 deprecation warning
     "ignore:.*is deprecated in favor of the newer PET-MAD-1.5.*:DeprecationWarning",
+    # NVAlchemiOps Deprecation warning
+    "ignore: The 'nvalchemiops.neighborlist' module has been renamed to 'nvalchemiops.neighbors'.*:DeprecationWarning",
+    "ignore: From version 0.3.0 onwards, PyTorch is now an optional dependency.*:DeprecationWarning",
 ]
