@@ -130,10 +130,10 @@ UPET integrates with the following atomistic simulation engines:
 
 - **Atomic Simulation Environment (ASE)**
 - **LAMMPS** (including KOKKOS support)
+- **GROMACS**
 - **i-PI**
 - **TorchSim**
 - **OpenMM** (coming soon)
-- **GROMACS** (coming soon)
 
 ## Usage
 
@@ -174,6 +174,26 @@ calculator = UPETCalculator(checkpoint_path="pet-mad-s-v1.5.0.ckpt", device="cpu
 These ASE methods are ideal for single-structure evaluations, but they are
 inefficient for the evaluation on a large number of pre-defined structures. To
 perform efficient batched evaluation in that case, read [here](docs/README_BATCHED.md).
+
+If the `version` argument is not specified, the latest available version of the model
+will be downloaded and used by default.
+
+```python
+from upet.calculator import UPETCalculator
+
+calculator = UPETCalculator(model="pet-mad-s", device="cpu") # uses the latest version of the PET-MAD-S model by default
+```
+
+You can get the list of available versions for a given model using the
+`list_available_models` function:
+
+```python
+from upet import list_available_models
+
+list_available_models(model="pet-mad", size="s") # for PET-MAD model of size S
+list_available_models(model="pet-mad") # for all PET-MAD models of all sizes
+list_available_models() # for all available UPET models
+```
 
 #### Non-conservative (direct) forces and stresses prediction
 
