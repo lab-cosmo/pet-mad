@@ -5,7 +5,7 @@ import warnings
 import torch
 from warp._src import utils as wp_utils
 
-from ._models import get_upet, save_upet
+from ._models import get_upet, list_available_models, save_upet
 
 
 # hides a harmless warning from nvalchemi's neighbor list implmentation
