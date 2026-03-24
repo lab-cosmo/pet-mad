@@ -297,56 +297,45 @@ def list_upet(
     model: Optional[str] = None,
     size: Optional[str] = None,
     print_summary: bool = True,
-) -> dict:
+) -> List[dict]:
     """List available UPET models, sizes, and versions.
 
-    When called without arguments, returns the available base model names.
-    When ``model`` is given, returns the available sizes and versions for that model.
-    When both ``model`` and ``size`` are given, returns the available versions for
-    that specific model/size combination.
+    When called without arguments, returns all available model/size/version
+    combinations. When ``model`` is given, filters to that model. When both
+    ``model`` and ``size`` are given, filters to that specific combination.
 
     :param model: Base model name (e.g., "pet-mad", "pet-omat"). If ``None``,
         lists all available models.
     :param size: Model size (e.g., "s", "m", "l"). If ``None`` and ``model`` is
-        given, lists all sizes and their versions for that model.
+        given, lists all sizes for that model.
     :param print_summary: Whether to print a human-readable summary to stdout.
         Defaults to ``True``.
-    :return: A dictionary with the available information. The keys depend on the
-        arguments:
-
-        - No arguments: ``{"models": ["pet-mad", ...]}``
-        - ``model`` only: ``{"model": "pet-mad", "sizes": {"xs": [...], "s": [...]}}``
-          where values are lists of version strings.
-        - ``model`` and ``size``:
-          ``{"model": "pet-mad", "size": "s", "versions": ["1.0.2", "1.5.0"]}``
+    :return: A list of dictionaries, each with keys ``"model"``, ``"size"``,
+        and ``"version"``.
     """
     if model is None:
         models = get_available_models()
-        result = {"models": models}
-        if print_summary:
-            print("Available UPET models:")
-            for m in models:
-                print(f"  - {m}")
-        return result
+    else:
+        models = [model]
 
-    if size is None:
-        sizes = get_sizes_for_model(model)
-        size_versions = {
-            s: [str(v) for v in get_versions_for_model(model, s)] for s in sizes
-        }
-        result = {"model": model, "sizes": size_versions}
-        if print_summary:
-            print(f"Available sizes and versions for {model}:")
-            for s, versions in size_versions.items():
-                print(f"  - {s}: {', '.join(versions)}")
-        return result
+    result = []
+    for m in models:
+        if size is None:
+            sizes = get_sizes_for_model(m)
+        else:
+            sizes = [size]
+        for s in sizes:
+            for v in get_versions_for_model(m, s):
+                result.append({"model": m, "size": s, "version": str(v)})
 
-    versions = [str(v) for v in get_versions_for_model(model, size)]
-    result = {"model": model, "size": size, "versions": versions}
     if print_summary:
-        print(f"Available versions for {model} (size {size}):")
-        for v in versions:
-            print(f"  - {v}")
+        if not result:
+            print("No UPET models found.")
+        else:
+            print("Available UPET models:")
+            for entry in result:
+                print(f"  - {entry['model']}-{entry['size']} v{entry['version']}")
+
     return result
 
 
