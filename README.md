@@ -185,14 +185,14 @@ calculator = UPETCalculator(model="pet-mad-s", device="cpu") # uses the latest v
 ```
 
 You can get the list of available versions for a given model using the
-`list_available_models` function:
+`list_upet` function:
 
 ```python
-from upet import list_available_models
+from upet import list_upet
 
-list_available_models(model="pet-mad", size="s") # for PET-MAD model of size S
-list_available_models(model="pet-mad") # for all PET-MAD models of all sizes
-list_available_models() # for all available UPET models
+list_upet(model="pet-mad", size="s") # for PET-MAD model of size S
+list_upet(model="pet-mad") # for all PET-MAD models of all sizes
+list_upet() # for all available UPET models
 ```
 
 #### Non-conservative (direct) forces and stresses prediction
