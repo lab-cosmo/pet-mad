@@ -1,10 +1,13 @@
+import os
+
 import pytest
 from ase.build import bulk, molecule
 
 from upet._models import (
     get_upet,
     get_versions_for_model,
-    list_available_models,
+    list_upet,
+    save_upet,
     upet_resolve_model,
 )
 from upet._version import UPET_AVAILABLE_MODELS
@@ -55,12 +58,25 @@ def test_get_upet(model_name):
         get_upet(model=model, size=size, version=version)
 
 
-@pytest.mark.parametrize("model", ["pet-mad"])
-@pytest.mark.parametrize("size", ["xs", "s", "m"])
-def test_list_available_models(model: str, size: str):
-    available_models = list_available_models(model=model, size=size)
-    for m in available_models:
-        assert m.startswith(f"{model}-{size}")
+def test_list_models():
+    result = list_upet(print_summary=False)
+    assert len(result) > 0
+    assert all(
+        "model" in entry and "size" in entry and "version" in entry for entry in result
+    )
+    assert any(entry["model"] == "pet-mad" for entry in result)
+
+
+def test_list_sizes_for_model():
+    result = list_upet(model="pet-mad", print_summary=False)
+    assert len(result) > 0
+    assert all(entry["model"] == "pet-mad" for entry in result)
+
+
+def test_list_versions_for_model_and_size():
+    result = list_upet(model="pet-mad", size="s", print_summary=False)
+    assert len(result) > 0
+    assert all(entry["model"] == "pet-mad" and entry["size"] == "s" for entry in result)
 
 
 @pytest.mark.parametrize("model_name", UPET_AVAILABLE_MODELS)
@@ -85,3 +101,10 @@ def test_basic_usage(model_name):
         assert isinstance(energy, float)
         assert forces.shape == (len(atoms), 3)
         assert virial.shape == (6,)
+
+
+def test_save_upet(tmp_path):
+    output_path = str(tmp_path / "pet-mad-xs.pt")
+    save_upet(model="pet-mad", size="xs", output=output_path)
+    assert os.path.isfile(output_path)
+    assert os.path.getsize(output_path) > 0

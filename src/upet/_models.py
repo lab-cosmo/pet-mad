@@ -77,28 +77,6 @@ def get_versions_for_model(model: str, size: str) -> List[Version]:
     return sorted(set(versions))
 
 
-def list_available_models(model: Optional[str] = None, size: Optional[str] = None):
-    """
-    List available models in the Hugging Face repository, optionally filtered by
-    model and size.
-
-    :param model: Base model name to filter by (e.g., "pet-mad"). If None,
-        includes all models.
-    :param size: Model size to filter by (e.g., "s", "m"). If None, includes
-        all sizes for the specified model(s).
-    :return: List of available model identifiers (without .ckpt extension)
-        matching the specified filters.
-    """
-    files = _get_upet_repo_files()
-    if model is None:
-        prefix = ""
-    elif size is None:
-        prefix = f"{model}-"
-    else:
-        prefix = f"{model}-{size}"
-    return [f.rstrip(".ckpt") for f in files if f.startswith(prefix)]
-
-
 def parse_checkpoint_filename(
     path: str,
 ) -> Union[Tuple[str, str, Version], Tuple[None, None, None]]:
