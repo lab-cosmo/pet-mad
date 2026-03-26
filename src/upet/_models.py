@@ -36,6 +36,20 @@ def _get_upet_repo_files() -> List[str]:
     return [f[7:] for f in repo_files if f.startswith("models/")]
 
 
+def get_available_models() -> List[str]:
+    """Get all available base model names from the HuggingFace repository.
+
+    :return: Sorted list of base model names (e.g., ["pet-mad", "pet-omat", ...])
+    """
+    files = _get_upet_repo_files()
+    models = set()
+    for f in files:
+        match = CHECKPOINT_NAME_PATTERN.match(f)
+        if match:
+            models.add(match.group("model"))
+    return sorted(models)
+
+
 def get_sizes_for_model(model: str) -> List[str]:
     """Get all available sizes for a given model from the cached repo files.
 
@@ -276,6 +290,53 @@ def save_upet(
 
     exported_model.to("cpu").save(output)
     logging.info(f"Saved UPET model to {output}")
+
+
+def list_upet(
+    *,
+    model: Optional[str] = None,
+    size: Optional[str] = None,
+    print_summary: bool = True,
+) -> List[dict]:
+    """List available UPET models, sizes, and versions.
+
+    When called without arguments, returns all available model/size/version
+    combinations. When ``model`` is given, filters to that model. When both
+    ``model`` and ``size`` are given, filters to that specific combination.
+
+    :param model: Base model name (e.g., "pet-mad", "pet-omat"). If ``None``,
+        lists all available models.
+    :param size: Model size (e.g., "s", "m", "l"). If ``None`` and ``model`` is
+        given, lists all sizes for that model.
+    :param print_summary: Whether to print a human-readable summary to stdout.
+        Defaults to ``True``.
+    :return: A list of dictionaries, each with keys ``"model"``, ``"size"``,
+        and ``"version"``.
+    """
+    if model is None:
+        models = get_available_models()
+    else:
+        models = [model]
+
+    result = []
+    for m in models:
+        if size is None:
+            sizes = get_sizes_for_model(m)
+        else:
+            sizes = [size]
+        for s in sizes:
+            for v in get_versions_for_model(m, s):
+                result.append({"model": m, "size": s, "version": str(v)})
+
+    if print_summary:
+        if not result:
+            print("No UPET models found.")
+        else:
+            print("Available UPET models:")
+            for entry in result:
+                print(f"  - {entry['model']}-{entry['size']} v{entry['version']}")
+
+    return result
 
 
 BASE_URL_PET_MAD_DOS = "https://huggingface.co/lab-cosmo/pet-mad-dos/resolve/{tag}/models/pet-mad-dos-{version}.pt"

@@ -1,7 +1,15 @@
+import os
+
 import pytest
 from ase.build import bulk, molecule
 
-from upet._models import get_upet, get_versions_for_model, upet_resolve_model
+from upet._models import (
+    get_upet,
+    get_versions_for_model,
+    list_upet,
+    save_upet,
+    upet_resolve_model,
+)
 from upet._version import UPET_AVAILABLE_MODELS
 from upet.calculator import UPETCalculator
 
@@ -50,6 +58,27 @@ def test_get_upet(model_name):
         get_upet(model=model, size=size, version=version)
 
 
+def test_list_models():
+    result = list_upet(print_summary=False)
+    assert len(result) > 0
+    assert all(
+        "model" in entry and "size" in entry and "version" in entry for entry in result
+    )
+    assert any(entry["model"] == "pet-mad" for entry in result)
+
+
+def test_list_sizes_for_model():
+    result = list_upet(model="pet-mad", print_summary=False)
+    assert len(result) > 0
+    assert all(entry["model"] == "pet-mad" for entry in result)
+
+
+def test_list_versions_for_model_and_size():
+    result = list_upet(model="pet-mad", size="s", print_summary=False)
+    assert len(result) > 0
+    assert all(entry["model"] == "pet-mad" and entry["size"] == "s" for entry in result)
+
+
 @pytest.mark.parametrize("model_name", UPET_AVAILABLE_MODELS)
 def test_basic_usage(model_name):
     if "-xl" in model_name or "-l" in model_name:
@@ -72,3 +101,10 @@ def test_basic_usage(model_name):
         assert isinstance(energy, float)
         assert forces.shape == (len(atoms), 3)
         assert virial.shape == (6,)
+
+
+def test_save_upet(tmp_path):
+    output_path = str(tmp_path / "pet-mad-xs.pt")
+    save_upet(model="pet-mad", size="xs", output=output_path)
+    assert os.path.isfile(output_path)
+    assert os.path.getsize(output_path) > 0

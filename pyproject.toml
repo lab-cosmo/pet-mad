@@ -106,8 +106,9 @@ filterwarnings = [
     # metatrain checkpoint upgrade warning
     "ignore: trying to upgrade an old model checkpoint with unknown version, this might fail and require manual modifications",
     # TorchScript deprecation warnings
-    "ignore: `torch.jit.script` is deprecated. Please switch to `torch.compile` or `torch.export`.",
-    "ignore: `torch.jit.load` is deprecated. Please switch to `torch.export`.",
+    "ignore: `torch.jit.script` is deprecated.*:DeprecationWarning",
+    "ignore: `torch.jit.save` is deprecated.*:DeprecationWarning",
+    "ignore: `torch.jit.load` is deprecated.*:DeprecationWarning",
     "ignore: `torch.jit.script_method` is deprecated. Please switch to `torch.compile` or `torch.export`.",
     # PET-MAD v1.0 deprecation warning
     "ignore:.*is deprecated in favor of the newer PET-MAD-1.5.*:DeprecationWarning",

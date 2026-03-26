@@ -5,7 +5,7 @@ import warnings
 import torch
 from warp._src import utils as wp_utils
 
-from ._models import get_upet, save_upet
+from ._models import get_upet, list_upet, save_upet
 
 
 # hides a harmless warning from nvalchemi's neighbor list implmentation
@@ -33,4 +33,4 @@ wp_utils.warn = _warn_filtered
 # causing "Global alloc not supported yet" errors (cuda 13+) at the time of writing
 torch.jit.set_fusion_strategy([("DYNAMIC", 10)])
 
-__all__ = ["get_upet", "save_upet"]
+__all__ = ["get_upet", "list_upet", "save_upet"]
