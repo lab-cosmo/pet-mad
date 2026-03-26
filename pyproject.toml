@@ -24,7 +24,7 @@ maintainers = [
 
 dependencies = [
     "metatrain>=2026.2,<2026.3",
-    "nvalchemi-toolkit-ops",
+    "nvalchemi-toolkit-ops==0.2.0",
     "huggingface_hub",
     "hf_xet",
     "packaging",
