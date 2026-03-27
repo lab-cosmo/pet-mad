@@ -6,7 +6,7 @@ import numpy as np
 import torch
 from ase import Atoms
 from metatomic.torch import ModelOutput
-from metatomic.torch.ase_calculator import MetatomicCalculator, SymmetrizedCalculator
+from metatomic_ase import MetatomicCalculator, SymmetrizedCalculator
 from packaging.version import Version
 
 from ._models import (
