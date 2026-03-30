@@ -197,12 +197,12 @@ list_upet() # for all available UPET models
 
 #### Non-conservative (direct) forces and stresses prediction
 
-UPET models also support the direct prediction of forces and stresses. In that case,
-the forces and stresses are predicted as separate targets along with the energy
-target, and not as derivatives of the energy using automatic differentiation.
+By default, UPET models compute conservative forces and stresses as derivatives of the energy
+using automatic differentiation. However, UPET models also support the direct prediction of
+forces and stresses, where the forces and stresses are predicted as separate targets.
 This approach typically leads to 2-3x speedups in the evaluation time. However, as discussed in [this
 preprint](https://arxiv.org/abs/2412.11569), non-conservative forces and stresses require
-additional care to avoid undesired effects during the molecular dynamics simulations.
+additional care to avoid undesired effects during molecular dynamics simulations.
 
 To use the non-conservative forces and stresses, you need to set the `non_conservative` parameter to `True` when initializing the `UPETCalculator` class.
 
@@ -602,7 +602,7 @@ you to choose a good trade-off for your application).
 It's important to note that by default the `UPETCalculator` class uses the 
 energy and non-conservative forces/stresses heads **provided with the pre-trained models**.
 If you fine-tune the model and create a new head for your energy target, you should 
-explicitly select the corresponding energy variant on runtime (same for non-conservative
+explicitly select the corresponding energy variant at runtime (same for non-conservative
 forces/stresses). Let's consider an example, where you fine-tune the energy head
 and call it `"energy/finetune"` in the `options.yaml` file, while running `mtt train` command.
 
