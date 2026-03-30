@@ -6,8 +6,8 @@
 </div>
 
 > [!NOTE]
-> The PET-MAD-1.5 models trained for 102 elements at the r2SCAN level of theory are 
-> now available! These models are more robust, more accurate and faster than the 
+> The PET-MAD-1.5 models trained for 102 elements at the r2SCAN level of theory are
+> now available! These models are more robust, more accurate and faster than the
 > previous PET-MAD models. We highly recommend using these models for all applications,
 > especially molecular dynamics simulations. Try them out and let us know what you think!
 ```py
@@ -37,14 +37,14 @@ calculator = UPETCalculator(model="pet-oam-xl", version="1.0.0", device="cuda")
 
 This repository contains **UPET** models - universal interatomic potentials for
 advanced materials modeling across the periodic table. These models are based on
-the **Point Edge Transformer (PET)**  architecture trained on various popular 
+the **Point Edge Transformer (PET)**  architecture trained on various popular
 atomistic datasets, and they are capable of predicting energies and forces in complex
 atomistic workflows.
 
 In addition, it contains **PET-MAD-DOS** - a universal model for predicting
 the density of states (DOS) of materials and molecules, as well as their Fermi levels
 and bandgaps. **PET-MAD-DOS** uses a slightly modified **PET** architecture and it is
-trained on the **MAD** dataset. 
+trained on the **MAD** dataset.
 
 ## Key Features
 
@@ -105,17 +105,17 @@ Currently, we provide the following pre-trained models:
 | PET-OAM     | PBE (Materials Project) | L, XL                  | <span title="Supported elements: H, He, Li, Be, B, C, N, O, F, Ne, Na, Mg, Al, Si, P, S, Cl, Ar, K, Ca, Sc, Ti, V, Cr, Mn, Fe, Co, Ni, Cu, Zn, Ga, Ge, As, Se, Br, Kr, Rb, Sr, Y, Zr, Nb, Mo, Tc, Ru, Rh, Pd, Ag, Cd, In, Sn, Sb, Te, I, Xe, Cs, Ba, La, Ce, Pr, Nd, Pm, Sm, Eu, Gd, Tb, Dy, Ho, Er, Tm, Yb, Lu, Hf, Ta, W, Re, Os, Ir, Pt, Au, Hg, Tl, Pb, Bi, Ac, Th, Pa, U, Np, Pu">materials&nbsp;(89&nbsp;elements)</span> | OMat -> sAlex+MPtrj   |
 | PET-OMat    | PBE                     | XS, S, M, L, XL        | <span title="Supported elements: H, He, Li, Be, B, C, N, O, F, Ne, Na, Mg, Al, Si, P, S, Cl, Ar, K, Ca, Sc, Ti, V, Cr, Mn, Fe, Co, Ni, Cu, Zn, Ga, Ge, As, Se, Br, Kr, Rb, Sr, Y, Zr, Nb, Mo, Tc, Ru, Rh, Pd, Ag, Cd, In, Sn, Sb, Te, I, Xe, Cs, Ba, La, Ce, Pr, Nd, Pm, Sm, Eu, Gd, Tb, Dy, Ho, Er, Tm, Yb, Lu, Hf, Ta, W, Re, Os, Ir, Pt, Au, Hg, Tl, Pb, Bi, Ac, Th, Pa, U, Np, Pu">materials&nbsp;(89&nbsp;elements)</span> | OMat                  |
 | PET-OMATPES | r2SCAN                  | L                      | <span title="Supported elements: H, He, Li, Be, B, C, N, O, F, Ne, Na, Mg, Al, Si, P, S, Cl, Ar, K, Ca, Sc, Ti, V, Cr, Mn, Fe, Co, Ni, Cu, Zn, Ga, Ge, As, Se, Br, Kr, Rb, Sr, Y, Zr, Nb, Mo, Tc, Ru, Rh, Pd, Ag, Cd, In, Sn, Sb, Te, I, Xe, Cs, Ba, La, Ce, Pr, Nd, Pm, Sm, Eu, Gd, Tb, Dy, Ho, Er, Tm, Yb, Lu, Hf, Ta, W, Re, Os, Ir, Pt, Au, Hg, Tl, Pb, Bi, Ac, Th, Pa, U, Np, Pu">materials&nbsp;(89&nbsp;elements)</span> | OMat -> MATPES        |
-| PET-SPICE   | ωB97M-D3                | S, L                   | <span title="Supported elements: H, Li, B, C, N, O, F, Na, Mg, Si, P, S, Cl, K, Ca, Br, I">molecules&nbsp;(17&nbsp;elements)</span> | SPICE                 | 
+| PET-SPICE   | ωB97M-D3                | S, L                   | <span title="Supported elements: H, Li, B, C, N, O, F, Na, Mg, Si, P, S, Cl, K, Ca, Br, I">molecules&nbsp;(17&nbsp;elements)</span> | SPICE                 |
 
 We recommend using the PET-MAD v1.5.0 model for molecular dynamics simulations of materials, surfaces, interfaces,
-solutions, metal complexes and other challenging systems, PET-OAM models for material 
-discovery tasks (convex hull energies, geometry optimization, phonons, etc), and PET-SPICE for accurate and fast 
+solutions, metal complexes and other challenging systems, PET-OAM models for material
+discovery tasks (convex hull energies, geometry optimization, phonons, etc), and PET-SPICE for accurate and fast
 simulations of molecules and biomolecules.
 
 **Legacy models**:
 
-For reproducibility or to cover specific use case we also provide a few additional models, even though they are 
-expected to have worse performance than the models listed above. 
+For reproducibility or to cover specific use case we also provide a few additional models, even though they are
+expected to have worse performance than the models listed above.
 
 | Name        | Level of theory         | Available sizes        | To be used for          | Training set          |
 |:------------|:-----------------------:|:----------------------:|:-----------------------:|:---------------------:|
@@ -218,7 +218,7 @@ forces = atoms.get_forces() # forces now are predicted as a separate target
 stresses = atoms.get_stress() # stresses now are predicted as a separate target
 ```
 
-More details on how to make direct-force MD simulations reliable are provided 
+More details on how to make direct-force MD simulations reliable are provided
 in the [Atomistic Cookbook](https://atomistic-cookbook.org/examples/pet-mad-nc/pet-mad-nc.html).
 
 ### Evaluating UPET models on a dataset
@@ -273,7 +273,7 @@ can be found in the [Metatrain documentation](https://metatensor.github.io/metat
 #### 1. Install LAMMPS with metatomic support
 
 To use UPET with LAMMPS, follow the instructions
-[here](https://docs.metatensor.org/metatomic/latest/engines/lammps.html#how-to-install-the-code) 
+[here](https://docs.metatensor.org/metatomic/latest/engines/lammps.html#how-to-install-the-code)
 to install lammps-metatomic. We recomend you use conda to install pre-built lammps binaries.
 
 #### 2. Run LAMMPS with UPET
@@ -366,11 +366,11 @@ mpirun -np 1 lmp -in lammps.in  # MPI version
 > Please note that `neigh_modify` setting is particularly important
 > for running PET-MAD v1.5 models, especially for dense systems with
 > a large number of neighbors. This is due to the adaptive cutoff strategy
-> that requires a large initial buffer of neighbors before truncation. 
+> that requires a large initial buffer of neighbors before truncation.
 > If your system is extremely dense, you may need to increase the `one`
 > and `page` parameters even further to avoid the neighborlist overflow.
 > Finally, the `binsize` parameter is important for KOKKOS version of the
-> code to avoid a bug with an empty neighborlist. 
+> code to avoid a bug with an empty neighborlist.
 
 ##### 2.2. KOKKOS-enabled GPU version
 
@@ -407,7 +407,7 @@ running a large system on multiple GPUs.
 
 UPET models can also be used to calculate the uncertainty of the energy prediction.
 This feature is particularly important if you are interested in probing the model
-on data that could be substantially different from the training data. Another important 
+on data that could be substantially different from the training data. Another important
 use case is propagation of uncertainties in the energy predictions to other
 observables, like phase transition temperatures, diffusion coefficients, etc.
 
@@ -432,7 +432,7 @@ Please note that the uncertainty quantification and ensemble prediction accepts 
 `per_atom` flag, which indicates whether the uncertainty/ensemble should be computed
 per atom or for the whole system. More details on the LLPR uncertainty quantification and shallow
 ensemble methods can be found in [this](https://doi.org/10.1088/2632-2153/ad594a) and
-[this](https://doi.org/10.1088/2632-2153/ad805f) papers respectively. 
+[this](https://doi.org/10.1088/2632-2153/ad805f) papers respectively.
 
 
 ### Rotational Averaging
@@ -456,11 +456,11 @@ forces = atoms.get_forces()
 stresses = atoms.get_stress()
 ```
 
-In this case, predictions will be averaged over a quadrature of the O(3) group based on a Lebedev grid of the 
+In this case, predictions will be averaged over a quadrature of the O(3) group based on a Lebedev grid of the
 specified order (here 3). Higher orders lead to more accurate equivariance, but also increase the computational cost.
 
 By default, all the transformed structures are evaluated in a single batch, which may lead to high memory usage
-for large systems. If you want to reduce the memory usage, you can set the `rotational_average_batch_size` 
+for large systems. If you want to reduce the memory usage, you can set the `rotational_average_batch_size`
 parameter to a smaller value (eg. 8), which will evaluate the transformed structures in smaller batches:
 
 ```python
@@ -561,13 +561,13 @@ fermi_levels = pet_mad_dos_calculator.calculate_efermi([atoms_1, atoms_2], dos=d
 ```
 
 ### Dataset visualization with the PET-MAD featurizer
- 
-You can use the last-layer features of the PET-MAD model together with a pre-trained 
+
+You can use the last-layer features of the PET-MAD model together with a pre-trained
 sketch-map dimensionality reduction to obtain 2D and 3D representations
 of a dataset, e.g. to identify structural or chemical motifs.
 This can be used as a stand-alone feature builder, or combined with
-the [chemiscope viewer](https://chemiscope.org) to generate an 
-interactive visualization. 
+the [chemiscope viewer](https://chemiscope.org) to generate an
+interactive visualization.
 
 ```python
 import ase.io
@@ -599,16 +599,16 @@ pre-trained on a very large dataset and they come in all sizes (from XS to XL, a
 you to choose a good trade-off for your application).
 
 ### Head Selection
-It's important to note that by default the `UPETCalculator` class uses the 
+It's important to note that by default the `UPETCalculator` class uses the
 energy and non-conservative forces/stresses heads **provided with the pre-trained models**.
-If you fine-tune the model and create a new head for your energy target, you should 
+If you fine-tune the model and create a new head for your energy target, you should
 explicitly select the corresponding energy variant at runtime (same for non-conservative
 forces/stresses). Let's consider an example, where you fine-tune the energy head
 and call it `"energy/finetune"` in the `options.yaml` file, while running `mtt train` command.
 
 #### ASE Interface
 
-In ASE, running the model with a variant selection can be done by loading your trained 
+In ASE, running the model with a variant selection can be done by loading your trained
 checkpoint and initializing the `UPETCalculator` class with the `variants` parameter:
 
 ```python
@@ -619,7 +619,7 @@ calc = UPETCalculator(checkpoint_path="finetuned.ckpt", variants={'energy': 'fin
 ```
 
 Same applies to non-conservative forces and stresses, if you created new heads
-for them during fine-tuning. 
+for them during fine-tuning.
 
 #### Metatrain Interface
 
@@ -669,13 +669,13 @@ In general, if you see that something doens't work as you expect, please update
 to the latest version of the UPET package (and simulation engines like `lammps-metatomic`),
 before spending hours on debugging or reporting the issue immediately. Our codebase evolves quickly,
 and chances are your issue has been already fixed in a recent update. If you still see
-the issue after updating, please follow the FAQs below, and open an [issue](https://github.com/lab-cosmo/upet/issues) 
+the issue after updating, please follow the FAQs below, and open an [issue](https://github.com/lab-cosmo/upet/issues)
 or a [discussion](https://github.com/lab-cosmo/upet/discussions) in case you didn't find the
-answer. 
+answer.
 
 **What model should I use for my application?**
 
-- For molecular dynamics simulations, we recommend using the **PET-MAD v1.5.0** models. 
+- For molecular dynamics simulations, we recommend using the **PET-MAD v1.5.0** models.
 - For materials discovery tasks (convex hull energies, geometry optimization, phonons, etc),
   we recommend using the **PET-OAM** models.
 - For accurate and fast simulations of biomolecules, we recommend using the **PET-SPICE** models.
@@ -689,7 +689,7 @@ answer.
 - Make sure you run it on a GPU
 - Use an S or XS model
 - Simulate with LAMMPS (Kokkos-GPU version)
-- Use non-conservative forces and stresses, preferably with multiple time stepping. Check out 
+- Use non-conservative forces and stresses, preferably with multiple time stepping. Check out
   [this example](https://atomistic-cookbook.org/examples/pet-mad-nc/pet-mad-nc.html) for details.
 - Still too slow? Check out [FlashMD](https://github.com/lab-cosmo/flashmd) for a further 30x boost.
 
@@ -725,11 +725,10 @@ There are two aspects to this:
 
 **Simulation blows up with lammps-metatomic 2025.9.10.mta2**
 
-While running upet models with the version above, we observe that simulations blow up. 
+While running upet models with the version above, we observe that simulations blow up.
 This is most likely a bug introduced in a recent PR in lammps-metatomic. Please
-update to the latest version of lammps-metatomic, `2025.9.10.mta3` or later, to fix this 
+update to the latest version of lammps-metatomic, `2025.9.10.mta3` or later, to fix this
 issue.
-
 
 ## Citing UPET Models
 
@@ -738,26 +737,26 @@ If you found our models useful, you can cite the corresponding articles.
 PET-MAD-1.5:
 ```bibtex
 @misc{PET-MAD-1.5-2026,
-      title={High-quality, high-information datasets for universal atomistic machine learning}, 
+      title={High-quality, high-information datasets for universal atomistic machine learning},
       author={Cesare Malosso and Filippo Bigi and Paolo Pegolo and Joseph W. Abbott and Philip Loche and Mariana Rossi and Michele Ceriotti and Arslan Mazitov},
       year={2026},
       eprint={2603.02089},
       archivePrefix={arXiv},
       primaryClass={cond-mat.mtrl-sci},
-      url={https://arxiv.org/abs/2603.02089}, 
+      url={https://arxiv.org/abs/2603.02089},
 }
 ```
 
 Current UPET architecture, PET-OAM, PET-OMat, PET-OMAD, PET-OMATPES, PET-SPICE:
 ```bibtex
 @misc{pushing-unconstrained-2026,
-      title={Pushing the limits of unconstrained machine-learned interatomic potentials}, 
+      title={Pushing the limits of unconstrained machine-learned interatomic potentials},
       author={Filippo Bigi and Paolo Pegolo and Arslan Mazitov and Michele Ceriotti},
       year={2026},
       eprint={2601.16195},
       archivePrefix={arXiv},
       primaryClass={physics.chem-ph},
-      url={https://arxiv.org/abs/2601.16195}, 
+      url={https://arxiv.org/abs/2601.16195},
 }
 ```
 
@@ -778,13 +777,13 @@ PET-MAD:
 PET-MAD-DOS:
 ```bibtex
 @misc{PET-MAD-DOS-2025,
-      title={A universal machine learning model for the electronic density of states}, 
+      title={A universal machine learning model for the electronic density of states},
       author={Wei Bin How and Pol Febrer and Sanggyu Chong and Arslan Mazitov and Filippo Bigi and Matthias Kellner and Sergey Pozdnyakov and Michele Ceriotti},
       year={2025},
       eprint={2508.17418},
       archivePrefix={arXiv},
       primaryClass={physics.chem-ph},
-      url={https://arxiv.org/abs/2508.17418}, 
+      url={https://arxiv.org/abs/2508.17418},
 }
 ```
 
@@ -799,3 +798,7 @@ For a general citation for the PET architecture, you can use
   pages = {79469--79501},
 }
 ```
+
+## Maintainers
+
+This project is [maintained](https://github.com/lab-cosmo/.github/blob/main/Maintainers.md) by @abmazitov and @frostedoyster, who will reply to issues and pull requests opened on this repository as soon as possible. You can mention them directly if you did not receive an answer after a couple of days.
