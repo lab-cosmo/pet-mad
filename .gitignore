@@ -178,4 +178,6 @@ extensions/
 
 # sphinx gallery
 docs/src/examples
+docs/src/generated_examples/
+docs/build/
 *execution_times*

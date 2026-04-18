@@ -1,0 +1,8 @@
+furo
+matplotlib
+# Sphinx < 9.0 because of some warnings on docs build (likely sphinx bug),
+# if future sphinx builds without warnings, remove constraint
+sphinx < 9.0
+sphinx-copybutton
+sphinx-gallery
+sphinx-toggleprompt
