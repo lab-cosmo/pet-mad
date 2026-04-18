@@ -119,4 +119,6 @@ filterwarnings = [
     # NVAlchemiOps Deprecation warning
     "ignore: The 'nvalchemiops.neighborlist' module has been renamed to 'nvalchemiops.neighbors'.*:DeprecationWarning",
     "ignore: From version 0.3.0 onwards, PyTorch is now an optional dependency.*:DeprecationWarning",
+    "ignore: `compute_requested_neighbors` is deprecated.*:UserWarning",
+    "ignore: `compute_requested_neighbors_from_options` is deprecated.*:UserWarning",
 ]
