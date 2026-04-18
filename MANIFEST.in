@@ -5,11 +5,13 @@ include README.md
 include *.bib
 
 prune docs
+prune examples
 prune tests
 prune .github
 prune .tox
 
 exclude .gitignore
 exclude tox.ini
+exclude AGENTS.md
 
 global-exclude *.py[cod] __pycache__/* *.so *.dylib
