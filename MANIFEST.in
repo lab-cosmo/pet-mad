@@ -2,7 +2,6 @@ graft src
 
 include LICENSE
 include README.md
-include *.bib
 
 prune docs
 prune examples
@@ -13,5 +12,7 @@ prune .tox
 exclude .gitignore
 exclude tox.ini
 exclude AGENTS.md
+exclude .readthedocs.yml
+exclude CITATION.bib
 
 global-exclude *.py[cod] __pycache__/* *.so *.dylib
