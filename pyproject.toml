@@ -87,6 +87,9 @@ docstring-code-format = true
 [tool.mypy]
 follow_imports = 'skip'
 ignore_missing_imports = true
+exclude = [
+    '^docs/src/generated_examples/',
+]
 
 [tool.pytest.ini_options]
 # ignore" a bunch of internal warnings with Python 3.13 and PyTorch
@@ -116,4 +119,6 @@ filterwarnings = [
     # NVAlchemiOps Deprecation warning
     "ignore: The 'nvalchemiops.neighborlist' module has been renamed to 'nvalchemiops.neighbors'.*:DeprecationWarning",
     "ignore: From version 0.3.0 onwards, PyTorch is now an optional dependency.*:DeprecationWarning",
+    "ignore: `compute_requested_neighbors` is deprecated.*:UserWarning",
+    "ignore: `compute_requested_neighbors_from_options` is deprecated.*:UserWarning",
 ]
