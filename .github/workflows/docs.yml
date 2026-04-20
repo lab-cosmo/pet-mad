@@ -15,7 +15,11 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - name: Install uv
+<<<<<<< HEAD
         uses: astral-sh/setup-uv@v8
+=======
+        uses: astral-sh/setup-uv@v7
+>>>>>>> 734117b (Added docs workflow)
         with:
           version: "0.9.0"
           python-version: "3.13"
