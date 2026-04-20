@@ -12,6 +12,7 @@ All workflows are driven through `tox` (see `tox.ini`). Install it once with `pi
 - `tox -e upet-tests-dev` — same suite but installs `metatrain` from git `main` first; used by the weekly CI job.
 - `tox -e pet-mad-dos-tests` — run the PET-MAD-DOS tests (`tests/pet_mad_dos/`).
 - `tox -e build` — build the sdist + wheel and run `twine check` and `check-manifest`.
+- `tox -e docs` — build the Sphinx HTML docs into `docs/build/html` (runs with `--fail-on-warning`).
 - Single test: `tox -e upet-tests -- -k test_name` (everything after `--` is forwarded as `{posargs}` to pytest; `changedir` is already `tests/upet`, so relative paths resolve there).
 
 `pytest` is configured with `filterwarnings = ["error", ...]` in `pyproject.toml`, so any new warning that isn't explicitly ignored will fail tests — add entries to that allowlist rather than silencing warnings inline.
@@ -40,3 +41,17 @@ Tests (`tests/`):
 - Each suite has its own `changedir` in `tox.ini`; tests pull real checkpoints from HuggingFace, so they are network-bound by design.
 
 External dependencies to keep in mind: `metatrain` (pinned to `>=2026.2,<2026.3`), `metatomic-ase`, `nvalchemi-toolkit-ops` (pinned exactly to `0.2.0`), and `huggingface_hub`. Version bumps to these usually require matching updates to the warning allowlist in `pyproject.toml` and sometimes to `_version.py`.
+
+## Documentation
+
+User-facing documentation lives in `docs/` and is built with Sphinx + the `furo` theme. The canonical hosted version is <https://lab-cosmo.github.io/upet/latest/>, deployed from `.github/workflows/docs.yml` to the `gh-pages` branch (one directory per tag, plus `latest/` for `main`). A Read the Docs build is also configured via `.readthedocs.yml` as a secondary target.
+
+- `docs/src/` — reST sources. `index.rst` is the landing page; the top-level pages are `quickstart`, `installation`, `usage/index` (one file per engine: `ase`, `metatrain`, `lammps`, `ipi`, `torchsim`, `gromacs`), `models`, `fine-tuning`, `miscellaneous`, `faq`, `cite`.
+- `docs/src/conf.py` — Sphinx config. Uses `sphinx.ext.autodoc` + `sphinx.ext.intersphinx` (mapping to python/numpy/torch/ase/metatensor/metatomic/metatrain) and `sphinx_gallery` to turn `examples/` into `docs/src/generated_examples/`.
+- `docs/src/generated_examples/` and `docs/src/sg_execution_times.rst` are sphinx-gallery outputs — do not hand-edit; regenerate by running `tox -e docs`.
+- `docs/requirements.txt` — pinned doc-build deps (used by both RTD and the `docs` tox env).
+- `docs/README_OLD.md`, `docs/UPET_MIGRATION_GUIDE.md`, `docs/SPEED.md`, `docs/README_BATCHED.md`, `docs/CHANGELOG.md` — legacy standalone markdown files, still linked from the Sphinx tree and the README.
+
+Local builds: `tox -e docs` (uses `--fail-on-warning`, so any autodoc/intersphinx/sphinx-lint warning breaks the build — either fix the source or add a targeted ignore). The `tox -e lint` env also runs `sphinx-lint` on `docs/src/` and `README.md`.
+
+`README.md` is intentionally a short quickstart that defers to the RTD site for details. When adding new user-facing features, prefer extending the Sphinx docs and linking from the README rather than inlining content there.
