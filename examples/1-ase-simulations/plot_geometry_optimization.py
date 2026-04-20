@@ -25,14 +25,13 @@ from upet.calculator import UPETCalculator
 atoms = bulk("Si", cubic=True, a=5.43, crystalstructure="diamond")
 
 # perturb positions and cell so the optimizer has something to do
-rng = np.random.default_rng(0)
-atoms.positions += 0.1 * rng.standard_normal(atoms.positions.shape)
-atoms.set_cell(atoms.cell * 1.02, scale_atoms=True)
+atoms.rattle(0.1, seed=0)  # ASE's built-in random displacement method
+atoms.set_cell(atoms.cell * 1.05, scale_atoms=True)
 
 calculator = UPETCalculator(model="pet-mad-xs", version="1.5.0", device="cpu")
 atoms.calc = calculator
 
-history = {"stage": [], "energy": [], "fmax": []}
+history = {"stage": [], "energy": [], "fmax": []}  # type: ignore
 
 
 def record(stage_name):
@@ -58,7 +57,11 @@ opt_cell.run(fmax=0.05, steps=30)
 
 steps = np.arange(len(history["energy"]))
 stages = np.array(history["stage"])
-boundary = int(np.searchsorted(stages == "cell", True)) if (stages == "cell").any() else len(stages)
+boundary = (
+    int(np.searchsorted(stages == "cell", True))
+    if (stages == "cell").any()
+    else len(stages)
+)
 
 fig, (ax_e, ax_f) = plt.subplots(1, 2, figsize=(9, 3.5))
 ax_e.plot(steps, history["energy"], "o-")

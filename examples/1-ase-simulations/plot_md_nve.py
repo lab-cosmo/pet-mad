@@ -26,7 +26,7 @@ MaxwellBoltzmannDistribution(atoms, temperature_K=300, rng=np.random.default_rng
 dyn = VelocityVerlet(atoms, timestep=1.0 * units.fs)
 
 n_steps = 100
-times, e_tot, e_kin, e_pot = [], [], [], []
+times, e_tot, e_kin, e_pot = [], [], [], []  # type: ignore
 
 
 def log():

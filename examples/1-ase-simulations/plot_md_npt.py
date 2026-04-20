@@ -27,7 +27,9 @@ p_target = P_TARGET_BAR * bar
 atoms = bulk("Si", cubic=True, a=5.43, crystalstructure="diamond")
 atoms.calc = UPETCalculator(model="pet-mad-xs", version="1.5.0", device="cpu")
 
-MaxwellBoltzmannDistribution(atoms, temperature_K=T_TARGET, rng=np.random.default_rng(0))
+MaxwellBoltzmannDistribution(
+    atoms, temperature_K=T_TARGET, rng=np.random.default_rng(0)
+)
 
 ttime = 25.0 * units.fs
 ptime = 100.0 * units.fs
@@ -43,7 +45,7 @@ dyn = NPT(
 )
 
 n_steps = 200
-times, temps, volumes, pressures = [], [], [], []
+times, temps, volumes, pressures = [], [], [], []  # type: ignore
 
 
 def log():
