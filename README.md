@@ -1,7 +1,7 @@
 <div align="center" width="600">
   <picture>
-    <source srcset="https://github.com/lab-cosmo/upet/raw/refs/heads/main/docs/static/upet-logo-with-text-dark.svg" media="(prefers-color-scheme: dark)">
-    <img src="https://github.com/lab-cosmo/upet/raw/refs/heads/main/docs/static/upet-logo-with-text.svg" alt="Figure">
+    <source srcset="https://github.com/lab-cosmo/upet/raw/refs/heads/main/docs/static/images/upet-logo-with-text-dark.svg" media="(prefers-color-scheme: dark)">
+    <img src="https://github.com/lab-cosmo/upet/raw/refs/heads/main/docs/static/images/upet-logo-with-text.svg" alt="Figure">
   </picture>
 </div>
 

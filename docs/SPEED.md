@@ -10,7 +10,7 @@ The NequIP model ran out of memory during the evaluation of the large structure 
 point on the right).
 
 <p align="center">
-  <img src="static/pet-speed-comparison.png" alt="speed-oam" width="450">
+  <img src="static/images/pet-speed-comparison.png" alt="speed-oam" width="450">
 </p>
 
 Besides the large PET-OAM-XL model, the figure also shows timings for two OMat24-trained models 
@@ -19,7 +19,7 @@ memory requirements of the entire PET-OMAT family, we also show a Pareto plot co
 cost and OMat24 validation errors
 
 <p align="center">
-  <img src="static/pet-omat-pareto.png" alt="omat-pareto" width="450">
+  <img src="static/images/pet-omat-pareto.png" alt="omat-pareto" width="450">
 </p>
 
 
@@ -30,5 +30,5 @@ SPICE dataset. This benchmark was run on an A100 GPU (cf.
 details on the models being compared).
 
 <p align="center">
-  <img src="static/speed-spice.png" alt="speed-spice">
+  <img src="static/images/speed-spice.png" alt="speed-spice">
 </p>

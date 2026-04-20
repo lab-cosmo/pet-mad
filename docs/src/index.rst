@@ -1,14 +1,10 @@
-.. image:: /../static/upet-logo-with-text.svg
+.. image:: /../static/images/upet-logo-with-text.svg
    :class: only-light
    :width: 600px
 
-.. image:: /../static/upet-logo-with-text-dark.svg
+.. image:: /../static/images/upet-logo-with-text-dark.svg
    :class: only-dark
    :width: 600px
-
-
-UPET: Universal Models for Advanced Atomistic Simulations
-=========================================================
 
 **UPET** is a family of universal interatomic potentials for advanced
 materials modeling across the periodic table. These models are based on the
