@@ -12,6 +12,13 @@ non-conservative forces and stresses, uncertainty quantification,
 rotational averaging, empirical dispersion corrections, electronic DOS
 prediction and dataset visualization.
 
+.. seealso::
+
+   For runnable end-to-end ASE workflows — single-point evaluation,
+   geometry optimization and MD in the NVE / NVT / NPT ensembles — see
+   the :doc:`example gallery
+   </generated_examples/1-ase-simulations/index>`.
+
 
 Basic usage
 -----------

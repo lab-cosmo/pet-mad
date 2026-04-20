@@ -4,5 +4,6 @@ matplotlib
 # if future sphinx builds without warnings, remove constraint
 sphinx < 9.0
 sphinx-copybutton
+sphinx-design
 sphinx-gallery
 sphinx-toggleprompt

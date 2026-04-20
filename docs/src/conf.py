@@ -28,6 +28,7 @@ extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.intersphinx",
     "sphinx_copybutton",
+    "sphinx_design",
     "sphinx_toggleprompt",
     "sphinx_gallery.gen_gallery",
 ]
@@ -62,7 +63,7 @@ sphinx_gallery_conf = {
     "filename_pattern": r"/*\.py",
     "within_subsection_order": "FileNameSortKey",
     "default_thumb_file": os.path.join(
-        ROOT, "docs", "static", "upet-logo-with-text.svg"
+        ROOT, "docs", "static", "images", "upet-logo-with-text.svg"
     ),
     "min_reported_time": 5,
     "remove_config_comments": True,
@@ -77,8 +78,8 @@ html_theme = "furo"
 html_static_path = [os.path.join(ROOT, "docs", "static")]
 
 html_theme_options = {
-    "light_logo": "upet-logo-with-text.svg",
-    "dark_logo": "upet-logo-with-text-dark.svg",
+    "light_logo": "images/upet-logo-with-text.svg",
+    "dark_logo": "images/upet-logo-with-text-dark.svg",
     "sidebar_hide_name": True,
     "footer_icons": [
         {
@@ -94,4 +95,5 @@ html_css_files = [
     "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/fontawesome.min.css",
     "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/solid.min.css",
     "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/brands.min.css",
+    "css/custom.css",
 ]
