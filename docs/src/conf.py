@@ -1,4 +1,5 @@
 import os
+import re
 import shutil
 import tomllib
 from datetime import datetime
@@ -13,10 +14,11 @@ ROOT = os.path.abspath(os.path.join("..", ".."))
 #
 # We embed PET-related examples from the atomistic-cookbook (vendored as a git
 # submodule under external/atomistic-cookbook) without duplicating their source.
-# A wrapper directory is assembled at build time with symlinks into the
-# submodule so sphinx-gallery sees a single gallery with one subsection per
+# A wrapper directory is assembled at build time with copies of each recipe
+# directory so sphinx-gallery sees a single gallery with one subsection per
 # recipe. The wrapper lives at docs/_cookbook_src/ (outside Sphinx's source
-# dir) and is gitignored.
+# dir) and is gitignored. Copies (rather than symlinks) are used so we can
+# apply a small docstring fixup pass without dirtying the submodule.
 #
 # Recipes are rendered (code + docstring narrative) but NOT executed: the
 # global sphinx_gallery_conf.filename_pattern below only matches files whose
@@ -72,7 +74,56 @@ for _name in COOKBOOK_RECIPES:
             f"cookbook recipe {_name!r} listed in COOKBOOK_RECIPES but not "
             f"found at {_src!r} — check the recipe name or bump the submodule."
         )
-    os.symlink(_src, os.path.join(COOKBOOK_WRAPPER, _name))
+    shutil.copytree(_src, os.path.join(COOKBOOK_WRAPPER, _name))
+
+
+# Some upstream recipes reuse the same inline hyperlink text with different
+# URLs (e.g. `i-PI <https://ipi-code.org>`_ vs `i-PI <http://ipi-code.org>`_),
+# which docutils flags as "Duplicate explicit target name" — fatal under
+# --fail-on-warning. Rewriting every occurrence of a duplicated target to its
+# anonymous form (`text <url>`__ with two trailing underscores) removes the
+# conflict without changing the rendered output. Names are normalised the
+# same way docutils does (lowercase, whitespace collapsed) when deciding
+# whether two link labels clash; sphinx-gallery `# ` comment prefixes that
+# appear on wrapped lines are stripped first since they aren't part of the
+# final RST.
+_HYPERLINK_RE = re.compile(r"`([^`<]+?)\s*<([^>\s]+)>`_(?!_)")
+_COMMENT_PREFIX_RE = re.compile(r"(?m)^\s*#\s?")
+
+
+def _dedupe_hyperlink_targets(text: str) -> str:
+    matches = list(_HYPERLINK_RE.finditer(text))
+    by_name: dict[str, list[re.Match[str]]] = {}
+    for m in matches:
+        label = _COMMENT_PREFIX_RE.sub("", m.group(1))
+        key = re.sub(r"\s+", " ", label.strip()).lower()
+        by_name.setdefault(key, []).append(m)
+    to_anonymize = [
+        m
+        for ms in by_name.values()
+        if len(ms) > 1 and len({m.group(2) for m in ms}) > 1
+        for m in ms
+    ]
+    if not to_anonymize:
+        return text
+    out = text
+    for m in sorted(to_anonymize, key=lambda m: m.start(), reverse=True):
+        out = out[: m.end() - 1] + "__" + out[m.end() :]
+    return out
+
+
+for _name in COOKBOOK_RECIPES:
+    for _root, _, _files in os.walk(os.path.join(COOKBOOK_WRAPPER, _name)):
+        for _fname in _files:
+            if not _fname.endswith(".py"):
+                continue
+            _path = os.path.join(_root, _fname)
+            with open(_path, encoding="utf-8") as _fp:
+                _src_text = _fp.read()
+            _fixed = _dedupe_hyperlink_targets(_src_text)
+            if _fixed != _src_text:
+                with open(_path, "w", encoding="utf-8") as _fp:
+                    _fp.write(_fixed)
 
 
 # -- Project information -----------------------------------------------------
