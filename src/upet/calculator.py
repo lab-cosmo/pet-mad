@@ -59,8 +59,9 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
         """
         :param model: PET-MLIP model to use. Required when not using checkpoint_path.
             Can be one of the following:
+
             - "pet-mad-xs": PET-MAD-1.5 model (size "xs", materials and molecules,
-                r2SCAN)
+              r2SCAN)
             - "pet-mad-s": PET-MAD-1.5 model (size "s", materials and molecules, r2SCAN)
             - "pet-omat-xs": PET-OMat model (size "xs", materials, PBE)
             - "pet-omat-s": PET-OMat model (size "s", materials, PBE)
@@ -68,23 +69,23 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
             - "pet-omat-l": PET-OMat model (size "l", materials, PBE)
             - "pet-omat-xl": PET-OMat model (size "xl", materials, PBE)
             - "pet-oam-l": PET-OAM model (size "l", materials,
-                Materials-Project-consistent PBE)
+              Materials-Project-consistent PBE)
             - "pet-oam-xl": PET-OAM model (size "xl", materials,
-                Materials-Project-consistent PBE)
+              Materials-Project-consistent PBE)
             - "pet-omatpes-l": PET-OMATPES model (size "l", materials, r2SCAN)
             - "pet-spice-s": PET-SPICE model (size "s", molecules, ωB97M-D3)
             - "pet-spice-l": PET-SPICE model (size "l", molecules, ωB97M-D3)
         :param version: version of the model to use. Defaults to the latest stable
-            version.
-            Deprecated model versions:
+            version. Deprecated model versions:
+
             - "pet-mad-s-v1.0.2": PET-MAD-1 model (size "s", materials and molecules,
-                PBEsol)
+              PBEsol)
             - "pet-omad-xs-v1.0.0": PET-OMAD model (size "xs", materials and molecules,
-                PBEsol)
+              PBEsol)
             - "pet-omad-s-v1.0.0": PET-OMAD model (size "s", materials and molecules,
-                PBEsol)
+              PBEsol)
             - "pet-omad-l-v0.1.0": PET-OMAD model (size "l", materials and molecules,
-                PBEsol)
+              PBEsol)
         :param dtype: dtype to use for the calculations. If `None`, we will use the
             default dtype.
         :param checkpoint_path: path to a checkpoint file to load the model from.
@@ -100,19 +101,8 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
             uncertainty and non-conservative outputs will be taken from this variant.
             If not provided, the default variant for each output will be used
             (for example: ``energy`` with no variant specification).
-        dictionary mapping output names to a variant that should be
-            used for the calculations (e.g. ``{"energy": "PBE"}``). If ``"energy"`` is
-            set to a variant also the uncertainty and non-conservative outputs will be
-            taken from this variant. This behaviour can be overriden by setting the
-            corresponding keys explicitly to ``None`` or to another value (e.g.
-            ``{"energy_uncertainty": "r2scan"}``).
         :param rotational_average_order: order of the Lebedev-Laikov grid used for
             averaging the prediction over rotations.
-        :param rotational_average_num_additional_rotations: the number of additional
-            rotations sampled from 0 to 2pi angle applied on top of the each
-            Lebedev-Laikov rotation vector when performing rotational averaging.
-            Defaults to 1, which means that by default only the Lebedev-Laikov grid
-            is used for rotational averaging.
         :param rotational_average_batch_size: batch size to use for the rotational
             averaging. If `None`, all rotations will be computed at once.
         :param device: torch device to use for the calculation. If `None`, we will try
@@ -120,8 +110,9 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
         :param non_conservative: whether to use the non-conservative regime of forces
             and stresses prediction. Defaults to False. Available for all models,
             except:
-                - PET-MAD models with version < 1.1.0
-                - PET-SPICE models
+
+            - PET-MAD models with version < 1.1.0
+            - PET-SPICE models
         :param check_consistency: whether internal consistency checks should be
             performed. Mainly for developers, defaults to False.
         """
@@ -418,7 +409,7 @@ class PETMADDOSCalculator:
             density of states is calculated using the `calculate_dos` method.
         :param temperature: Temperature (K). Defaults to 0 K.
         :return: Fermi energy for each ase.Atoms object stored in a torch.Tensor
-        format.
+            format.
         """
         if isinstance(atoms, Atoms):
             atoms = [atoms]
