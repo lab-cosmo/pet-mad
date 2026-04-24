@@ -89,6 +89,8 @@ checkpoints or reproducibility):
    calculator = UPETCalculator(checkpoint_path="pet-mad-s-v1.5.0.ckpt", device="cpu")
 
 
+.. _ase-non-conservative:
+
 Non-conservative (direct) forces and stresses
 ---------------------------------------------
 
@@ -123,6 +125,8 @@ More details on making direct-force MD simulations reliable are in the
 <https://atomistic-cookbook.org/examples/pet-mad-nc/pet-mad-nc.html>`_.
 
 
+.. _ase-uncertainty:
+
 Uncertainty quantification
 --------------------------
 
@@ -131,6 +135,12 @@ This is important when probing the model on data that may be substantially
 different from its training distribution, or when propagating uncertainty
 to derived observables (phase transition temperatures, diffusion
 coefficients, and so on).
+
+.. note::
+
+   Uncertainty quantification is only available for a subset of
+   checkpoints (currently ``pet-mad-s`` v1.0.2, ``pet-mad-xs`` v1.5.0
+   and ``pet-mad-s`` v1.5.0). See :ref:`models` for the full list.
 
 Use the ``get_energy_uncertainty`` and ``get_energy_ensemble`` methods of
 :py:class:`~upet.calculator.UPETCalculator`:
@@ -241,6 +251,8 @@ Then combine both calculators with ``ase.calculators.mixing.SumCalculator``:
    combined_calc = SumCalculator([calc_upet, dft_d3])
    atoms.calc = combined_calc
 
+
+.. _ase-pet-mad-dos:
 
 DOS, Fermi levels and bandgaps (PET-MAD-DOS)
 --------------------------------------------
