@@ -95,6 +95,7 @@ them directly if you have not received an answer after a couple of days.
    usage/index
    models
    fine-tuning
+   api
    generated_examples/index
    miscellaneous
    faq
