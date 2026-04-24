@@ -96,6 +96,7 @@ them directly if you have not received an answer after a couple of days.
    models
    fine-tuning
    generated_examples/index
+   cookbook/index
    miscellaneous
    faq
    cite

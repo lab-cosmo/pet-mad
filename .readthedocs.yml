@@ -11,6 +11,10 @@ build:
   tools:
     python: "3.13"
 
+# Pull in the atomistic-cookbook submodule (renders cookbook recipes inline)
+submodules:
+  include: all
+
 # Build documentation in the docs/ directory with Sphinx
 sphinx:
   configuration: docs/src/conf.py
