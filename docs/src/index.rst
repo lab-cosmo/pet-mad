@@ -33,7 +33,7 @@ PET architecture and is trained on the MAD dataset.
 .. note::
 
    Are you here to try our **Matbench model**? Here is all you need. Don't
-   be scared by the parameter count — our model is much faster than you
+   be scared by the parameter count — our model is :ref:`much faster <model-speeds>` than you
    might think. It is excellent for convex hull energies, geometry
    optimization and phonons, but we highly recommend the lighter and more
    universal PET-MAD for molecular dynamics.
