@@ -116,7 +116,7 @@ cost.
 
 .. _model-speeds:
 
-Model Speeds
+Model speeds
 ------------
 Seeing the parameter counts of our larger models, it would be
 tempting to think that the models are slow. This is not the case, as we use our
