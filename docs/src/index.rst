@@ -99,4 +99,5 @@ them directly if you have not received an answer after a couple of days.
    generated_examples/index
    miscellaneous
    faq
+   changelog
    cite
