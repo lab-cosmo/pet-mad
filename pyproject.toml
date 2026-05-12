@@ -117,8 +117,10 @@ filterwarnings = [
     # PET-MAD v1.0 deprecation warning
     "ignore:.*is deprecated in favor of the newer PET-MAD-1.5.*:DeprecationWarning",
     # NVAlchemiOps Deprecation warning
-    "ignore: The 'nvalchemiops.neighborlist' module has been renamed to 'nvalchemiops.neighbors'.*:DeprecationWarning",
-    "ignore: From version 0.3.0 onwards, PyTorch is now an optional dependency.*:DeprecationWarning",
-    "ignore: `compute_requested_neighbors` is deprecated.*:UserWarning",
-    "ignore: `compute_requested_neighbors_from_options` is deprecated.*:UserWarning",
+    "ignore:The 'nvalchemiops.neighborlist' module has been renamed to 'nvalchemiops.neighbors'.*:DeprecationWarning",
+    "ignore:From version 0.3.0 onwards, PyTorch is now an optional dependency.*:DeprecationWarning",
+    "ignore:`compute_requested_neighbors` is deprecated.*:UserWarning",
+    "ignore:`compute_requested_neighbors_from_options` is deprecated.*:UserWarning",
+    # HF Xet deprecation warning
+    "ignore:hf_xet.download_files\\(\\) is deprecated. Use XetSession\\(\\):DeprecationWarning",
 ]
