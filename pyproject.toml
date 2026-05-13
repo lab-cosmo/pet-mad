@@ -26,7 +26,7 @@ dependencies = [
     "metatrain>=2026.2,<2026.3",
     "metatomic-ase",
     "nvalchemi-toolkit-ops==0.3.0",
-    "huggingface_hub<0.14.0",
+    "huggingface_hub",
     "hf_xet",
     "packaging",
     "platformdirs",
