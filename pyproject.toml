@@ -31,6 +31,7 @@ dependencies = [
     "packaging",
     "platformdirs",
     "tqdm",
+    "scipy",
 ]
 
 keywords = ["machine learning", "molecular modeling"]
@@ -121,4 +122,5 @@ filterwarnings = [
     "ignore: From version 0.3.0 onwards, PyTorch is now an optional dependency.*:DeprecationWarning",
     "ignore: `compute_requested_neighbors` is deprecated.*:UserWarning",
     "ignore: `compute_requested_neighbors_from_options` is deprecated.*:UserWarning",
+    "ignore: hf_xet.download_files() is deprecated.*:DeprecationWarning",
 ]
