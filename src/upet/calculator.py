@@ -1,3 +1,4 @@
+import logging
 import warnings
 from typing import Dict, List, Optional, Tuple, Union
 
@@ -10,7 +11,7 @@ from metatomic.torch import ModelOutput
 from metatomic_ase import MetatomicCalculator, SymmetrizedCalculator
 from packaging.version import Version
 from scipy.ndimage import gaussian_filter1d
-import logging
+
 from ._models import (
     _get_bandgap_model,
     _get_fermi_model,
