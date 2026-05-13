@@ -19,7 +19,7 @@ from ._version import (
     PET_MAD_DOS_AVAILABLE_VERSIONS,
     PET_MAD_DOS_LATEST_STABLE_VERSION,
 )
-from .modules import BandgapModel
+from .modules import CNNModel
 from .utils import hf_hub_download_url
 
 
@@ -343,6 +343,9 @@ BASE_URL_PET_MAD_DOS = "https://huggingface.co/lab-cosmo/pet-mad-dos/resolve/{ta
 BASE_URL_BANDGAP_MODEL = (
     "https://huggingface.co/lab-cosmo/pet-mad-dos/resolve/{tag}/models/bandgap-model.pt"
 )
+BASE_URL_FERMI_MODEL = (
+    "https://huggingface.co/lab-cosmo/pet-mad-dos/resolve/{tag}/models/fermi-model.pt"
+)
 
 
 def get_pet_mad_dos(
@@ -412,6 +415,45 @@ def _get_bandgap_model(version: str = "latest", model_path: Optional[str] = None
                 # cache invalidation
                 path, _ = urlretrieve(url=url.geturl())
 
-    model = BandgapModel()
+    model = CNNModel()
+    model.load_state_dict(torch.load(path, weights_only=False, map_location="cpu"))
+    return model
+
+def _get_fermi_model(version: str = "latest", model_path: Optional[str] = None):
+    """
+    Get a Fermi level model for PET-MAD-DOS
+    """
+    if version == "latest":
+        version = Version(PET_MAD_DOS_LATEST_STABLE_VERSION)
+    if not isinstance(version, Version):
+        version = Version(version)
+
+    if version not in [Version(v) for v in PET_MAD_DOS_AVAILABLE_VERSIONS]:
+        raise ValueError(
+            f"Version {version} is not supported. Supported versions are "
+            f"{PET_MAD_DOS_AVAILABLE_VERSIONS}"
+        )
+
+    if model_path is not None:
+        logging.info(
+            f"Loading the PET-MAD-DOS Fermi level model from checkpoint: {model_path}"
+        )
+        path = model_path
+    else:
+        logging.info(f"Downloading Fermi level model version: {version}")
+        # Set to main for now until the next version gets published
+        path = BASE_URL_FERMI_MODEL.format(tag="main") 
+        path = str(path)
+        url = urlparse(path)
+
+        if url.scheme:
+            if url.netloc == "huggingface.co":
+                path = hf_hub_download_url(url=url.geturl(), hf_token=None)
+            else:
+                # Avoid caching generic URLs due to lack of a model hash for proper
+                # cache invalidation
+                path, _ = urlretrieve(url=url.geturl())
+
+    model = CNNModel()
     model.load_state_dict(torch.load(path, weights_only=False, map_location="cpu"))
     return model

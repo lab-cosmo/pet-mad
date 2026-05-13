@@ -61,6 +61,22 @@ def test_efermi_calculation(with_dos):
 
     torch.testing.assert_close(efermi, target_efermi, atol=1e-3, rtol=1e-3)
 
+@pytest.mark.parametrize(
+    "with_dos",
+    [True, False],
+)
+def test_efermi_model_prediction(with_dos):
+    calc = PETMADDOSCalculator()
+    atoms = get_atoms()
+    target_efermi = torch.tensor([-7.3819, -8.7343])
+    if with_dos:
+        _, dos = calc.calculate_dos(atoms, per_atom=False)
+        efermi = calc.calculate_efermi(atoms, dos=dos, model = True)
+    else:
+        efermi = calc.calculate_efermi(atoms, model = True)
+
+    torch.testing.assert_close(efermi, target_efermi, atol=1e-3, rtol=1e-3)
+
 
 @pytest.mark.parametrize(
     "with_dos",

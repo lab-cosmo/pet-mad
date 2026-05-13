@@ -1,13 +1,14 @@
 import torch.nn as nn
 
 
-class BandgapModel(nn.Module):
+class CNNModel(nn.Module):
     """
-    A minimalistic CNN model for predicting bandgap from density of states.
+    A minimalistic CNN model for predicting the bandgap or Fermi level from the
+    electronic density of states.
     """
 
     def __init__(self):
-        super(BandgapModel, self).__init__()
+        super(CNNModel, self).__init__()
         self.conv1 = nn.Conv1d(
             in_channels=1,
             out_channels=64,

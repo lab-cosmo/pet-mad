@@ -4,13 +4,16 @@ from typing import Dict, List, Optional, Tuple, Union
 import ase.calculators.calculator
 import numpy as np
 import torch
+import torch.nn.functional as F
 from ase import Atoms
 from metatomic.torch import ModelOutput
 from metatomic_ase import MetatomicCalculator, SymmetrizedCalculator
 from packaging.version import Version
+from scipy.ndimage import gaussian_filter1d
 
 from ._models import (
     _get_bandgap_model,
+    _get_fermi_model,
     get_pet_mad_dos,
     get_upet,
     parse_checkpoint_filename,
@@ -276,7 +279,7 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
 
 
 ENERGY_LOWER_BOUND = -159.6456  # Lower bound of the energy grid for DOS
-ENERGY_UPPER_BOUND = 79.1528 + 1.5  # Upper bound of the energy grid for DOS
+ENERGY_UPPER_BOUND = 80.6528   # Upper bound of the energy grid for DOS
 ENERGY_INTERVAL = 0.05  # Interval of the energy grid for DOS
 
 # If we want to calculate the Fermi level at a given temperature, we need to search
@@ -299,6 +302,7 @@ class PETMADDOSCalculator:
         version: str = "latest",
         model_path: Optional[str] = None,
         bandgap_model_path: Optional[str] = None,
+        fermi_model_path: Optional[str] = None,
         *,
         check_consistency: bool = False,
         device: Optional[str] = None,
@@ -325,6 +329,9 @@ class PETMADDOSCalculator:
         bandgap_model = _get_bandgap_model(
             version=version, model_path=bandgap_model_path
         )
+        fermi_model = _get_fermi_model(
+            version=version, model_path=fermi_model_path
+        )
 
         self.calculator = MetatomicCalculator(
             model,
@@ -333,6 +340,10 @@ class PETMADDOSCalculator:
             device=device,
         )
         self._bandgap_model = bandgap_model
+        self._fermi_model = fermi_model
+        self.UQ_model = None # UQ model is heavy so it will not be loaded by default.
+        self.sigmoid = torch.nn.Sigmoid()
+
 
         n_points = np.ceil((ENERGY_UPPER_BOUND - ENERGY_LOWER_BOUND) / ENERGY_INTERVAL)
         self._energy_grid = (
@@ -340,7 +351,10 @@ class PETMADDOSCalculator:
         )
 
     def calculate_dos(
-        self, atoms: Union[Atoms, List[Atoms]], per_atom: bool = False
+        self, 
+        atoms: Union[Atoms, List[Atoms]], 
+        per_atom: bool = False, 
+        denoise: bool = False,
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         """
         Calculate the density of states for a given ase.Atoms object,
@@ -348,12 +362,15 @@ class PETMADDOSCalculator:
 
         :param atoms: ASE atoms object or a list of ASE atoms objects
         :param per_atom: Whether to return the density of states per atom.
+        :param denoise: Whether to apply denoising to the calculated DOS.
         :return: Energy grid and corresponding DOS values in torch.Tensor format.
         """
         results = self.calculator.run_model(
             atoms, outputs={"mtt::dos": ModelOutput(per_atom=per_atom)}
         )
         dos = results["mtt::dos"].block().values
+        if denoise:
+            _, dos = self.denoise_predictions(atoms, dos, self._energy_grid.clone())
         return self._energy_grid.clone(), dos
 
     def calculate_bandgap(
@@ -396,6 +413,7 @@ class PETMADDOSCalculator:
         atoms: Union[Atoms, List[Atoms]],
         dos: Optional[torch.Tensor] = None,
         temperature: float = 0.0,
+        model = False
     ) -> torch.Tensor:
         """
         Get the Fermi energy for a given ase.Atoms object, or a list of ase.Atoms
@@ -403,6 +421,12 @@ class PETMADDOSCalculator:
         By default, the density of states is first calculated using the `calculate_dos`
         method, and the Fermi level is calculated at T=0 K. Alternatively, the density
         of states can be provided as an input parameter to avoid re-calculating the DOS.
+        There are two methods to calculate the Fermi level: (1) the default method, 
+        which is based on charge neutrality and cumulative DOS, and (2) a model-based 
+        method that uses a dedicated CNN model trained to predict the Fermi level 
+        directly from the DOS. The model-based method can be activated by setting 
+        `model=True`. The model-based method is less susceptible to model noise 
+        especially for gapped systems.
 
         :param atoms: ASE atoms object or a list of ASE atoms objects
         :param dos: Density of states for the given atoms. If not provided, the
@@ -422,41 +446,248 @@ class PETMADDOSCalculator:
                 "`dos = None` or provide a consistent DOS, computed with "
                 "`per_atom = False`."
             )
-        cdos = torch.cumulative_trapezoid(dos, dx=ENERGY_INTERVAL)
-        num_electrons = get_num_electrons(atoms)
-        num_electrons.to(dos.device)
-        efermi_indices = torch.argmax(
-            (cdos > num_electrons.unsqueeze(1)).float(), dim=1
-        )
-        efermi = self._energy_grid[efermi_indices]
-        if temperature > 0.0:
-            efermi_grid_trial = torch.linspace(
-                efermi.min() - ENERGY_WINDOW,
-                efermi.max() + ENERGY_WINDOW,
-                ENERGY_GRID_NUM_POINTS_COARSE,
+        if model:
+            print ("Calculating Fermi level with the model-based method. This method is"
+                   " more robust to noise in the DOS, especially for gapped systems")
+            num_atoms = torch.tensor([len(item) for item in atoms], device=dos.device)
+            dos = dos / num_atoms.unsqueeze(1)
+            efermi = self._fermi_model(
+                dos.unsqueeze(1)
+            ).detach() 
+            efermi = efermi.squeeze()
+            
+        else:
+            print("Calculating Fermi level with the default method "
+            "based on charge neutrality and cumulative DOS.")
+            cdos = torch.cumulative_trapezoid(dos, dx=ENERGY_INTERVAL)
+            num_electrons = get_num_electrons(atoms)
+            num_electrons.to(dos.device)
+            efermi_indices = torch.argmax(
+                (cdos > num_electrons.unsqueeze(1)).float(), dim=1
             )
-            occupancies = fermi_dirac_distribution(
-                self._energy_grid.unsqueeze(0),
-                efermi_grid_trial.unsqueeze(1),
-                temperature,
-            )
-            idos = torch.trapezoid(dos.unsqueeze(1) * occupancies, self._energy_grid)
-            idos_interp = torch.nn.functional.interpolate(
-                idos.unsqueeze(0),
-                size=ENERGY_GRID_NUM_POINTS_FINE,
-                mode="linear",
-                align_corners=True,
-            )[0]
-            efermi_grid_interp = torch.nn.functional.interpolate(
-                efermi_grid_trial.unsqueeze(0).unsqueeze(0),
-                size=ENERGY_GRID_NUM_POINTS_FINE,
-                mode="linear",
-                align_corners=True,
-            )[0][0]
-            # Soft approximation of argmax using temperature scaling
-            residue = idos_interp - num_electrons.unsqueeze(1)
-            # Use softmax with a sharp temperature to approximate argmax
-            tau = 0.0001  # Small temperature for sharp approximation
-            weights = torch.softmax(-torch.abs(residue) / tau, dim=1)
-            efermi = torch.sum(weights * efermi_grid_interp.unsqueeze(0), dim=1)
+            efermi = self._energy_grid[efermi_indices]
+            if temperature > 0.0:
+                efermi_grid_trial = torch.linspace(
+                    efermi.min() - ENERGY_WINDOW,
+                    efermi.max() + ENERGY_WINDOW,
+                    ENERGY_GRID_NUM_POINTS_COARSE,
+                )
+                occupancies = fermi_dirac_distribution(
+                    self._energy_grid.unsqueeze(0),
+                    efermi_grid_trial.unsqueeze(1),
+                    temperature,
+                )
+                idos = torch.trapezoid(
+                    dos.unsqueeze(1) * occupancies, 
+                    self._energy_grid
+                )
+                idos_interp = torch.nn.functional.interpolate(
+                    idos.unsqueeze(0),
+                    size=ENERGY_GRID_NUM_POINTS_FINE,
+                    mode="linear",
+                    align_corners=True,
+                )[0]
+                efermi_grid_interp = torch.nn.functional.interpolate(
+                    efermi_grid_trial.unsqueeze(0).unsqueeze(0),
+                    size=ENERGY_GRID_NUM_POINTS_FINE,
+                    mode="linear",
+                    align_corners=True,
+                )[0][0]
+                # Soft approximation of argmax using temperature scaling
+                residue = idos_interp - num_electrons.unsqueeze(1)
+                # Use softmax with a sharp temperature to approximate argmax
+                tau = 0.0001  # Small temperature for sharp approximation
+                weights = torch.softmax(-torch.abs(residue) / tau, dim=1)
+                efermi = torch.sum(weights * efermi_grid_interp.unsqueeze(0), dim=1)
         return efermi
+    
+    def denoise_predictions(
+        self,
+        atoms: Union[Atoms, List[Atoms]],
+        dos: torch.Tensor,
+        energies: Optional[torch.Tensor] = None,
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        """
+        Denoise the predicted DOS by enforcing physical consistency between the DOS
+        and the Fermi level predicted by the model. The denoising procedure is detailed
+        in the PET-MAD-DOS paper. The procedure is summarized as:
+
+        1) Predict the Fermi level from the original DOS
+        2) A 1-D Gaussian filter with a standard deviation of 0.3eV is applied to the
+              original DOS to smooth out spurious peaks and noise.
+        3) The filtered DOS is passed through a modified sigmoid function such that
+            the inflection point is at 0.1 an the slope is 100
+        4) The output is used as a multiplier on the DOS output to obtain a 
+            thresholded DOS
+        5) The thresholded DOS is scaled such that the physical Fermi level of the DOS
+            lie on the same point as the predicted by the model in the first step.
+
+        :param atoms: ASE atoms object or a list of ASE atoms objects
+        :param dos: Density of states for the given atoms
+        :param energies: Energy grid corresponding to the DOS. If not provided, 
+            the default energy grid of PET-MAD-DOS will be used.
+        :return: Energy grid and corresponding denoised DOS values for each ase.Atoms 
+            object stored in torch.Tensor format.
+        """
+        fermi = self.calculate_efermi(atoms, dos=dos, model=True)
+        n_electrons = get_num_electrons(atoms).to(dos.device)
+        if energies is None:
+            energies = self._energy_grid.clone().to(dos.device)
+        dos_filtered = gaussian_filter1d(dos.cpu().numpy(), sigma=0.3 / ENERGY_INTERVAL)
+        dos_filtered = torch.from_numpy(dos_filtered).to(dos.device)
+        sigmoid_input = 100 * (dos_filtered - 0.1)
+        multiplier = self.sigmoid(sigmoid_input)
+        dos_thresholded = dos * multiplier
+        cdos_thresholded = torch.cumulative_trapezoid(
+            dos_thresholded, 
+            x=energies, 
+            dim = 1
+        )
+        fermi_indexes = torch.searchsorted(energies, fermi)
+        current_electrons = cdos_thresholded.gather(1, fermi_indexes.unsqueeze(1))
+        scaling_factor = n_electrons.flatten()/current_electrons.flatten()
+        dos_denoised = dos_thresholded * scaling_factor.unsqueeze(1)
+        return energies, dos_denoised
+                
+        
+    def align_dos(
+        self,
+        predicted_DOS: torch.Tensor, 
+        true_DOS: torch.Tensor, 
+        mask: torch.Tensor
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        """
+        Align the predicted DOS to the true DOS by finding the optimal energy shift that
+        minimizes the mean squared error between the predicted and true DOS in a given
+        energy window defined by the mask. It is assumed that predictions have a larger
+        energy grid than the true_DOS. The output is the true_DOS expanded to the same
+        energy grid as the predicted_DOS in a way that aligns the two spectras.
+
+        :param predicted_DOS: Predicted density of states for a given atoms.
+        :param true_DOS: True density of states for the same atoms.
+        :param mask: Integer boolean tensor (1/0) indicating the energy window to 
+            consider for the alignment.
+        :return: Aligned predicted and true DOS.
+        """
+
+        device = predicted_DOS.device
+        true_DOS = true_DOS.to(device)
+        mask = mask.to(device)
+        sum_sq_smaller = torch.sum((true_DOS ** 2) * mask, dim=1, keepdim=True)
+        batch_size = predicted_DOS.shape[0]
+        bigger_reshaped = predicted_DOS.unsqueeze(0)
+        kernel = (true_DOS * mask).unsqueeze(1)
+        cross_corr = F.conv1d(bigger_reshaped, kernel, groups=batch_size)
+        cross_corr = cross_corr.squeeze(0)
+        bigger_sq_reshaped = (predicted_DOS ** 2).unsqueeze(0)
+        mask_kernel = mask.unsqueeze(1)
+        sum_sq_bigger = F.conv1d(bigger_sq_reshaped, mask_kernel, groups=batch_size)
+        sum_sq_bigger = sum_sq_bigger.squeeze(0)
+        losses = sum_sq_bigger - 2 * cross_corr + sum_sq_smaller
+        losses = torch.clamp(losses, min=0.0)
+        front_tail = torch.cumsum(predicted_DOS**2, dim=1)
+        shape_difference = predicted_DOS.shape[1] - true_DOS.shape[1]
+        additional_error = torch.hstack(
+            [
+                torch.zeros(
+                    len(predicted_DOS), 
+                    device=predicted_DOS.device
+                ).reshape(-1, 1),
+                front_tail[:, :shape_difference],
+            ]
+        )
+        total_losses = losses + additional_error
+        final_loss, shift = torch.min(total_losses, dim=1)
+        aligned_true_DOS = []
+        for index, s in enumerate(shift):
+            front_pad = torch.zeros(s, device=predicted_DOS.device)
+            back_pad = torch.zeros(
+                predicted_DOS.shape[1] - true_DOS.shape[1] - s, 
+                device=predicted_DOS.device
+            )
+            true_DOS_padded = torch.hstack([front_pad, true_DOS[index], back_pad])
+            aligned_true_DOS.append(true_DOS_padded)
+
+        return predicted_DOS, torch.vstack(aligned_true_DOS)
+    
+    def compute_DOS_and_mask_from_eigenvalues(
+        self,
+        eigenvalues: torch.Tensor,
+        kweights: Optional[torch.Tensor] = None,
+        energy_grid: Optional[torch.Tensor] = None,
+        sigma: float = 0.3,
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        """
+        Compute the density of states and the corresponding mask from a given set of
+        eigenvalues and k-point weights. The DOS is computed by broadening each
+        eigenvalue with a Gaussian function and summing over all eigenvalues. The mask
+        is a boolean tensor indicating which energy grid points are reliable enough to 
+        compute the loss on.
+
+        :param eigenvalues: Tensor of shape (n_kpoints, n_bands) containing the 
+            eigenvalues.
+        :param kweights: Tensor of shape (n_kpoints,) containing the weights of each 
+            k-point.
+        :param energy_grid: Tensor containing the energy grid on which to compute the 
+            DOS. Defaults to the energy grid defined in the PET-MAD-DOS model.
+        :param sigma: Standard deviation for Gaussian broadening in eV. 
+            Defaults to 0.3 eV.
+        :return: DOS and mask
+        """
+
+        if kweights is None:
+            kweights = torch.ones(
+                eigenvalues.shape[0], 
+                device=eigenvalues.device
+            ) / eigenvalues.shape[0]
+        if energy_grid is None:
+            energy_grid = self._energy_grid.clone()
+            device = energy_grid.device
+        confident_upper_energy_bound = torch.min(eigenvalues[:,-1]) - 3 * sigma
+        eigenvalues = eigenvalues.to(device)
+        kweights = kweights.to(device)
+        n_bands = eigenvalues.shape[1]
+        eigenvalues = eigenvalues.flatten()
+        kweights = kweights.squeeze().repeat(n_bands)
+        delta_E = (energy_grid - eigenvalues[:, None]) / sigma
+        gaussian_weights = torch.exp(-0.5 * delta_E**2)
+        normalization = 1 / np.sqrt(2 * np.pi * sigma**2)
+        dos = torch.sum(kweights[:, None] * gaussian_weights, dim=0) * normalization
+        mask = (energy_grid <= confident_upper_energy_bound).to(torch.int)
+
+        return dos, mask
+       
+    def pad_dos_and_mask_for_training(
+        self,
+        dos: torch.Tensor,
+        mask: torch.Tensor,
+        target_length: int = 4806,
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        """
+        Pad the DOS and mask tensors with zeros to a target length. The padding is done
+        on the left side of the tensors.
+
+        :param dos: Tensor containing the density of states values.
+        :param mask: Tensor containing the mask values.
+        :param target_length: The target length to pad the tensors to. Defaults to 4806.
+        :return: Padded DOS and mask tensors.
+        """
+        
+        current_length = dos.shape[0] if dos.ndim == 1 else dos.shape[1]
+        if current_length >= target_length:
+            print ("No padding needed for DOS and mask. Current length: ", 
+                   current_length," Target length: ", target_length)
+            return dos, mask
+        padding_length = target_length - current_length
+        print ("Padding DOS and mask with zeros to the left."
+               " Padding length: ", padding_length," Please use this value for "
+               "n_extra_targets parameter for the loss function "
+               "in the training hyperparameters YAML file.")
+        dos_padded = F.pad(dos, (padding_length, 0), mode='constant', value=0)
+        mask_padded = F.pad(mask, (padding_length, 0), mode='constant', value=0)
+        return dos_padded, mask_padded
+
+        
+
+
+
