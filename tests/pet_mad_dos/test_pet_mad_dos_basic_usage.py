@@ -71,7 +71,7 @@ def test_efermi_model_prediction(with_dos):
     target_efermi = torch.tensor([-7.3819, -8.7343])
     if with_dos:
         _, dos = calc.calculate_dos(atoms, per_atom=False)
-        efermi = calc.calculate_efermi(atoms, dos=dos, model = True)
+        efermi = calc.calculate_efermi(atoms, dos=dos, model=True)
     else:
         efermi = calc.calculate_efermi(atoms, model = True)
 
