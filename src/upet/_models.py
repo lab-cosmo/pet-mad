@@ -419,6 +419,7 @@ def _get_bandgap_model(version: str = "latest", model_path: Optional[str] = None
     model.load_state_dict(torch.load(path, weights_only=False, map_location="cpu"))
     return model
 
+
 def _get_fermi_model(version: str = "latest", model_path: Optional[str] = None):
     """
     Get a Fermi level model for PET-MAD-DOS
@@ -442,7 +443,7 @@ def _get_fermi_model(version: str = "latest", model_path: Optional[str] = None):
     else:
         logging.info(f"Downloading Fermi level model version: {version}")
         # Set to main for now until the next version gets published
-        path = BASE_URL_FERMI_MODEL.format(tag="main") 
+        path = BASE_URL_FERMI_MODEL.format(tag="main")
         path = str(path)
         url = urlparse(path)
 

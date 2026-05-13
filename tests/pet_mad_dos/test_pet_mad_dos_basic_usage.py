@@ -61,6 +61,7 @@ def test_efermi_calculation(with_dos):
 
     torch.testing.assert_close(efermi, target_efermi, atol=1e-3, rtol=1e-3)
 
+
 @pytest.mark.parametrize(
     "with_dos",
     [True, False],
