@@ -10,7 +10,7 @@ from metatomic.torch import ModelOutput
 from metatomic_ase import MetatomicCalculator, SymmetrizedCalculator
 from packaging.version import Version
 from scipy.ndimage import gaussian_filter1d
-
+import logging
 from ._models import (
     _get_bandgap_model,
     _get_fermi_model,
@@ -444,7 +444,7 @@ class PETMADDOSCalculator:
                 "`per_atom = False`."
             )
         if model:
-            print(
+            logging.info(
                 "Calculating Fermi level with the model-based method. This method is"
                 " more robust to noise in the DOS, especially for gapped systems"
             )
@@ -454,7 +454,7 @@ class PETMADDOSCalculator:
             efermi = efermi.squeeze()
 
         else:
-            print(
+            logging.info(
                 "Calculating Fermi level with the default method "
                 "based on charge neutrality and cumulative DOS."
             )
@@ -666,7 +666,7 @@ class PETMADDOSCalculator:
 
         current_length = dos.shape[0] if dos.ndim == 1 else dos.shape[1]
         if current_length >= target_length:
-            print(
+            logging.info(
                 "No padding needed for DOS and mask. Current length: ",
                 current_length,
                 " Target length: ",
@@ -674,7 +674,7 @@ class PETMADDOSCalculator:
             )
             return dos, mask
         padding_length = target_length - current_length
-        print(
+        logging.info(
             "Padding DOS and mask with zeros to the left. Padding length: ",
             padding_length,
             " Please use this value for "
