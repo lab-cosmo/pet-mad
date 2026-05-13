@@ -26,7 +26,7 @@ dependencies = [
     "metatrain>=2026.2,<2026.3",
     "metatomic-ase",
     "nvalchemi-toolkit-ops==0.3.0",
-    "huggingface_hub",
+    "huggingface_hub<0.14.0",
     "hf_xet",
     "packaging",
     "platformdirs",
@@ -122,6 +122,4 @@ filterwarnings = [
     "ignore: From version 0.3.0 onwards, PyTorch is now an optional dependency.*:DeprecationWarning",
     "ignore: `compute_requested_neighbors` is deprecated.*:UserWarning",
     "ignore: `compute_requested_neighbors_from_options` is deprecated.*:UserWarning",
-    # hf_xet deprecation warning
-    "ignore: `hf_xet.download_files()` is deprecated.*:DeprecationWarning",
 ]
