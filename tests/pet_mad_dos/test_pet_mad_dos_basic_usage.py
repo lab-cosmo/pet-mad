@@ -73,7 +73,7 @@ def test_efermi_model_prediction(with_dos):
         _, dos = calc.calculate_dos(atoms, per_atom=False)
         efermi = calc.calculate_efermi(atoms, dos=dos, model=True)
     else:
-        efermi = calc.calculate_efermi(atoms, model = True)
+        efermi = calc.calculate_efermi(atoms, model=True)
 
     torch.testing.assert_close(efermi, target_efermi, atol=1e-3, rtol=1e-3)
 
