@@ -575,7 +575,7 @@ class PETMADDOSCalculator:
 
     def align_dos(
         self, predicted_DOS: torch.Tensor, true_DOS: torch.Tensor, mask: torch.Tensor
-    ) -> Tuple[torch.Tensor, torch.Tensor]:
+    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         """
         Align the predicted DOS to the true DOS by finding the optimal energy shift that
         minimizes the mean squared error between the predicted and true DOS in a given
