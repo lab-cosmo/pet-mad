@@ -24,7 +24,21 @@ using the ASE-compatible :py:class:`~upet.calculator.UPETCalculator`:
    energy = atoms.get_potential_energy()
    forces = atoms.get_forces()
 
-The first call downloads the model checkpoint from the `HuggingFace
+For DOS calculations, you can use the :py:class:`~upet.calculator.PETMADDOSCalculator`:
+
+.. code-block:: python
+
+   from upet.calculator import PETMADDOSCalculator
+   from ase.build import bulk
+
+   atoms = bulk("Si", cubic=True, a=5.43, crystalstructure="diamond")
+   calculator = PETMADDOSCalculator(version="latest", device="cpu")
+   energies, predicted_DOS = pet_mad_dos_calculator.calculate_dos(atoms)
+
+where the energies refer to the energy grid that the DOS is projected on and has units
+of eV and the DOS refers to the density of states values and has units of states/eV. 
+
+In both examples, the first call downloads the model checkpoint from the `HuggingFace
 repository <https://huggingface.co/lab-cosmo/upet>`_ and caches it locally,
 so subsequent calls are fast.
 
