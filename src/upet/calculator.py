@@ -278,10 +278,15 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
         key = self.calculator._energy_uq_key.replace("_uncertainty", "_ensemble")
         return self._run_uq(atoms=atoms, per_atom=per_atom, key=key)
 
-
+# For PET-MAD-DOS predictions
 ENERGY_LOWER_BOUND = -159.6456  # Lower bound of the energy grid for DOS
 ENERGY_UPPER_BOUND = 80.6528  # Upper bound of the energy grid for DOS
 ENERGY_INTERVAL = 0.05  # Interval of the energy grid for DOS
+
+# For PET-MAD-DOS Targets Computation
+TARGET_ENERGY_LOWER_BOUND = -149.6456  # Lower bound of the energy grid for DOS
+TARGET_ENERGY_UPPER_BOUND = 80.6528  # Upper bound of the energy grid for DOS
+TARGET_ENERGY_INTERVAL = 0.05  # Interval of the energy grid for DOS
 
 # If we want to calculate the Fermi level at a given temperature, we need to search
 # it around the Fermi level at 0 K. To do this, we first set a certain energy window
@@ -346,6 +351,14 @@ class PETMADDOSCalculator:
         n_points = np.ceil((ENERGY_UPPER_BOUND - ENERGY_LOWER_BOUND) / ENERGY_INTERVAL)
         self._energy_grid = (
             torch.arange(n_points) * ENERGY_INTERVAL + ENERGY_LOWER_BOUND
+        )
+        target_n_points = np.ceil(
+            (TARGET_ENERGY_UPPER_BOUND - TARGET_ENERGY_LOWER_BOUND) / 
+            TARGET_ENERGY_INTERVAL
+        )
+        self._target_energy_grid = (
+            torch.arange(target_n_points) * TARGET_ENERGY_INTERVAL + 
+            TARGET_ENERGY_LOWER_BOUND
         )
 
     def calculate_dos(
