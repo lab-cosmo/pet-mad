@@ -625,8 +625,8 @@ class PETMADDOSCalculator:
                 predicted_DOS.shape[1] - true_DOS.shape[1] - s,
                 device=predicted_DOS.device,
             )
-            true_DOS_padded = torch.hstack([front_pad, true_DOS[index], back_pad])
-            true_Mask_padded = torch.hstack([front_pad, mask[index], back_pad])
+            true_DOS_padded = torch.hstack([front_pad, true_DOS[index], back_pad]).int()
+            true_Mask_padded = torch.hstack([front_pad+1, mask[index], back_pad]).int()
             aligned_true_DOS.append(true_DOS_padded)
             aligned_true_masks.append(true_Mask_padded)
 
