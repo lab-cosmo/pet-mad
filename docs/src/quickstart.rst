@@ -36,7 +36,7 @@ For DOS calculations, you can use the :py:class:`~upet.calculator.PETMADDOSCalcu
    energies, predicted_DOS = pet_mad_dos_calculator.calculate_dos(atoms)
 
 where the energies refer to the energy grid that the DOS is projected on and has units
-of eV and the DOS refers to the density of states values and has units of states/eV. 
+of eV and the DOS refers to the density of states values and has units of states/eV.
 
 In both examples, the first call downloads the model checkpoint from the `HuggingFace
 repository <https://huggingface.co/lab-cosmo/upet>`_ and caches it locally,

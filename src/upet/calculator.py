@@ -368,6 +368,11 @@ class PETMADDOSCalculator:
         )
         dos = results["mtt::dos"].block().values
         if denoise:
+            if per_atom:
+                raise NotImplementedError(
+                    "Denoising is not implemented for per-atom DOS."
+                    " Please set `per_atom=False` to use denoising."
+                )
             _, dos = self.denoise_predictions(atoms, dos, self._energy_grid.clone())
         return self._energy_grid.clone(), dos
 
@@ -541,6 +546,8 @@ class PETMADDOSCalculator:
             dos_thresholded, x=energies, dim=1
         )
         fermi_indexes = torch.searchsorted(energies, fermi)
+        if len(fermi_indexes.shape) == 0:
+            fermi_indexes = fermi_indexes.unsqueeze(0)
         current_electrons = cdos_thresholded.gather(1, fermi_indexes.unsqueeze(1))
         scaling_factor = n_electrons.flatten() / current_electrons.flatten()
         dos_denoised = dos_thresholded * scaling_factor.unsqueeze(1)

@@ -286,12 +286,27 @@ supported:
        [atoms_1, atoms_2], per_atom=False
    )
 
-Bandgap and Fermi level predictions are available via dedicated methods:
+Additionally, a denoising algorithm is available to mitigate unphysical oscillations
+in the raw predicted DOS. The denoised DOS is non-negative and smoother compared to the
+raw DOS, and can be obtained by setting the ``denoise`` flag to ``True``. As the
+denoising algorithm is applied on the DOS of the system, the per_atom DOS is not
+supported when denoising is turned on.:
+
+.. code-block:: python
+
+   energies, denoised_dos = pet_mad_dos_calculator.calculate_dos(atoms, denoise=True)
+
+
+Bandgap and Fermi level predictions are available via dedicated methods. There are two
+methods of obtaining the Fermi level, one using the predicted DOS and the other using a
+direct prediction a decicated CNN model. The latter is more resilient to errors in the
+DOS for gapped systems.
 
 .. code-block:: python
 
    bandgap = pet_mad_dos_calculator.calculate_bandgap(atoms)
    fermi_level = pet_mad_dos_calculator.calculate_efermi(atoms)
+   fermi_level_CNN = pet_mad_dos_calculator.calculate_efermi(atoms, model=True)
 
 You can also re-use a previously computed DOS:
 
@@ -299,6 +314,7 @@ You can also re-use a previously computed DOS:
 
    bandgap = pet_mad_dos_calculator.calculate_bandgap(atoms, dos=dos)
    fermi_level = pet_mad_dos_calculator.calculate_efermi(atoms, dos=dos)
+   fermi_level_CNN = pet_mad_dos_calculator.calculate_efermi(atoms, dos=dos, model=True)
 
 The same is supported for a list of ``Atoms``:
 
@@ -306,6 +322,11 @@ The same is supported for a list of ``Atoms``:
 
    bandgaps = pet_mad_dos_calculator.calculate_bandgap([atoms_1, atoms_2], dos=dos)
    fermi_levels = pet_mad_dos_calculator.calculate_efermi([atoms_1, atoms_2], dos=dos)
+   fermi_levels_CNN = pet_mad_dos_calculator.calculate_efermi(
+      [atoms_1, atoms_2],
+      dos=dos,
+      model=True
+   )
 
 
 Dataset visualization with the PET-MAD featurizer
