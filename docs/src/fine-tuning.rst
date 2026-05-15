@@ -11,14 +11,14 @@ Fine-tuning
    which covers the full workflow end-to-end.
 
 .. note::
-   
-   Due to the complexity of the data processing pipeline for fine-tuning PET-MAD-DOS, 
+
+   Due to the complexity of the data processing pipeline for fine-tuning PET-MAD-DOS,
    the reader is instead referred to the
    `PET-MAD-DOS fine-tuning tutorial in the atomistic cookbook
    <https://atomistic-cookbook.org/examples/pet-mad-dos/
    pet-mad-dos.html#finetuning-pet-mad-dos-on-specific-applications>`_
    for a step-by-step walkthrough of the fine-tuning process for PET-MAD-DOS models.
-   
+
 
 UPET models can be fine-tuned using the `metatrain
 <https://docs.metatensor.org/metatrain/latest/>`_ library. We currently
