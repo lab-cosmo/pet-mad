@@ -547,8 +547,13 @@ class PETMADDOSCalculator:
         :return: Energy grid and corresponding denoised DOS values for each ase.Atoms
             object stored in torch.Tensor format.
         """
+        if isinstance(atoms, Atoms):
+            atoms = [atoms]
         fermi = self.calculate_efermi(atoms, dos=dos, model=True)
         n_electrons = get_num_electrons(atoms).to(dos.device)
+        num_atoms = torch.tensor([len(item) for item in atoms], device=dos.device)
+        dos = dos / num_atoms.unsqueeze(1)
+        n_electrons = n_electrons / num_atoms
         if energies is None:
             energies = self._energy_grid.clone().to(dos.device)
         dos_filtered = gaussian_filter1d(dos.cpu().numpy(), sigma=0.3 / ENERGY_INTERVAL)
@@ -565,7 +570,8 @@ class PETMADDOSCalculator:
         current_electrons = cdos_thresholded.gather(1, fermi_indexes.unsqueeze(1))
         scaling_factor = n_electrons.flatten() / current_electrons.flatten()
         dos_denoised = dos_thresholded * scaling_factor.unsqueeze(1)
-        return energies, dos_denoised
+        dos_rescaled = dos_denoised * num_atoms.unsqueeze(1)
+        return energies, dos_rescaled
 
     def align_dos(
         self, predicted_DOS: torch.Tensor, true_DOS: torch.Tensor, mask: torch.Tensor
@@ -612,6 +618,7 @@ class PETMADDOSCalculator:
         total_losses = losses + additional_error
         final_loss, shift = torch.min(total_losses, dim=1)
         aligned_true_DOS = []
+        aligned_true_masks = []
         for index, s in enumerate(shift):
             front_pad = torch.zeros(s, device=predicted_DOS.device)
             back_pad = torch.zeros(
@@ -619,9 +626,15 @@ class PETMADDOSCalculator:
                 device=predicted_DOS.device,
             )
             true_DOS_padded = torch.hstack([front_pad, true_DOS[index], back_pad])
+            true_Mask_padded = torch.hstack([front_pad, mask[index], back_pad])
             aligned_true_DOS.append(true_DOS_padded)
+            aligned_true_masks.append(true_Mask_padded)
 
-        return predicted_DOS, torch.vstack(aligned_true_DOS)
+        return (
+            predicted_DOS,
+            torch.vstack(aligned_true_DOS),
+            torch.vstack(aligned_true_masks),
+        )
 
     def compute_DOS_and_mask_from_eigenvalues(
         self,
