@@ -196,10 +196,12 @@ def align_dos(
         consider for the alignment.
     :return: Aligned predicted and true DOS.
     """
-
+    # Ensure that everything is on the same device and has the same dtype
     device = predicted_DOS.device
-    true_DOS = true_DOS.to(device)
-    mask = mask.to(device)
+    true_DOS = true_DOS.float().to(device)
+    predicted_DOS = predicted_DOS.float()
+    mask = mask.float().to(device)
+
     sum_sq_smaller = torch.sum((true_DOS**2) * mask, dim=1, keepdim=True)
     batch_size = predicted_DOS.shape[0]
     bigger_reshaped = predicted_DOS.unsqueeze(0)
