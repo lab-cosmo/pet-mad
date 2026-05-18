@@ -5,7 +5,6 @@ from typing import Dict, List, Optional, Tuple, Union
 import ase.calculators.calculator
 import numpy as np
 import torch
-import torch.nn.functional as F
 from ase import Atoms
 from metatomic.torch import ModelOutput
 from metatomic_ase import MetatomicCalculator, SymmetrizedCalculator
@@ -26,8 +25,10 @@ from ._version import (
     UPET_UQ_SUPPORTED_MODELS,
 )
 from .utils import (
+    dos_from_eigenvalues,
     fermi_dirac_distribution,
     get_num_electrons,
+    pad_dos,
 )
 
 
@@ -346,7 +347,6 @@ class PETMADDOSCalculator:
         )
         self._bandgap_model = bandgap_model
         self._fermi_model = fermi_model
-        self.UQ_model = None  # UQ model is heavy so it will not be loaded by default.
         self.sigmoid = torch.nn.Sigmoid()
 
         n_points = np.ceil((ENERGY_UPPER_BOUND - ENERGY_LOWER_BOUND) / ENERGY_INTERVAL)
@@ -357,10 +357,13 @@ class PETMADDOSCalculator:
             (TARGET_ENERGY_UPPER_BOUND - TARGET_ENERGY_LOWER_BOUND)
             / TARGET_ENERGY_INTERVAL
         )
-        self._target_energy_grid = (
+        self.target_energy_grid = (
             torch.arange(target_n_points) * TARGET_ENERGY_INTERVAL
             + TARGET_ENERGY_LOWER_BOUND
         )
+        self.sigma = torch.tensor(
+            0.3
+        )  # Standard deviation for Gaussian broadening in eV
 
     def calculate_dos(
         self,
@@ -573,151 +576,48 @@ class PETMADDOSCalculator:
         dos_rescaled = dos_denoised * num_atoms.unsqueeze(1)
         return energies, dos_rescaled
 
-    def align_dos(
-        self, predicted_DOS: torch.Tensor, true_DOS: torch.Tensor, mask: torch.Tensor
-    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-        """
-        Align the predicted DOS to the true DOS by finding the optimal energy shift that
-        minimizes the mean squared error between the predicted and true DOS in a given
-        energy window defined by the mask. It is assumed that predictions have a larger
-        energy grid than the true_DOS. The output is the true_DOS expanded to the same
-        energy grid as the predicted_DOS in a way that aligns the two spectras.
-
-        :param predicted_DOS: Predicted density of states for a given atoms.
-        :param true_DOS: True density of states for the same atoms.
-        :param mask: Integer boolean tensor (1/0) indicating the energy window to
-            consider for the alignment.
-        :return: Aligned predicted and true DOS.
-        """
-
-        device = predicted_DOS.device
-        true_DOS = true_DOS.to(device)
-        mask = mask.to(device)
-        sum_sq_smaller = torch.sum((true_DOS**2) * mask, dim=1, keepdim=True)
-        batch_size = predicted_DOS.shape[0]
-        bigger_reshaped = predicted_DOS.unsqueeze(0)
-        kernel = (true_DOS * mask).unsqueeze(1)
-        cross_corr = F.conv1d(bigger_reshaped, kernel, groups=batch_size)
-        cross_corr = cross_corr.squeeze(0)
-        bigger_sq_reshaped = (predicted_DOS**2).unsqueeze(0)
-        mask_kernel = mask.unsqueeze(1)
-        sum_sq_bigger = F.conv1d(bigger_sq_reshaped, mask_kernel, groups=batch_size)
-        sum_sq_bigger = sum_sq_bigger.squeeze(0)
-        losses = sum_sq_bigger - 2 * cross_corr + sum_sq_smaller
-        losses = torch.clamp(losses, min=0.0)
-        front_tail = torch.cumsum(predicted_DOS**2, dim=1)
-        shape_difference = predicted_DOS.shape[1] - true_DOS.shape[1]
-        additional_error = torch.hstack(
-            [
-                torch.zeros(len(predicted_DOS), device=predicted_DOS.device).reshape(
-                    -1, 1
-                ),
-                front_tail[:, :shape_difference],
-            ]
-        )
-        total_losses = losses + additional_error
-        final_loss, shift = torch.min(total_losses, dim=1)
-        aligned_true_DOS = []
-        aligned_true_masks = []
-        for index, s in enumerate(shift):
-            front_pad = torch.zeros(s, device=predicted_DOS.device)
-            back_pad = torch.zeros(
-                predicted_DOS.shape[1] - true_DOS.shape[1] - s,
-                device=predicted_DOS.device,
-            )
-            true_DOS_padded = torch.hstack([front_pad, true_DOS[index], back_pad]).int()
-            true_Mask_padded = torch.hstack(
-                [front_pad + 1, mask[index], back_pad]
-            ).int()
-            aligned_true_DOS.append(true_DOS_padded)
-            aligned_true_masks.append(true_Mask_padded)
-
-        return (
-            predicted_DOS,
-            torch.vstack(aligned_true_DOS),
-            torch.vstack(aligned_true_masks),
-        )
-
-    def compute_DOS_and_mask_from_eigenvalues(
+    def dos_from_eigenvalues(
         self,
         eigenvalues: torch.Tensor,
         kweights: Optional[torch.Tensor] = None,
-        energy_grid: Optional[torch.Tensor] = None,
-        sigma: float = 0.3,
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         """
-        Compute the density of states and the corresponding mask from a given set of
-        eigenvalues and k-point weights. The DOS is computed by broadening each
-        eigenvalue with a Gaussian function and summing over all eigenvalues. The mask
-        is a boolean tensor indicating which energy grid points are reliable enough to
-        compute the loss on.
+        Calls the `dos_from_eigenvalues` function with PET-MAD-DOS default parameters.
+        The function is useful to compute the DOS and mask from eigenvalues and
+        k-point weights from DFT calculations in a way that is consistent with
+        PET-MAD-DOS.
 
         :param eigenvalues: Tensor of shape (n_kpoints, n_bands) containing the
             eigenvalues.
         :param kweights: Tensor of shape (n_kpoints,) containing the weights of each
             k-point.
-        :param energy_grid: Tensor containing the energy grid on which to compute the
-            DOS. Defaults to the energy grid defined in the PET-MAD-DOS model.
-        :param sigma: Standard deviation for Gaussian broadening in eV.
-            Defaults to 0.3 eV.
         :return: DOS and mask
         """
 
-        if kweights is None:
-            kweights = (
-                torch.ones(eigenvalues.shape[0], device=eigenvalues.device)
-                / eigenvalues.shape[0]
-            )
-        if energy_grid is None:
-            energy_grid = self._energy_grid.clone()
-            device = energy_grid.device
-        confident_upper_energy_bound = torch.min(eigenvalues[:, -1]) - 3 * sigma
-        eigenvalues = eigenvalues.to(device)
-        kweights = kweights.to(device)
-        n_bands = eigenvalues.shape[1]
-        eigenvalues = eigenvalues.flatten()
-        kweights = kweights.squeeze().repeat(n_bands)
-        delta_E = (energy_grid - eigenvalues[:, None]) / sigma
-        gaussian_weights = torch.exp(-0.5 * delta_E**2)
-        normalization = 1 / np.sqrt(2 * np.pi * sigma**2)
-        dos = torch.sum(kweights[:, None] * gaussian_weights, dim=0) * normalization
-        mask = (energy_grid <= confident_upper_energy_bound).to(torch.int)
+        dos, mask = dos_from_eigenvalues(
+            self._energy_grid,
+            self.sigma,
+            eigenvalues,
+            kweights,
+        )
 
         return dos, mask
 
-    def pad_dos_and_mask_for_training(
+    def pad_dos(
         self,
         dos: torch.Tensor,
         mask: torch.Tensor,
-        target_length: int = 4806,
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         """
-        Pad the DOS and mask tensors with zeros to a target length. The padding is done
-        on the left side of the tensors.
+        Calls the `pad_dos` function with PET-MAD-DOS default parameters.
+        This function is useful to pad the DOS and mask tensors to the length required
+        for PET-MAD-DOS training/fine-tuning.
 
         :param dos: Tensor containing the density of states values.
         :param mask: Tensor containing the mask values.
-        :param target_length: The target length to pad the tensors to. Defaults to 4806.
         :return: Padded DOS and mask tensors.
         """
 
-        current_length = dos.shape[0] if dos.ndim == 1 else dos.shape[1]
-        if current_length >= target_length:
-            logging.info(
-                "No padding needed for DOS and mask. Current length: ",
-                current_length,
-                " Target length: ",
-                target_length,
-            )
-            return dos, mask
-        padding_length = target_length - current_length
-        logging.info(
-            "Padding DOS and mask with zeros to the left. Padding length: ",
-            padding_length,
-            " Please use this value for "
-            "n_extra_targets parameter for the loss function "
-            "in the training hyperparameters YAML file.",
-        )
-        dos_padded = F.pad(dos, (padding_length, 0), mode="constant", value=0)
-        mask_padded = F.pad(mask, (padding_length, 0), mode="constant", value=0)
+        dos_padded, mask_padded = pad_dos(dos, mask, len(self._energy_grid))
+
         return dos_padded, mask_padded
