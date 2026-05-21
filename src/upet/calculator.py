@@ -413,6 +413,12 @@ class PETMADDOSCalculator:
             atoms = [atoms]
         if dos is None:
             _, dos = self.calculate_dos(atoms, per_atom=False)
+        else:
+            logging.info(
+                "Using provided DOS to calculate the bandgap. Make sure that the DOS "
+                "is the raw predictions from the model (i.e., not denoised or post-"
+                "processed in any way)."
+            )
         if dos.shape[0] != len(atoms):
             raise ValueError(
                 f"The provided DOS is inconsistent with the provided `atoms` "
@@ -434,6 +440,7 @@ class PETMADDOSCalculator:
         dos: Optional[torch.Tensor] = None,
         temperature: float = 0.0,
         model=False,
+        warn=True,
     ) -> torch.Tensor:
         """
         Get the Fermi energy for a given ase.Atoms object, or a list of ase.Atoms
@@ -452,6 +459,11 @@ class PETMADDOSCalculator:
         :param dos: Density of states for the given atoms. If not provided, the
             density of states is calculated using the `calculate_dos` method.
         :param temperature: Temperature (K). Defaults to 0 K.
+        :param model: Whether to use the model-based method to calculate the Fermi
+            level. Defaults to False.
+        :param warn: Whether to log a warning message if a DOS is provided as input.
+            This is to make sure that users are aware that the provided DOS should be
+            the raw predictions from the model. Defaults to True.
         :return: Fermi energy for each ase.Atoms object stored in a torch.Tensor
             format.
         """
@@ -459,6 +471,12 @@ class PETMADDOSCalculator:
             atoms = [atoms]
         if dos is None:
             _, dos = self.calculate_dos(atoms, per_atom=False)
+        elif warn:
+            logging.info(
+                "Using provided DOS to calculate the Fermi level. Make sure that the "
+                "DOS is the raw predictions from the model (i.e., not denoised or post-"
+                "processed in any way)."
+            )
         if dos.shape[0] != len(atoms):
             raise ValueError(
                 f"The provided DOS is inconsistent with the provided `atoms` "
@@ -552,7 +570,7 @@ class PETMADDOSCalculator:
         """
         if isinstance(atoms, Atoms):
             atoms = [atoms]
-        fermi = self.calculate_efermi(atoms, dos=dos, model=True)
+        fermi = self.calculate_efermi(atoms, dos=dos, model=True, warn=False)
         n_electrons = get_num_electrons(atoms).to(dos.device)
         num_atoms = torch.tensor([len(item) for item in atoms], device=dos.device)
         dos = dos / num_atoms.unsqueeze(1)
