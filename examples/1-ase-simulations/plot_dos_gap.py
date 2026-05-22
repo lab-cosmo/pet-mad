@@ -21,7 +21,7 @@ calculator = PETMADDOSCalculator(version="latest", device="cpu")
 energies, dos = calculator.calculate_dos(atoms)
 energies, denoised_pred_DOS = calculator.calculate_dos(atoms, denoise=True)
 
-bandgap = calculator.calculate_bandgap(atoms, dos=dos)
+bandgap = calculator.calculate_bandgap(atoms)
 print(f"Predicted bandgap: {bandgap:.4f} eV")
 print("True Bandgap: 0.4667 eV (Under the same DFT paramters)")
 

@@ -62,19 +62,11 @@ def test_efermi_calculation(with_dos):
     torch.testing.assert_close(efermi, target_efermi, atol=1e-3, rtol=1e-3)
 
 
-@pytest.mark.parametrize(
-    "with_dos",
-    [True, False],
-)
 def test_efermi_model_prediction(with_dos):
     calc = PETMADDOSCalculator()
     atoms = get_atoms()
     target_efermi = torch.tensor([-7.3819, -8.7343])
-    if with_dos:
-        _, dos = calc.calculate_dos(atoms, per_atom=False)
-        efermi = calc.calculate_efermi(atoms, dos=dos, model=True, warn=False)
-    else:
-        efermi = calc.calculate_efermi(atoms, model=True)
+    efermi = calc.calculate_efermi(atoms, model=True)
 
     torch.testing.assert_close(efermi, target_efermi, atol=1e-3, rtol=1e-3)
 
@@ -97,18 +89,10 @@ def test_efermi_calculation_finite_temperature(with_dos):
     torch.testing.assert_close(efermi, target_efermi, atol=1e-3, rtol=1e-3)
 
 
-@pytest.mark.parametrize(
-    "with_dos",
-    [True, False],
-)
 def test_bandgap_calculation(with_dos):
     calc = PETMADDOSCalculator()
     atoms = get_atoms()
-    if with_dos:
-        _, dos = calc.calculate_dos(atoms, per_atom=False)
-        bandgap = calc.calculate_bandgap(atoms, dos=dos)
-    else:
-        bandgap = calc.calculate_bandgap(atoms)
+    bandgap = calc.calculate_bandgap(atoms)
     target_bandgap = torch.tensor([4.1007, 0.5021])
 
     torch.testing.assert_close(bandgap, target_bandgap, atol=1e-3, rtol=1e-3)

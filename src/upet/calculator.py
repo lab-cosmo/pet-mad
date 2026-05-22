@@ -393,9 +393,7 @@ class PETMADDOSCalculator:
             _, dos = self.denoise_predictions(atoms, dos, self._energy_grid.clone())
         return self._energy_grid.clone(), dos
 
-    def calculate_bandgap(
-        self, atoms: Union[Atoms, List[Atoms]], dos: Optional[torch.Tensor] = None
-    ) -> torch.Tensor:
+    def calculate_bandgap(self, atoms: Union[Atoms, List[Atoms]]) -> torch.Tensor:
         """
         Calculate the bandgap for a given ase.Atoms object,or a list of ase.Atoms
         objects. By default, the density of states is first calculated using the
@@ -404,28 +402,12 @@ class PETMADDOSCalculator:
         input parameter to avoid re-calculating the DOS.
 
         :param atoms: ASE atoms object or a list of ASE atoms objects
-        :param dos: Density of states for the given atoms. If not provided, the
-            density of states is calculated using the `calculate_dos` method.
         :return: bandgap values for each ase.Atoms object object stored in a
             torch.Tensor format.
         """
         if isinstance(atoms, Atoms):
             atoms = [atoms]
-        if dos is None:
-            _, dos = self.calculate_dos(atoms, per_atom=False)
-        else:
-            logging.info(
-                "Using provided DOS to calculate the bandgap. Make sure that the DOS "
-                "is the raw predictions from the model (i.e., not denoised or post-"
-                "processed in any way)."
-            )
-        if dos.shape[0] != len(atoms):
-            raise ValueError(
-                f"The provided DOS is inconsistent with the provided `atoms` "
-                f"parameter: {len(atoms)} != {dos.shape[0]}. Please either set "
-                "`dos = None` or provide a consistent DOS, computed with "
-                "`per_atom = False`."
-            )
+        _, dos = self.calculate_dos(atoms, per_atom=False)
         num_atoms = torch.tensor([len(item) for item in atoms], device=dos.device)
         dos = dos / num_atoms.unsqueeze(1)
         bandgap = self._bandgap_model(
@@ -440,7 +422,6 @@ class PETMADDOSCalculator:
         dos: Optional[torch.Tensor] = None,
         temperature: float = 0.0,
         model=False,
-        warn=True,
     ) -> torch.Tensor:
         """
         Get the Fermi energy for a given ase.Atoms object, or a list of ase.Atoms
@@ -461,9 +442,6 @@ class PETMADDOSCalculator:
         :param temperature: Temperature (K). Defaults to 0 K.
         :param model: Whether to use the model-based method to calculate the Fermi
             level. Defaults to False.
-        :param warn: Whether to log a warning message if a DOS is provided as input.
-            This is to make sure that users are aware that the provided DOS should be
-            the raw predictions from the model. Defaults to True.
         :return: Fermi energy for each ase.Atoms object stored in a torch.Tensor
             format.
         """
@@ -471,12 +449,12 @@ class PETMADDOSCalculator:
             atoms = [atoms]
         if dos is None:
             _, dos = self.calculate_dos(atoms, per_atom=False)
-        elif warn:
-            logging.info(
-                "Using provided DOS to calculate the Fermi level. Make sure that the "
-                "DOS is the raw predictions from the model (i.e., not denoised or post-"
-                "processed in any way)."
+        elif model:
+            raise ValueError(
+                "The `model` method for calculating the Fermi level is not compatible"
+                " with an input DOS. Please set `model=False` or set `dos=None`."
             )
+
         if dos.shape[0] != len(atoms):
             raise ValueError(
                 f"The provided DOS is inconsistent with the provided `atoms` "
@@ -570,7 +548,7 @@ class PETMADDOSCalculator:
         """
         if isinstance(atoms, Atoms):
             atoms = [atoms]
-        fermi = self.calculate_efermi(atoms, dos=dos, model=True, warn=False)
+        fermi = self.calculate_efermi(atoms, dos=None, model=True)
         n_electrons = get_num_electrons(atoms).to(dos.device)
         num_atoms = torch.tensor([len(item) for item in atoms], device=dos.device)
         dos = dos / num_atoms.unsqueeze(1)
