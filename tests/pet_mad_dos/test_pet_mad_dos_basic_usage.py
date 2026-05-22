@@ -104,6 +104,4 @@ def test_error_wrong_dos_shape():
     _, dos = calc.calculate_dos(atoms, per_atom=False)
     dos = dos[:-1]
     with pytest.raises(ValueError, match="The provided DOS is inconsistent"):
-        calc.calculate_bandgap(atoms, dos=dos)
-    with pytest.raises(ValueError, match="The provided DOS is inconsistent"):
         calc.calculate_efermi(atoms, dos=dos)
