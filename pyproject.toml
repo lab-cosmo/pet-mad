@@ -26,6 +26,7 @@ dependencies = [
     "metatrain>=2026.2,<2026.3",
     "metatomic-ase",
     "nvalchemi-toolkit-ops==0.3.0",
+    "warp-lang==0.13.0",
     "huggingface_hub",
     "hf_xet",
     "packaging",
