@@ -45,7 +45,7 @@ def test_dos_calculation_single_item():
     assert dos.shape[0] == 1
 
 
-def test_efermi_calculation(with_dos):
+def test_efermi_calculation():
     calc = PETMADDOSCalculator()
     atoms = get_atoms()
     target_efermi = torch.tensor([-10.7456, -9.3956])
@@ -64,7 +64,7 @@ def test_efermi_model_prediction():
     torch.testing.assert_close(efermi, target_efermi, atol=1e-3, rtol=1e-3)
 
 
-def test_efermi_calculation_finite_temperature(with_dos):
+def test_efermi_calculation_finite_temperature():
     calc = PETMADDOSCalculator()
     atoms = get_atoms()
     target_efermi = torch.tensor(-10.7198)
