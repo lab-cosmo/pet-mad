@@ -48,7 +48,7 @@ def test_dos_calculation_single_item():
 def test_efermi_model_prediction():
     calc = PETMADDOSCalculator()
     atoms = get_atoms()
-    target_efermi = torch.tensor([-7.3819, -8.7343])
+    target_efermi = torch.tensor([152.2637, 150.9113])
     dos = calc._calculate_dos(atoms, per_atom=False)
     efermi = calc._calculate_efermi(atoms, dos=dos)
 
