@@ -501,7 +501,9 @@ class PETMADDOSCalculator(ase.calculators.calculator.Calculator):
         num_atoms = torch.tensor([len(item) for item in atoms], device=dos.device)
         dos = dos / num_atoms.unsqueeze(1)
         n_electrons = n_electrons / num_atoms
-        dos_filtered = gaussian_filter1d(dos.cpu().numpy(), sigma=0.3 / ENERGY_INTERVAL)
+        dos_filtered = gaussian_filter1d(
+            dos.detach().cpu().numpy(), sigma=0.3 / ENERGY_INTERVAL
+        )
         dos_filtered = torch.from_numpy(dos_filtered).to(dos.device)
         sigmoid_input = 100 * (dos_filtered - 0.1)
         multiplier = self.sigmoid(sigmoid_input)
