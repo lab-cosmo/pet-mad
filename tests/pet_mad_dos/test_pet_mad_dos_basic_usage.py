@@ -63,4 +63,3 @@ def test_bandgap_calculation():
     target_bandgap = torch.tensor([4.1007, 0.5021])
 
     torch.testing.assert_close(bandgap, target_bandgap, atol=1e-3, rtol=1e-3)
-
