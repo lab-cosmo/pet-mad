@@ -87,6 +87,7 @@ def test_bandgap_calculation():
 
     torch.testing.assert_close(bandgap, target_bandgap, atol=1e-3, rtol=1e-3)
 
+
 def test_error_wrong_dos_shape():
     calc = PETMADDOSCalculator()
     atoms = get_atoms()
