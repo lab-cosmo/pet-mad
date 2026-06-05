@@ -13,13 +13,14 @@ oscillatory and non-negative compared to the raw DOS.
 import matplotlib.pyplot as plt
 import numpy as np
 from ase.build import bulk
-
+import torch
 from upet.calculator import PETMADDOSCalculator
 
 
 atoms = bulk("Si", cubic=True, a=5.43, crystalstructure="diamond")
 calculator = PETMADDOSCalculator(version="latest", device="cpu")
-results = calculator.calculate(atoms)
+with torch.no_grad():
+    results = calculator.calculate(atoms)
 
 print(f"The keys in results is: {results.keys()}")
 print(f"Predicted bandgap: {results['bandgap']:.4f} eV")
