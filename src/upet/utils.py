@@ -199,7 +199,12 @@ def align_dos(
     # Ensure that everything is on the same device and has the same dtype
     device = predicted_DOS.device
     true_DOS = true_DOS.float().to(device)
+    original_length = predicted_DOS.shape[1]
+    original_predicted_DOS = predicted_DOS.clone()
+    dos_pad = torch.zeros_like(predicted_DOS)
+    predicted_DOS = torch.hstack([dos_pad, predicted_DOS, dos_pad])
     predicted_DOS = predicted_DOS.float()
+
     mask = mask.float().to(device)
 
     sum_sq_smaller = torch.sum((true_DOS**2) * mask, dim=1, keepdim=True)
@@ -227,18 +232,31 @@ def align_dos(
     aligned_true_DOS = []
     aligned_true_masks = []
     for index, s in enumerate(shift):
-        front_pad = torch.zeros(s, device=predicted_DOS.device)
-        back_pad = torch.zeros(
-            predicted_DOS.shape[1] - true_DOS.shape[1] - s,
-            device=predicted_DOS.device,
-        )
-        true_DOS_padded = torch.hstack([front_pad, true_DOS[index], back_pad]).int()
-        true_Mask_padded = torch.hstack([front_pad + 1, mask[index], back_pad]).int()
+        if s - original_length < 0:
+            front_cut = int(original_length - s)
+            back_pad = torch.zeros(
+                predicted_DOS.shape[1] - true_DOS.shape[1] - s - original_length,
+                device=predicted_DOS.device,
+            )
+            true_DOS_padded = torch.hstack(
+                [true_DOS[index, front_cut:], back_pad]
+            ).int()
+            true_Mask_padded = torch.hstack([mask[index], back_pad + 1]).int()
+        elif s - original_length > 0:
+            front_pad = torch.zeros(s - original_length, device=predicted_DOS.device)
+            back_pad = torch.zeros(
+                predicted_DOS.shape[1] - true_DOS.shape[1] - s - original_length,
+                device=predicted_DOS.device,
+            )
+            true_DOS_padded = torch.hstack([front_pad, true_DOS[index], back_pad]).int()
+            true_Mask_padded = torch.hstack(
+                [front_pad + 1, mask[index], back_pad]
+            ).int()
         aligned_true_DOS.append(true_DOS_padded)
         aligned_true_masks.append(true_Mask_padded)
 
     return (
-        predicted_DOS,
+        original_predicted_DOS,
         torch.vstack(aligned_true_DOS),
         torch.vstack(aligned_true_masks),
     )
@@ -323,5 +341,5 @@ def pad_dos(
         "in the training hyperparameters YAML file.",
     )
     dos_padded = F.pad(dos, (padding_length, 0), mode="constant", value=0)
-    mask_padded = F.pad(mask, (padding_length, 0), mode="constant", value=0)
+    mask_padded = F.pad(mask, (padding_length, 0), mode="constant", value=1)
     return dos_padded, mask_padded

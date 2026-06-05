@@ -85,10 +85,13 @@ For DOS calculations, you can use the `PETMADDOSCalculator`:
 
   atoms = bulk("Si", cubic=True, a=5.43, crystalstructure="diamond")
   calculator = PETMADDOSCalculator(version="latest", device="cpu")
-  energies, predicted_DOS = pet_mad_dos_calculator.calculate_dos(atoms)
+  results = pet_mad_dos_calculator.calculate(atoms)
 ```
-where the energies refer to the energy grid that the DOS is projected on and has units
-of eV and the DOS refers to the density of states values and has units of states/eV. 
+where ``results`` is a dictionary and the keys include ``dos_raw``, ``dos_denoised``, 
+``fermi_level``and ``bandgap``. Each key corresponds to its output quantitiy, eg. 
+``dos_denoised`` is the denoised DOS obtained by applying a denoising algorithm on the 
+raw predicted DOS. The DOS has units of states/eV and is projected on an energy grid 
+with intervals of 0.05eV. The bandgap and Fermi level has units of eV.
 
 
 The first call downloads the checkpoint from the

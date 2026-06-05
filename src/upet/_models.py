@@ -339,7 +339,7 @@ def list_upet(
     return result
 
 
-BASE_URL_PET_MAD_DOS = "https://huggingface.co/lab-cosmo/pet-mad-dos/resolve/{tag}/models/pet-mad-dos-{version}.pt"
+BASE_URL_PET_MAD_DOS = "https://huggingface.co/lab-cosmo/pet-mad-dos/resolve/{tag}/models/pet-mad-dos-{version}.ckpt"
 BASE_URL_BANDGAP_MODEL = (
     "https://huggingface.co/lab-cosmo/pet-mad-dos/resolve/{tag}/models/bandgap-model.pt"
 )
@@ -369,16 +369,16 @@ def get_pet_mad_dos(
         )
 
     if model_path is not None:
-        logging.info(f"Loading PET-MAD-DOS model from checkpoint: {model_path}")
+        print(f"Loading PET-MAD-DOS model from checkpoint: {model_path}")
         path = model_path
     else:
-        logging.info(f"Downloading PET-MAD-DOS model version: {version}")
-        path = BASE_URL_PET_MAD_DOS.format(tag=f"v{version}", version=f"v{version}")
+        print(f"Downloading PET-MAD-DOS model version: {version}")
+        path = BASE_URL_PET_MAD_DOS.format(tag="main", version=f"v{version}")
 
     model = load_metatrain_model(path)
     metadata = get_pet_mad_dos_metadata(version)
-    model._metadata = metadata
-    return model
+    exported_model = model.export(metadata)
+    return exported_model
 
 
 def _get_bandgap_model(version: str = "latest", model_path: Optional[str] = None):
@@ -403,7 +403,7 @@ def _get_bandgap_model(version: str = "latest", model_path: Optional[str] = None
         path = model_path
     else:
         logging.info(f"Downloading bandgap model version: {version}")
-        path = BASE_URL_BANDGAP_MODEL.format(tag=f"v{version}")
+        path = BASE_URL_BANDGAP_MODEL.format(tag="main")
         path = str(path)
         url = urlparse(path)
 

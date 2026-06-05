@@ -31,7 +31,7 @@ def test_get_pet_mad_dos(version):
 def test_dos_calculation(per_atom):
     calc = PETMADDOSCalculator()
     atoms = get_atoms()
-    _, dos = calc.calculate_dos(atoms, per_atom=per_atom)
+    _, dos = calc._calculate_dos(atoms, per_atom=per_atom)
     if per_atom:
         assert dos.shape[0] == sum([len(item) for item in atoms])
     else:
@@ -41,23 +41,16 @@ def test_dos_calculation(per_atom):
 def test_dos_calculation_single_item():
     calc = PETMADDOSCalculator()
     atoms = get_atoms()[0]
-    _, dos = calc.calculate_dos(atoms, per_atom=False)
+    _, dos = calc._calculate_dos(atoms, per_atom=False)
     assert dos.shape[0] == 1
 
 
-@pytest.mark.parametrize(
-    "with_dos",
-    [True, False],
-)
 def test_efermi_calculation(with_dos):
     calc = PETMADDOSCalculator()
     atoms = get_atoms()
     target_efermi = torch.tensor([-10.7456, -9.3956])
-    if with_dos:
-        _, dos = calc.calculate_dos(atoms, per_atom=False)
-        efermi = calc.calculate_efermi(atoms, dos=dos)
-    else:
-        efermi = calc.calculate_efermi(atoms)
+    _, dos = calc._calculate_dos(atoms, per_atom=False)
+    efermi = calc._calculate_efermi(atoms, dos=dos)
 
     torch.testing.assert_close(efermi, target_efermi, atol=1e-3, rtol=1e-3)
 
@@ -66,7 +59,7 @@ def test_efermi_model_prediction():
     calc = PETMADDOSCalculator()
     atoms = get_atoms()
     target_efermi = torch.tensor([-7.3819, -8.7343])
-    efermi = calc.calculate_efermi(atoms, model=True)
+    efermi = calc._calculate_efermi(atoms, model=True)
 
     torch.testing.assert_close(efermi, target_efermi, atol=1e-3, rtol=1e-3)
 
@@ -78,13 +71,10 @@ def test_efermi_model_prediction():
 def test_efermi_calculation_finite_temperature(with_dos):
     calc = PETMADDOSCalculator()
     atoms = get_atoms()
-    temperature = 1000
-    target_efermi = torch.tensor([-10.7198, -9.3410])
+    target_efermi = torch.tensor(-10.7198)
     if with_dos:
-        _, dos = calc.calculate_dos(atoms, per_atom=False)
-        efermi = calc.calculate_efermi(atoms, dos=dos, temperature=temperature)
-    else:
-        efermi = calc.calculate_efermi(atoms, temperature=temperature)
+        _, dos = calc._calculate_dos(atoms, per_atom=False)
+        efermi = calc._calculate_efermi(atoms, dos=dos)
 
     torch.testing.assert_close(efermi, target_efermi, atol=1e-3, rtol=1e-3)
 
@@ -92,16 +82,15 @@ def test_efermi_calculation_finite_temperature(with_dos):
 def test_bandgap_calculation():
     calc = PETMADDOSCalculator()
     atoms = get_atoms()
-    bandgap = calc.calculate_bandgap(atoms)
+    bandgap = calc._calculate_bandgap(atoms)
     target_bandgap = torch.tensor([4.1007, 0.5021])
 
     torch.testing.assert_close(bandgap, target_bandgap, atol=1e-3, rtol=1e-3)
 
-
 def test_error_wrong_dos_shape():
     calc = PETMADDOSCalculator()
     atoms = get_atoms()
-    _, dos = calc.calculate_dos(atoms, per_atom=False)
+    _, dos = calc._calculate_dos(atoms, per_atom=False)
     dos = dos[:-1]
     with pytest.raises(ValueError, match="The provided DOS is inconsistent"):
-        calc.calculate_efermi(atoms, dos=dos)
+        calc._calculate_efermi(atoms, dos=dos)

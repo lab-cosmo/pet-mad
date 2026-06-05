@@ -18,15 +18,18 @@ from upet.calculator import PETMADDOSCalculator
 
 atoms = bulk("Si", cubic=True, a=5.43, crystalstructure="diamond")
 calculator = PETMADDOSCalculator(version="latest", device="cpu")
-energies, dos = calculator.calculate_dos(atoms)
-energies, denoised_pred_DOS = calculator.calculate_dos(atoms, denoise=True)
+results = calculator.calculate(atoms)
 
-bandgap = calculator.calculate_bandgap(atoms)
-print(f"Predicted bandgap: {bandgap:.4f} eV")
+print (f"The keys in results is: {results.keys()}")
+print(f"Predicted bandgap: {results['bandgap']:.4f} eV")
 print("True Bandgap: 0.4667 eV (Under the same DFT paramters)")
 
-plt.plot(energies, dos[0], label="Raw DOS")
-plt.plot(energies, denoised_pred_DOS[0], label="Denoised DOS")
+energy_grid = np.arange(
+    results['dos_raw'].shape[1]
+) * calculator.energy_interval
+
+plt.plot(energy_grid, results['dos_raw'], label="Raw DOS")
+plt.plot(energy_grid, results['dos_denoised'], label="Denoised DOS")
 plt.xlabel("Energy (eV)")
 plt.ylabel("Density of States (States/eV)")
 plt.title("Density of States for Bulk Silicon")
