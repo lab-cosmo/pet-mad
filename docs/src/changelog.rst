@@ -4,6 +4,11 @@ Changelog
 Unreleased changes
 ------------------
 
+0.2.4
+-----
+- Pin the version of warp-lang in dependencies as a hotfix around an internal
+  change.
+
 0.2.3
 -----
 - Added sphinx documentation for the package.
