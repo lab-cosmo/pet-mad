@@ -12,8 +12,9 @@ oscillatory and non-negative compared to the raw DOS.
 
 import matplotlib.pyplot as plt
 import numpy as np
-from ase.build import bulk
 import torch
+from ase.build import bulk
+
 from upet.calculator import PETMADDOSCalculator
 
 
