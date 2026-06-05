@@ -25,7 +25,7 @@ print(f"The keys in results is: {results.keys()}")
 print(f"Predicted bandgap: {results['bandgap']:.4f} eV")
 print("True Bandgap: 0.4667 eV (Under the same DFT paramters)")
 
-energy_grid = np.arange(results["dos_raw"].shape[1]) * calculator.energy_interval
+energy_grid = np.arange(len(results["dos_raw"])) * calculator.energy_interval
 
 plt.plot(energy_grid, results["dos_raw"], label="Raw DOS")
 plt.plot(energy_grid, results["dos_denoised"], label="Denoised DOS")
