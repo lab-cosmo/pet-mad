@@ -1,4 +1,3 @@
-import logging
 import re
 from pathlib import Path
 from typing import List, Optional, Tuple, Union
@@ -325,21 +324,8 @@ def pad_dos(
 
     current_length = dos.shape[0] if dos.ndim == 1 else dos.shape[1]
     if current_length >= target_length:
-        logging.info(
-            "No padding needed for DOS and mask. Current length: ",
-            current_length,
-            " Target length: ",
-            target_length,
-        )
         return dos, mask
     padding_length = target_length - current_length
-    logging.info(
-        "Padding DOS and mask with zeros to the left. Padding length: ",
-        padding_length,
-        " Please use this value for "
-        "n_extra_targets parameter for the loss function "
-        "in the training hyperparameters YAML file.",
-    )
     dos_padded = F.pad(dos, (padding_length, 0), mode="constant", value=0)
     mask_padded = F.pad(mask, (padding_length, 0), mode="constant", value=0)
     return dos_padded, mask_padded

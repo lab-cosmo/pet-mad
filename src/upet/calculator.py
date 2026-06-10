@@ -559,7 +559,7 @@ class PETMADDOSCalculator(ase.calculators.calculator.Calculator):
         )
 
         dos, mask = self.pad_dos(dos, mask)
-        dos[~mask] = float('nan')
+        dos[~mask] = float("nan")
 
         return dos
 
@@ -571,16 +571,15 @@ class PETMADDOSCalculator(ase.calculators.calculator.Calculator):
         """
         Calls the `pad_dos` function with PET-MAD-DOS default parameters.
         This function is useful to pad the DOS and mask tensors to the length required
-        for PET-MAD-DOS training/fine-tuning. At the end, it replaces the 
+        for PET-MAD-DOS training/fine-tuning. At the end, it replaces the
         regions where the DOS is not well-defined with zeros.
 
         :param dos: Tensor containing the density of states values.
         :param mask: Tensor containing the mask values.
-        :return: Padded DOS 
+        :return: Padded DOS
         """
 
         dos_padded, mask_padded = pad_dos(dos, mask, self.output_size)
-        dos_padded[~mask_padded] = float('nan')
-
+        dos_padded[~mask_padded] = float("nan")
 
         return dos_padded
