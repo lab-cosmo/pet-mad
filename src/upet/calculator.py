@@ -532,8 +532,7 @@ class PETMADDOSCalculator(ase.calculators.calculator.Calculator):
         Calls the `dos_from_eigenvalues` function with PET-MAD-DOS default parameters.
         The function is useful to compute the DOS and mask from eigenvalues and
         k-point weights from DFT calculations in a way that is consistent with
-        PET-MAD-DOS. At the end, it replaces the regions where the DOS is
-        not well-defined with zeros.
+        PET-MAD-DOS.
 
         :param eigenvalues: Tensor of shape (n_kpoints, n_bands) containing the
             eigenvalues.
@@ -558,8 +557,7 @@ class PETMADDOSCalculator(ase.calculators.calculator.Calculator):
             kweights,
         )
 
-        dos, mask = self.pad_dos(dos, mask)
-        dos[~mask] = float("nan")
+        dos = self.pad_dos(dos, mask)
 
         return dos
 
