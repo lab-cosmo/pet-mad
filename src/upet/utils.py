@@ -341,5 +341,5 @@ def pad_dos(
         "in the training hyperparameters YAML file.",
     )
     dos_padded = F.pad(dos, (padding_length, 0), mode="constant", value=0)
-    mask_padded = F.pad(mask, (padding_length, 0), mode="constant", value=1)
+    mask_padded = F.pad(mask, (padding_length, 0), mode="constant", value=0)
     return dos_padded, mask_padded

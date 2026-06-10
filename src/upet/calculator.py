@@ -532,13 +532,14 @@ class PETMADDOSCalculator(ase.calculators.calculator.Calculator):
         Calls the `dos_from_eigenvalues` function with PET-MAD-DOS default parameters.
         The function is useful to compute the DOS and mask from eigenvalues and
         k-point weights from DFT calculations in a way that is consistent with
-        PET-MAD-DOS.
+        PET-MAD-DOS. At the end, it replaces the regions where the DOS is
+        not well-defined with zeros.
 
         :param eigenvalues: Tensor of shape (n_kpoints, n_bands) containing the
             eigenvalues.
         :param kweights: Tensor of shape (n_kpoints,) containing the weights of each
             k-point.
-        :return: DOS and mask
+        :return: DOS
         """
 
         energy_grid_min = torch.min(eigenvalues)
@@ -558,8 +559,9 @@ class PETMADDOSCalculator(ase.calculators.calculator.Calculator):
         )
 
         dos, mask = self.pad_dos(dos, mask)
+        dos[~mask] = float('nan')
 
-        return dos, mask
+        return dos
 
     def pad_dos(
         self,
@@ -569,13 +571,16 @@ class PETMADDOSCalculator(ase.calculators.calculator.Calculator):
         """
         Calls the `pad_dos` function with PET-MAD-DOS default parameters.
         This function is useful to pad the DOS and mask tensors to the length required
-        for PET-MAD-DOS training/fine-tuning.
+        for PET-MAD-DOS training/fine-tuning. At the end, it replaces the 
+        regions where the DOS is not well-defined with zeros.
 
         :param dos: Tensor containing the density of states values.
         :param mask: Tensor containing the mask values.
-        :return: Padded DOS and mask tensors.
+        :return: Padded DOS 
         """
 
         dos_padded, mask_padded = pad_dos(dos, mask, self.output_size)
+        dos_padded[~mask_padded] = float('nan')
 
-        return dos_padded, mask_padded
+
+        return dos_padded
