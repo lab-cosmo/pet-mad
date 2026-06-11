@@ -24,7 +24,7 @@ def test_get_pet_mad_dos(version):
     assert model.metadata().name == f"PET-MAD-DOS v{version}"
 
 
-def test_dos_calculation(per_atom):
+def test_dos_calculation():
     calc = PETMADDOSCalculator()
     atoms = get_atoms()
     results = calc._calculate_dos(atoms, properties=["dos_raw", "dos_raw_per_atom"])
