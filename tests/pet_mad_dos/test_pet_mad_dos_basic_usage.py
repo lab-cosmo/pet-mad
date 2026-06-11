@@ -27,7 +27,7 @@ def test_get_pet_mad_dos(version):
 def test_dos_calculation():
     calc = PETMADDOSCalculator()
     atoms = get_atoms()
-    results = calc._calculate_dos(atoms, properties=["dos_raw", "dos_raw_per_atom"])
+    results = calc.calculate(atoms, properties=["dos_raw", "dos_raw_per_atom"])
     dos = results["dos_raw"]
     dos_per_atom = results["dos_raw_per_atom"]
     assert dos_per_atom.shape[0] == sum([len(item) for item in atoms])
