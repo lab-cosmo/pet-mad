@@ -39,7 +39,7 @@ where the keys in the ``results`` dictionary include ``dos_raw``, ``dos_denoised
 ``fermi_level`` and ``bandgap``. Each key corresponds to its output quantitiy, eg.
 ``dos_denoised`` is the denoised DOS obtained by applying a denoising algorithm on the
 raw predicted DOS. The DOS has units of states/eV and is projected on an energy grid
-with intervals of 0.05eV. The bandgap and Fermi level has units of eV.
+with intervals of 0.05 eV. The bandgap and Fermi level has units of eV.
 
 In both examples, the first call downloads the model checkpoint from the `HuggingFace
 repository <https://huggingface.co/lab-cosmo/upet>`_ and caches it locally,
