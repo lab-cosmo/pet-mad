@@ -269,7 +269,7 @@ bandgaps, via :py:class:`~upet.calculator.PETMADDOSCalculator`:
    atoms = bulk("Si", cubic=True, a=5.43, crystalstructure="diamond")
    pet_mad_dos_calculator = PETMADDOSCalculator(version="latest", device="cpu")
 
-   results = pet_mad_dos_calculator.calculate_dos(atoms)
+   results = pet_mad_dos_calculator.calculate(atoms)
    print (f"The keys in results is: {results.keys()}")
 
 Per-atom DOS and batched evaluation on a list of structures are also
@@ -278,7 +278,7 @@ supported:
 .. code-block:: python
 
    # per-atom DOS
-   results = pet_mad_dos_calculator.calculate_dos(
+   results = pet_mad_dos_calculator.calculate(
       atoms,
       properties=["dos_raw_per_atom"]
    )
@@ -286,11 +286,11 @@ supported:
    # multiple structures
    atoms_1 = bulk("Si", cubic=True, a=5.43, crystalstructure="diamond")
    atoms_2 = bulk("C", cubic=True, a=3.55, crystalstructure="diamond")
-   results = pet_mad_dos_calculator.calculate_dos([atoms_1, atoms_2])
+   results = pet_mad_dos_calculator.calculate([atoms_1, atoms_2])
 
 Additionally, a denoising algorithm is available to mitigate unphysical oscillations
 in the raw predicted DOS. The denoised DOS is non-negative and smoother compared to the
-raw DOS. As the denoising algorithm is applied on the DOS of the system, the per_atom
+raw DOS. As the denoising algorithm is applied on the DOS of the system, the per atom
 DOS is not supported when denoising is turned on.:
 
 .. code-block:: python
@@ -298,9 +298,8 @@ DOS is not supported when denoising is turned on.:
    denoised_dos = results['dos_denoised']
 
 
-Bandgap and Fermi level predictions are available via dedicated methods. Both quantities
-are obtained by using a dedicated CNN model to predict these quantities directly from
-the predicted DOS.
+Bandgap and Fermi level predictions are available via a dedicated CNN model
+to predict these quantities directly from the predicted DOS.
 
 .. code-block:: python
 

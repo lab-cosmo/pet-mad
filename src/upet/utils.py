@@ -329,3 +329,47 @@ def pad_dos(
     dos_padded = F.pad(dos, (padding_length, 0), mode="constant", value=0)
     mask_padded = F.pad(mask, (padding_length, 0), mode="constant", value=0)
     return dos_padded, mask_padded
+
+
+def torch_gaussian_filter1d(
+    input_tensor: torch.Tensor, sigma: float, truncate: float = 4.0
+) -> torch.Tensor:
+    """
+    Pure PyTorch implementation of SciPy's gaussian_filter1d.
+    Supports batched 1D inputs of shape (B, N).
+    """
+    if sigma <= 0:
+        return input_tensor
+
+    # Calculate the radius and kernel size (matches SciPy's truncation logic)
+    radius = int(truncate * sigma + 0.5)
+    # Create the 1D coordinate grid centered at 0
+    x = torch.arange(
+        -radius, radius + 1, device=input_tensor.device, dtype=input_tensor.dtype
+    )
+    # Compute the Gaussian kernel: exp(-x^2 / (2 * sigma^2))
+    kernel = torch.exp(-0.5 * (x / sigma) ** 2)
+    kernel = kernel / kernel.sum()  # Normalize to sum to 1
+
+    # Reshape kernel for conv1d: (out_channels, in_channels/groups, kernel_width)
+    kernel = kernel.view(1, 1, -1)
+
+    # Reshape input to (B, 1, N) for conv1d processing
+    original_shape = input_tensor.shape
+    if len(original_shape) == 1:
+        x_input = input_tensor.view(1, 1, -1)
+    elif len(original_shape) == 2:
+        x_input = input_tensor.unsqueeze(1)
+    else:
+        raise ValueError("Expected a 1D or 2D (batched) tensor.")
+
+    # Apply reflect padding to mirror SciPy's default behavior ('reflect')
+    x_padded = F.pad(x_input, (radius, radius), mode="reflect")
+
+    # Convolve. Since we want independent filtering per row, we use groups=B if batched
+    batch_size = x_input.shape[0]
+    kernel = kernel.repeat(batch_size, 1, 1)
+
+    output = F.conv1d(x_padded, kernel, groups=batch_size)
+
+    return output.view(original_shape)

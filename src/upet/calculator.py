@@ -8,7 +8,6 @@ from ase import Atoms
 from metatomic.torch import ModelOutput
 from metatomic_ase import MetatomicCalculator, SymmetrizedCalculator
 from packaging.version import Version
-from scipy.ndimage import gaussian_filter1d
 
 from ._models import (
     _get_bandgap_model,
@@ -27,6 +26,7 @@ from .utils import (
     dos_from_eigenvalues,
     get_num_electrons,
     pad_dos,
+    torch_gaussian_filter1d,
 )
 
 
@@ -501,10 +501,9 @@ class PETMADDOSCalculator(ase.calculators.calculator.Calculator):
         num_atoms = torch.tensor([len(item) for item in atoms], device=dos.device)
         dos = dos / num_atoms.unsqueeze(1)
         n_electrons = n_electrons / num_atoms
-        dos_filtered = gaussian_filter1d(
-            dos.detach().cpu().numpy(), sigma=0.3 / ENERGY_INTERVAL
-        )
-        dos_filtered = torch.from_numpy(dos_filtered).to(dos.device)
+
+        dos_filtered = torch_gaussian_filter1d(dos, sigma=0.3 / ENERGY_INTERVAL)
+
         sigmoid_input = 100 * (dos_filtered - 0.1)
         multiplier = self.sigmoid(sigmoid_input)
         dos_thresholded = dos * multiplier
@@ -567,9 +566,9 @@ class PETMADDOSCalculator(ase.calculators.calculator.Calculator):
         mask: torch.Tensor,
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         """
-        Calls the `pad_dos` function with PET-MAD-DOS default parameters.
-        This function is useful to pad the DOS and mask tensors to the length required
-        for PET-MAD-DOS training/fine-tuning. At the end, it replaces the
+        Pads the input DOS to the length required for PET-MAD-DOS training/
+        finetuning. It calls the `pad_dos` utility function with PET-MAD-DOS
+        default parameters. At the end, it replaces the
         regions where the DOS is not well-defined with zeros.
 
         :param dos: Tensor containing the density of states values.
