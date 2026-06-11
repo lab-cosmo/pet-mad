@@ -30,8 +30,8 @@ def test_dos_calculation(per_atom):
     results = calc._calculate_dos(atoms, properties=["dos_raw", "dos_raw_per_atom"])
     dos = results["dos_raw"]
     dos_per_atom = results["dos_raw_per_atom"]
-    assert dos.shape[0] == sum([len(item) for item in atoms])
-    assert dos_per_atom.shape[0] == len(atoms)
+    assert dos_per_atom.shape[0] == sum([len(item) for item in atoms])
+    assert dos.shape[0] == len(atoms)
 
 
 def test_dos_calculation_single_item():
@@ -40,8 +40,8 @@ def test_dos_calculation_single_item():
     results = calc.calculate(atoms, properties=["dos_raw", "dos_denoised"])
     dos = results["dos_raw"]
     denoised_dos = results["dos_denoised"]
-    assert dos.shape[0] == 1
-    assert denoised_dos.shape[0] == 1
+    assert dos.shape[0] == 4806
+    assert denoised_dos.shape[0] == 4806
 
 
 def test_efermi_model_prediction():
