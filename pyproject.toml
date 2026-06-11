@@ -32,7 +32,6 @@ dependencies = [
     "packaging",
     "platformdirs",
     "tqdm",
-    "scipy"
 ]
 
 keywords = ["machine learning", "molecular modeling"]
