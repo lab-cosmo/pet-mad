@@ -24,85 +24,38 @@ def test_get_pet_mad_dos(version):
     assert model.metadata().name == f"PET-MAD-DOS v{version}"
 
 
-@pytest.mark.parametrize(
-    "per_atom",
-    [True, False],
-)
-def test_dos_calculation(per_atom):
+def test_dos_calculation():
     calc = PETMADDOSCalculator()
     atoms = get_atoms()
-    _, dos = calc.calculate_dos(atoms, per_atom=per_atom)
-    if per_atom:
-        assert dos.shape[0] == sum([len(item) for item in atoms])
-    else:
-        assert dos.shape[0] == len(atoms)
+    results = calc.calculate(atoms, properties=["dos_raw", "dos_raw_per_atom"])
+    dos = results["dos_raw"]
+    dos_per_atom = results["dos_raw_per_atom"]
+    assert dos_per_atom.shape[0] == sum([len(item) for item in atoms])
+    assert dos.shape[0] == len(atoms)
 
 
 def test_dos_calculation_single_item():
     calc = PETMADDOSCalculator()
     atoms = get_atoms()[0]
-    _, dos = calc.calculate_dos(atoms, per_atom=False)
-    assert dos.shape[0] == 1
+    results = calc.calculate(atoms, properties=["dos_raw", "dos_denoised"])
+    dos = results["dos_raw"]
+    denoised_dos = results["dos_denoised"]
+    assert dos.shape[0] == 4806
+    assert denoised_dos.shape[0] == 4806
 
 
-@pytest.mark.parametrize(
-    "with_dos",
-    [True, False],
-)
-def test_efermi_calculation(with_dos):
+def test_efermi_model_prediction():
     calc = PETMADDOSCalculator()
     atoms = get_atoms()
-    target_efermi = torch.tensor([-10.7456, -9.3956])
-    if with_dos:
-        _, dos = calc.calculate_dos(atoms, per_atom=False)
-        efermi = calc.calculate_efermi(atoms, dos=dos)
-    else:
-        efermi = calc.calculate_efermi(atoms)
-
+    target_efermi = torch.tensor([152.2637, 150.9113])
+    efermi = calc.calculate(atoms, properties=["fermi_level"])["fermi_level"]
     torch.testing.assert_close(efermi, target_efermi, atol=1e-3, rtol=1e-3)
 
 
-@pytest.mark.parametrize(
-    "with_dos",
-    [True, False],
-)
-def test_efermi_calculation_finite_temperature(with_dos):
+def test_bandgap_calculation():
     calc = PETMADDOSCalculator()
     atoms = get_atoms()
-    temperature = 1000
-    target_efermi = torch.tensor([-10.7198, -9.3410])
-    if with_dos:
-        _, dos = calc.calculate_dos(atoms, per_atom=False)
-        efermi = calc.calculate_efermi(atoms, dos=dos, temperature=temperature)
-    else:
-        efermi = calc.calculate_efermi(atoms, temperature=temperature)
-
-    torch.testing.assert_close(efermi, target_efermi, atol=1e-3, rtol=1e-3)
-
-
-@pytest.mark.parametrize(
-    "with_dos",
-    [True, False],
-)
-def test_bandgap_calculation(with_dos):
-    calc = PETMADDOSCalculator()
-    atoms = get_atoms()
-    if with_dos:
-        _, dos = calc.calculate_dos(atoms, per_atom=False)
-        bandgap = calc.calculate_bandgap(atoms, dos=dos)
-    else:
-        bandgap = calc.calculate_bandgap(atoms)
+    bandgap = calc.calculate(atoms, properties=["bandgap"])["bandgap"]
     target_bandgap = torch.tensor([4.1007, 0.5021])
 
     torch.testing.assert_close(bandgap, target_bandgap, atol=1e-3, rtol=1e-3)
-
-
-def test_error_wrong_dos_shape():
-    calc = PETMADDOSCalculator()
-    atoms = get_atoms()
-    _, dos = calc.calculate_dos(atoms, per_atom=False)
-    dos = dos[:-1]
-    with pytest.raises(ValueError, match="The provided DOS is inconsistent"):
-        calc.calculate_bandgap(atoms, dos=dos)
-    with pytest.raises(ValueError, match="The provided DOS is inconsistent"):
-        calc.calculate_efermi(atoms, dos=dos)
