@@ -4,6 +4,12 @@ Changelog
 Unreleased changes
 ------------------
 
+0.2.5
+-----
+- Updated the PET-MAD DOS calculator by adding a DOS denoising step,
+  DOS alignment function, and other technical improvements.
+- Updated the docs for the new DOS calculator API. 
+
 0.2.4
 -----
 - Pin the version of warp-lang in dependencies as a hotfix around an internal
