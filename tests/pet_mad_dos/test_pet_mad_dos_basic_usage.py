@@ -27,7 +27,9 @@ def test_get_pet_mad_dos(version):
 def test_dos_calculation():
     calc = PETMADDOSCalculator()
     atoms = get_atoms()
-    results = calc.calculate(atoms, properties=["dos_raw", "dos_raw_per_atom", "dos_denoised"])
+    results = calc.calculate(
+        atoms, properties=["dos_raw", "dos_raw_per_atom", "dos_denoised"]
+    )
     dos = results["dos_raw"]
     dos_per_atom = results["dos_raw_per_atom"]
     dos_denoised = results["dos_denoised"]
