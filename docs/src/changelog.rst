@@ -8,7 +8,7 @@ Unreleased changes
 -----
 - Updated the PET-MAD DOS calculator by adding a DOS denoising step,
   DOS alignment function, and other technical improvements.
-- Updated the docs for the new DOS calculator API. 
+- Updated the docs for the new DOS calculator API.
 
 0.2.4
 -----
