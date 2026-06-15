@@ -503,7 +503,6 @@ class PETMADDOSCalculator(ase.calculators.calculator.Calculator):
         n_electrons = n_electrons / num_atoms
 
         dos_filtered = torch_gaussian_filter1d(dos, sigma=0.3 / ENERGY_INTERVAL)
-
         sigmoid_input = 100 * (dos_filtered - 0.1)
         multiplier = self.sigmoid(sigmoid_input)
         dos_thresholded = dos * multiplier

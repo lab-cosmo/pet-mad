@@ -366,10 +366,6 @@ def torch_gaussian_filter1d(
     # Apply reflect padding to mirror SciPy's default behavior ('reflect')
     x_padded = F.pad(x_input, (radius, radius), mode="reflect")
 
-    # Convolve. Since we want independent filtering per row, we use groups=B if batched
-    batch_size = x_input.shape[0]
-    kernel = kernel.repeat(batch_size, 1, 1)
+    output = F.conv1d(x_padded, kernel, groups=1)
 
-    output = F.conv1d(x_padded, kernel, groups=batch_size)
-
-    return output.view(original_shape)
+    return output.squeeze(1)
