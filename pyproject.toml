@@ -23,7 +23,7 @@ maintainers = [
 ]
 
 dependencies = [
-    "metatrain>=2026.2,<2026.3",
+    "metatrain",
     "metatomic-ase",
     "nvalchemi-toolkit-ops==0.3.0",
     "warp-lang==1.13.0",
