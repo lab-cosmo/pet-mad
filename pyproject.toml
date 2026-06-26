@@ -126,4 +126,11 @@ filterwarnings = [
     "ignore:`compute_requested_neighbors_from_options` is deprecated.*:UserWarning",
     # HF Xet deprecation warning
     "ignore:hf_xet.download_files\\(\\) is deprecated. Use XetSession\\(\\):DeprecationWarning",
+    # Numpy warning
+    "ignore: Setting the shape on a NumPy array has been deprecated in NumPy 2.5.",
+    # MD
+    "ignore: Use thermalize_momenta",
+    "ignore: the 'non_conservative_forces' output name is deprecated, please update the model to use 'non_conservative_force' instead",
+    "ignore: output 'energy' has an empty unit. Consider adding a unit to ensure correct unit conversion. (function set_outputs)",
+    "Use thermalize_momenta"
 ]
