@@ -115,6 +115,7 @@ filterwarnings = [
     "ignore: `torch.jit.save` is deprecated.*:DeprecationWarning",
     "ignore: `torch.jit.load` is deprecated.*:DeprecationWarning",
     "ignore: `torch.jit.script_method` is deprecated. Please switch to `torch.compile` or `torch.export`.",
+    "ignore: `torch.jit.interface` is deprecated. Please use `torch.compile` instead.",
     # PET-MAD v1.0 deprecation warning
     "ignore:.*is deprecated in favor of the newer PET-MAD-1.5.*:DeprecationWarning",
     # NVAlchemiOps Deprecation warning
