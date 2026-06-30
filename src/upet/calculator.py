@@ -158,7 +158,7 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
         if non_conservative:
             selected_variant = None if variants is None else variants.get("energy")
             variant_postfix = f"/{selected_variant}" if selected_variant else ""
-            nc_forces_key = "non_conservative_forces" + variant_postfix
+            nc_forces_key = "non_conservative_force" + variant_postfix
             nc_stress_key = "non_conservative_stress" + variant_postfix
             if nc_forces_key not in model_outputs or nc_stress_key not in model_outputs:
                 raise NotImplementedError(

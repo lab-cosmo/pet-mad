@@ -113,7 +113,7 @@ class PETMADFeaturizer:
         explorer = MADExplorer(petmad.module, device=device)
         explorer.load_checkpoint(petmad_explorer_path)
 
-        outputs = {"features": mta.ModelOutput(per_atom=True)}
+        outputs = {"feature": mta.ModelOutput(sample_kind="atom")}
         self.dtype = torch.float64
 
         capabilities = mta.ModelCapabilities(
@@ -155,7 +155,7 @@ class PETMADFeaturizer:
 
         options = mta.ModelEvaluationOptions(
             length_unit=self.length_unit,
-            outputs={"features": mta.ModelOutput(per_atom=True)},
+            outputs={"feature": mta.ModelOutput(sample_kind="atom")},
             selected_atoms=selected_atoms,
         )
 
@@ -169,7 +169,7 @@ class PETMADFeaturizer:
                 check_consistency=self.check_consistency,
             )
             outputs.append(
-                batch_outputs["features"].block().values.detach().cpu().numpy()
+                batch_outputs["feature"].block().values.detach().cpu().numpy()
             )
 
         return np.concatenate(outputs)
