@@ -1,32 +1,38 @@
-__version__ = "0.2.5"
-
 import warnings
 
 import torch
-from warp._src import utils as wp_utils
+
+# from warp._src import utils as wp_utils
+import warp
 
 from ._models import get_upet, list_upet, save_upet
+from ._scm_version import __version__  # noqa: F401
 
 
-# hides a harmless warning from nvalchemi's neighbor list implmentation
+warp.config.log_level = warp.LOG_WARNING
+
+# # hides a harmless warning from nvalchemi's neighbor list implmentation
+# warnings.filterwarnings(
+#     "ignore",
+#     category=UserWarning,
+#     message="The .grad attribute of a Tensor that is not a leaf Tensor",
+# )
 warnings.filterwarnings(
-    "ignore",
-    category=UserWarning,
-    message="The .grad attribute of a Tensor that is not a leaf Tensor",
+    "ignore", category=DeprecationWarning, message="warp.config.quiet is deprecated"
 )
 
-# we want to suppress a further warning from nvalchemi's usage of warp
-# warp uses an internal warn() helper: we wrap it.
-_orig_warn = wp_utils.warn
+# # we want to suppress a further warning from nvalchemi's usage of warp
+# # warp uses an internal warn() helper: we wrap it.
+# _orig_warn = wp_utils.warn
 
 
-def _warn_filtered(message, category=None, stacklevel=1):
-    if category is DeprecationWarning and "warp.vec" in str(message):
-        return
-    return _orig_warn(message, category=category, stacklevel=stacklevel)
+# def _warn_filtered(message, category=None, stacklevel=1):
+#     if category is DeprecationWarning and "warp.vec" in str(message):
+#         return
+#     return _orig_warn(message, category=category, stacklevel=stacklevel)
 
 
-wp_utils.warn = _warn_filtered
+# wp_utils.warn = _warn_filtered
 
 # Disable static fusion. Besides the fact that atomistic batches have variable
 # sizes, statically fused CUDA kernels cannot allocate new tensors at runtime,

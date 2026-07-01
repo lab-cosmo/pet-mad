@@ -15,6 +15,7 @@ __pycache__/
 *.ipynb
 
 # Distribution / packaging
+_scm_version.py
 .Python
 build/
 develop-eggs/
