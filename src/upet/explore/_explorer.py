@@ -23,7 +23,7 @@ class MADExplorer(torch.nn.Module):
     :param output_dim: target low dimensionality for the projected embeddings
     :param device: cpu or cuda
     :param features_output: key to access the PET-MAD feature output.
-        mtt::aux::energy_last_layer_features is used by default
+        mtt::aux::energy_last_layer_feature is used by default
     """
 
     def __init__(
@@ -57,17 +57,17 @@ class MADExplorer(torch.nn.Module):
         outputs: Dict[str, mta.ModelOutput],
         selected_atoms: Optional[mts.Labels],
     ) -> Dict[str, mts.TensorMap]:
-        if list(outputs.keys()) != ["features"]:
+        if list(outputs.keys()) != ["feature"]:
             raise ValueError(
                 f"`outputs` keys ({', '.join(outputs.keys())}) contain unsupported "
-                "keys. Only 'features' is supported"
+                "keys. Only 'feature' is supported"
             )
 
         systems = [s.to(self.dtype, self.device) for s in systems]
 
-        per_atom = outputs["features"].per_atom
+        sample_kind = outputs["feature"].sample_kind
         pet_requested_outputs = {
-            self.features_output: mta.ModelOutput(per_atom=per_atom)
+            self.features_output: mta.ModelOutput(sample_kind=sample_kind)
         }
 
         if selected_atoms is not None:
@@ -113,7 +113,7 @@ class MADExplorer(torch.nn.Module):
             blocks=[block],
         )
 
-        return {"features": tensor_map}
+        return {"feature": tensor_map}
 
     def _get_features(
         self,
@@ -134,7 +134,7 @@ class MADExplorer(torch.nn.Module):
         if selected_atoms is not None:
             features = mts.slice(features, "samples", selected_atoms)
 
-        if outputs[self.features_output].per_atom:
+        if outputs[self.features_output].sample_kind == "atom":
             mean = mts.mean_over_samples(features, "atom")
             mean_vals = torch.cat([block.values for block in mean.blocks()], dim=0)
 

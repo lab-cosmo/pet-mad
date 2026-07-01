@@ -23,10 +23,10 @@ maintainers = [
 ]
 
 dependencies = [
-    "metatrain>=2026.2,<2026.3",
+    "metatrain>=2026.3.1, <2026.4",
     "metatomic-ase",
-    "nvalchemi-toolkit-ops==0.3.0",
-    "warp-lang==1.13.0",
+    "nvalchemi-toolkit-ops",
+    "warp-lang",
     "huggingface_hub",
     "hf_xet",
     "packaging",
@@ -60,6 +60,7 @@ repository = "https://github.com/lab-cosmo/upet"
 [build-system]
 requires = [
     "setuptools >= 68",
+    "setuptools_scm>=8",
     "wheel",
 ]
 build-backend = "setuptools.build_meta"
@@ -67,11 +68,15 @@ build-backend = "setuptools.build_meta"
 [tool.setuptools.packages.find]
 where = ["src"]
 
-[tool.setuptools.dynamic]
-version = {attr = "upet.__version__"}
+[tool.setuptools_scm]
+version_file = "src/upet/_scm_version.py"
+
+[tool.check-manifest]
+ignore = ["src/upet/_scm_version.py"]
 
 [tool.ruff]
 line-length = 88
+exclude = ["src/upet/_scm_version.py"]
 
 [tool.ruff.lint]
 select = ["E", "F", "B", "I"]
@@ -115,6 +120,8 @@ filterwarnings = [
     "ignore: `torch.jit.save` is deprecated.*:DeprecationWarning",
     "ignore: `torch.jit.load` is deprecated.*:DeprecationWarning",
     "ignore: `torch.jit.script_method` is deprecated. Please switch to `torch.compile` or `torch.export`.",
+    "ignore: `torch.jit.interface` is deprecated. Please use `torch.compile` instead.",
+    "ignore: `torch.jit.set_fusion_strategy` is deprecated. Please use `torch.compile` instead.",
     # PET-MAD v1.0 deprecation warning
     "ignore:.*is deprecated in favor of the newer PET-MAD-1.5.*:DeprecationWarning",
     # NVAlchemiOps Deprecation warning
@@ -124,4 +131,11 @@ filterwarnings = [
     "ignore:`compute_requested_neighbors_from_options` is deprecated.*:UserWarning",
     # HF Xet deprecation warning
     "ignore:hf_xet.download_files\\(\\) is deprecated. Use XetSession\\(\\):DeprecationWarning",
+    # Numpy warning
+    "ignore: Setting the shape on a NumPy array has been deprecated in NumPy 2.5.",
+    # MD
+    "ignore: Use thermalize_momenta",
+    # New metatomic release warnings
+    "ignore: the 'features' output name is deprecated:UserWarning",
+    "ignore: the 'non_conservative_forces' output name is deprecated:UserWarning",
 ]

@@ -51,7 +51,7 @@ intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),
     "numpy": ("https://numpy.org/doc/stable/", None),
     "torch": ("https://docs.pytorch.org/docs/stable/", None),
-    "ase": ("https://ase-lib.org/", None),
+    "ase": ("https://docs.ase-lib.org/", None),
     "metatensor": ("https://docs.metatensor.org/latest/", None),
     "metatomic": ("https://docs.metatensor.org/metatomic/latest/", None),
     "metatrain": ("https://docs.metatensor.org/metatrain/latest/", None),
