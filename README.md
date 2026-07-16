@@ -11,7 +11,7 @@
 > previous PET-MAD models. We highly recommend using these models for all applications,
 > especially molecular dynamics simulations. Try them out and let us know what you think!
 ```py
-from upet.calculator import UPETCalculator
+from upet.ase import UPETCalculator
 calculator = UPETCalculator(model="pet-mad-s", version="1.5.0", device="cuda")
 ```
 
@@ -20,7 +20,7 @@ calculator = UPETCalculator(model="pet-mad-s", version="1.5.0", device="cuda")
 > This model is excellent for convex hull energies, geometry optimization and phonons,
 > but we highly recommend the lighter and more universal PET-MAD for molecular dynamics!
 ```py
-from upet.calculator import UPETCalculator
+from upet.ase import UPETCalculator
 calculator = UPETCalculator(model="pet-oam-xl", version="1.0.0", device="cuda")
 ```
 
@@ -66,7 +66,7 @@ for additional methods (specific versions, `uv`, etc.).
 Run a single-point evaluation with the ASE-compatible `UPETCalculator`:
 
 ```python
-from upet.calculator import UPETCalculator
+from upet.ase import UPETCalculator
 from ase.build import bulk
 
 atoms = bulk("Si", cubic=True, a=5.43, crystalstructure="diamond")
@@ -80,7 +80,7 @@ forces = atoms.get_forces()
 For DOS calculations, you can use the `PETMADDOSCalculator`:
 
 ```python
-  from upet.calculator import PETMADDOSCalculator
+  from upet.ase.dos import PETMADDOSCalculator
   from ase.build import bulk
 
   atoms = bulk("Si", cubic=True, a=5.43, crystalstructure="diamond")
@@ -129,8 +129,10 @@ The documentation covers the complete feature surface:
 - [LAMMPS](https://lab-cosmo.github.io/upet/latest/usage/lammps.html) (including
   KOKKOS GPU support),
   [i-PI](https://lab-cosmo.github.io/upet/latest/usage/ipi.html),
-  [TorchSim](https://lab-cosmo.github.io/upet/latest/usage/torchsim.html), and
-  [GROMACS](https://lab-cosmo.github.io/upet/latest/usage/gromacs.html) interfaces.
+  [TorchSim](https://lab-cosmo.github.io/upet/latest/usage/torchsim.html),
+  [GROMACS](https://lab-cosmo.github.io/upet/latest/usage/gromacs.html), and
+  [nvalchemi-toolkit](https://lab-cosmo.github.io/upet/latest/usage/nvalchemi.html)
+  (NVIDIA's GPU-native batched inference and MD toolkit) interfaces.
 - [Fine-tuning](https://lab-cosmo.github.io/upet/latest/fine-tuning.html) and
   [example gallery](https://lab-cosmo.github.io/upet/latest/generated_examples/index.html).
 - [FAQ and known issues](https://lab-cosmo.github.io/upet/latest/faq.html).

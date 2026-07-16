@@ -62,6 +62,10 @@ Click a tile below for the corresponding guide.
         :width: 150px
         :align: center
 
+    .. grid-item-card:: nvalchemi-toolkit
+      :link: usage_nvalchemi
+      :link-type: ref
+
 
 .. toctree::
    :maxdepth: 1
@@ -73,3 +77,4 @@ Click a tile below for the corresponding guide.
    ipi
    torchsim
    gromacs
+   nvalchemi

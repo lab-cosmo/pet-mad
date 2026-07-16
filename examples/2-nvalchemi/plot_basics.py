@@ -1,19 +1,19 @@
 """
-UPETWrapper basics
-===================
+UPETWrapper basics: single-structure evaluation
+=================================================
 
 :py:class:`~upet.nvalchemi.UPETWrapper` wraps a UPET / PET-MAD checkpoint as
 an `nvalchemi-toolkit <https://github.com/NVIDIA/nvalchemi-toolkit>`_
 ``BaseModelMixin`` model, so it can be driven through nvalchemi's batched
 :py:class:`~nvalchemi.data.Batch` data pipeline instead of ASE ``Atoms``.
-This is the entry point for large-scale batched inference and for
-nvalchemi's GPU-accelerated MD integrators (see
-:doc:`plot_upet_wrapper_nvt`).
+This is the entry point for large-scale batched inference (see
+:doc:`plot_batched_eval`) and for nvalchemi's GPU-accelerated MD
+integrators (see :doc:`plot_nvt`).
 
-This example builds a single water molecule as an
-:py:class:`~nvalchemi.data.AtomicData` instance, wraps it in a single-graph
-:py:class:`~nvalchemi.data.Batch`, and evaluates energy, forces, and stress
-with :py:class:`~upet.nvalchemi.UPETWrapper`.
+This example builds a bulk silicon cell as an ASE ``Atoms`` object,
+converts it to a single-graph :py:class:`~nvalchemi.data.Batch` with
+:py:meth:`~nvalchemi.data.AtomicData.from_atoms`, and evaluates energy,
+forces, and stress with :py:class:`~upet.nvalchemi.UPETWrapper`.
 
 .. note::
 
@@ -23,6 +23,7 @@ with :py:class:`~upet.nvalchemi.UPETWrapper`.
 """
 
 import torch
+from ase.build import bulk
 
 
 try:
@@ -50,24 +51,16 @@ if NVALCHEMI_AVAILABLE:
     )
 
     # %%
-    # Building a single water molecule
-    # ---------------------------------
-    positions = torch.tensor(
-        [
-            [0.0000, 0.0000, 0.1173],
-            [0.0000, 0.7572, -0.4692],
-            [0.0000, -0.7572, -0.4692],
-        ],
-        dtype=torch.float32,
-    )
-    atomic_numbers = torch.tensor([8, 1, 1], dtype=torch.long)
+    # From ASE ``Atoms`` to a single-graph ``Batch``
+    # ------------------------------------------------
+    # :py:meth:`~nvalchemi.data.AtomicData.from_atoms` builds an
+    # :py:class:`~nvalchemi.data.AtomicData` instance directly from an ASE
+    # ``Atoms`` object, carrying over positions, atomic numbers, cell and
+    # PBC. :py:meth:`~nvalchemi.data.Batch.from_data_list` then promotes it
+    # to a single-graph batch.
 
-    data = AtomicData(
-        positions=positions,
-        atomic_numbers=atomic_numbers,
-        forces=torch.zeros_like(positions),
-        energy=torch.zeros(1, 1),
-    )
+    atoms = bulk("Si", cubic=True, a=5.43, crystalstructure="diamond")
+    data = AtomicData.from_atoms(atoms, device=device)
     batch = Batch.from_data_list([data], device=device)
 
     # %%
@@ -83,6 +76,7 @@ if NVALCHEMI_AVAILABLE:
 
     print(f"Energy : {outputs['energy'].item():+.4f} eV")
     print(f"Forces :\n{outputs['forces'].detach().cpu().numpy()}")
+    print(f"Stress :\n{outputs['stress'].squeeze(0).detach().cpu().numpy()}")
 else:
     print(
         "This example requires the optional 'nvalchemi' extra: "
