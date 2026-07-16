@@ -23,7 +23,11 @@ maintainers = [
 ]
 
 dependencies = [
-    "metatrain>=2026.3.1, <2026.4",
+    # Temporary: this branch's nvalchemi-toolkit integration needs the
+    # pure-torch `PETBackend`, which isn't in a tagged metatrain release
+    # yet. Pull it from `main` for now, and switch back to a pinned PyPI
+    # release (e.g. "metatrain>=2026.3.1, <2026.4") once available.
+    "metatrain @ git+https://github.com/metatensor/metatrain.git@main",
     "metatomic-ase",
     "nvalchemi-toolkit-ops",
     "warp-lang",
@@ -49,6 +53,11 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Physics",
     "Topic :: Software Development :: Libraries",
     "Topic :: Software Development :: Libraries :: Python Modules",
+]
+
+[project.optional-dependencies]
+nvalchemi = [
+    "nvalchemi-toolkit @ git+https://github.com/NVIDIA/nvalchemi-toolkit.git@main",
 ]
 
 [project.urls]
@@ -85,7 +94,7 @@ ignore = ["B018", "B904"]
 [tool.ruff.lint.isort]
 lines-after-imports = 2
 known-first-party = ["upet"]
-known-third-party = ["torch"]
+known-third-party = ["torch", "nvalchemi"]
 
 [tool.ruff.format]
 docstring-code-format = true

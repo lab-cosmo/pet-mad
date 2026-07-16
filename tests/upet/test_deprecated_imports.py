@@ -2,7 +2,8 @@
 
 ``upet.calculator`` and ``upet.explore`` were the pre-restructure public
 paths for ``UPETCalculator``/``PETMADDOSCalculator`` and
-``PETMADFeaturizer`` respectively. They must keep working (with a
+``PETMADFeaturizer`` respectively. ``upet.utils.align_dos`` was the
+pre-restructure path for ``align_dos``. They must keep working (with a
 ``DeprecationWarning``) so external code importing from them doesn't break.
 """
 
@@ -35,3 +36,14 @@ def test_explore_shim_warns_and_reexports():
     from upet.ase.explore import PETMADFeaturizer
 
     assert shim.PETMADFeaturizer is PETMADFeaturizer
+
+
+def test_utils_align_dos_attribute_warns_and_reexports():
+    utils = _fresh_import("upet.utils")
+
+    with pytest.warns(DeprecationWarning, match="upet.utils.align_dos is deprecated"):
+        align_dos = utils.align_dos
+
+    from upet.ase.dos.utils import align_dos as new_align_dos
+
+    assert align_dos is new_align_dos

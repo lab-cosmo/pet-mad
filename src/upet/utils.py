@@ -50,3 +50,22 @@ def hf_hub_download_url(
         token=hf_token,
         endpoint=endpoint,
     )
+
+
+def __getattr__(name: str):
+    # Deprecated: `align_dos` moved to `upet.ase.dos.utils`. Resolved lazily
+    # (PEP 562) so importing `upet.utils` itself doesn't warn - only
+    # accessing this specific, moved attribute does.
+    if name == "align_dos":
+        import warnings
+
+        from .ase.dos.utils import align_dos
+
+        warnings.warn(
+            "upet.utils.align_dos is deprecated, use `from upet.ase.dos.utils "
+            "import align_dos` instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return align_dos
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
