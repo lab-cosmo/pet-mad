@@ -4,7 +4,7 @@ Density of States (DOS) and Bandgap calculations with UPET
 
 Single-point evaluation of a bulk silicon cell with PET-MAD-DOS. The two silicon atoms
 are displaced off their equilibrium positions and the DOS and bandgap is computed using
-the :py:class:`~upet.calculator.PETMADDOSCalculator`. Additionally, we showcase the
+the :py:class:`~upet.ase.dos.PETMADDOSCalculator`. Additionally, we showcase the
 performance of the denoising algorithm. The DOS is plotted with and without denoising,
 and the predicted bandgap is printed for both cases. The denoised DOS is less
 oscillatory and non-negative compared to the raw DOS.
@@ -15,7 +15,7 @@ import numpy as np
 import torch
 from ase.build import bulk
 
-from upet.calculator import PETMADDOSCalculator
+from upet.ase.dos import PETMADDOSCalculator
 
 
 atoms = bulk("Si", cubic=True, a=5.43, crystalstructure="diamond")

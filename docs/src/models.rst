@@ -158,8 +158,8 @@ Uncertainty quantification
 --------------------------
 
 A subset of PET-MAD checkpoints expose per-structure energy uncertainty
-estimates through :py:meth:`~upet.calculator.UPETCalculator.get_energy_uncertainty`
-and :py:meth:`~upet.calculator.UPETCalculator.get_energy_ensemble`
+estimates through :py:meth:`~upet.ase.UPETCalculator.get_energy_uncertainty`
+and :py:meth:`~upet.ase.UPETCalculator.get_energy_ensemble`
 (LLPR + shallow-ensemble heads, see :ref:`ase-uncertainty` for usage):
 
 - ``pet-mad-s`` v1.0.2
@@ -187,7 +187,7 @@ PET-MAD-DOS
 In addition to the energy/force models above, UPET ships **PET-MAD-DOS**,
 a separate model family for predicting the electronic density of states,
 Fermi levels and bandgaps via
-:py:class:`~upet.calculator.PETMADDOSCalculator` (see
+:py:class:`~upet.ase.dos.PETMADDOSCalculator` (see
 :ref:`ase-pet-mad-dos`).
 
 .. list-table::

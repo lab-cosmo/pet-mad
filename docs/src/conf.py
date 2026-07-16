@@ -46,6 +46,10 @@ autoclass_content = "both"
 autodoc_member_order = "bysource"
 autodoc_typehints = "both"
 autodoc_typehints_format = "short"
+# `upet.nvalchemi` requires the optional `nvalchemi` extra, which isn't
+# installed in the docs build environment; mock it so autodoc can still
+# extract docstrings/signatures without importing it.
+autodoc_mock_imports = ["nvalchemi"]
 
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),

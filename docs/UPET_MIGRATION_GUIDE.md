@@ -24,7 +24,7 @@ from pet_mad.calculator import PETMADCalculator
 with:
 
 ```python
-from upet.calculator import UPETCalculator
+from upet.ase import UPETCalculator
 ```
 
 ## Step 2: Update Calculator Initialization

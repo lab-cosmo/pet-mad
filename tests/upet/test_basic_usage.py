@@ -11,7 +11,7 @@ from upet._models import (
     upet_resolve_model,
 )
 from upet._version import UPET_AVAILABLE_MODELS
-from upet.calculator import UPETCalculator
+from upet.ase import UPETCalculator
 
 
 @pytest.mark.parametrize("size", ["s", "m", "l", "xl", "xs", "xxs"])

@@ -13,7 +13,7 @@ from metatrain.utils.dtype import dtype_to_str
 from platformdirs import user_cache_dir
 from tqdm import tqdm
 
-from .._models import get_upet
+from ..._models import get_upet
 from ._explorer import MADExplorer
 
 

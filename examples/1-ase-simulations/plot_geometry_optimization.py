@@ -19,7 +19,7 @@ from ase.build import bulk
 from ase.filters import FrechetCellFilter
 from ase.optimize import LBFGS
 
-from upet.calculator import UPETCalculator
+from upet.ase import UPETCalculator
 
 
 atoms = bulk("Si", cubic=True, a=5.43, crystalstructure="diamond")

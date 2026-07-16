@@ -3,7 +3,7 @@ import torch
 from ase.build import bulk
 
 from upet._models import get_pet_mad_dos
-from upet.calculator import PETMADDOSCalculator
+from upet.ase.dos import PETMADDOSCalculator
 
 
 VERSIONS = ["1.0"]

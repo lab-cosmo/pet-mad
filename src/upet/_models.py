@@ -4,8 +4,6 @@ import re
 import warnings
 from functools import lru_cache
 from typing import List, Optional, Tuple, Union
-from urllib.parse import urlparse
-from urllib.request import urlretrieve
 
 import torch
 from huggingface_hub import HfApi, hf_hub_download
@@ -13,14 +11,8 @@ from metatomic.torch import AtomisticModel
 from metatrain.utils.io import load_model as load_metatrain_model
 from packaging.version import Version
 
-from ._metadata import get_pet_mad_dos_metadata, get_upet_metadata
-from ._version import (
-    DEPRECATED_MODELS,
-    PET_MAD_DOS_AVAILABLE_VERSIONS,
-    PET_MAD_DOS_LATEST_STABLE_VERSION,
-)
-from .modules import CNNModel
-from .utils import hf_hub_download_url
+from ._metadata import get_upet_metadata
+from ._version import DEPRECATED_MODELS
 
 
 CHECKPOINT_NAME_PATTERN = re.compile(
@@ -158,6 +150,56 @@ def upet_resolve_model(
     return size, version
 
 
+def _resolve_and_download_checkpoint(
+    model: str,
+    size: Optional[str] = None,
+    version: Optional[Union[str, Version]] = "latest",
+) -> Tuple[str, Version, str]:
+    """
+    Resolve size/version for a UPET model and download its checkpoint from
+    the ``lab-cosmo/upet`` HuggingFace repository, caching it locally.
+
+    Shared by :func:`_get_upet_exported_atomistic_model` and
+    :class:`upet.nvalchemi.UPETWrapper`'s ``from_checkpoint``.
+
+    :param model: Base model name (e.g., "pet-mad", "pet-omat")
+    :param size: Specific size to use, or None for the default
+    :param version: Specific version, or "latest"/None for the newest
+    :return: Tuple of (resolved size, resolved version, local checkpoint path)
+    """
+    # Resolve size and version via upet_resolve_model, which handles
+    # defaults (prefers 's'), validates against available checkpoints,
+    # and correctly resolves "latest" to an actual version number.
+    # Previously, passing version="latest" would reach hf_hub_download
+    # as None and produce a broken "pet-mad-s-vNone" filename.
+    requested_version = (
+        None if (version is None or version == "latest") else str(version)
+    )
+    size, version = upet_resolve_model(
+        model=model,
+        requested_size=size,
+        requested_version=requested_version,
+    )
+
+    model_name = f"{model}-{size}-v{version}"
+    if model_name in DEPRECATED_MODELS:
+        warn_msg = (
+            f"Model {model_name} is deprecated and may not be supported in "
+            "future versions. Please switch to a newer model for better "
+            "performance and support."
+        )
+        warnings.warn(warn_msg, category=DeprecationWarning, stacklevel=2)
+
+    model_string = f"{model_name}.ckpt"
+    logging.info(f"Loading pre-trained model: {model_string}")
+    path = hf_hub_download(
+        repo_id="lab-cosmo/upet",
+        filename=model_string,
+        subfolder="models",
+    )
+    return size, version, path
+
+
 def _get_upet_exported_atomistic_model(
     model: Optional[str] = None,
     size: Optional[str] = None,
@@ -179,36 +221,7 @@ def _get_upet_exported_atomistic_model(
         if model is None:
             raise ValueError("'model' is required when not using checkpoint_path")
 
-        # Resolve size and version via upet_resolve_model, which handles
-        # defaults (prefers 's'), validates against available checkpoints,
-        # and correctly resolves "latest" to an actual version number.
-        # Previously, passing version="latest" would reach hf_hub_download
-        # as None and produce a broken "pet-mad-s-vNone" filename.
-        requested_version = (
-            None if (version is None or version == "latest") else str(version)
-        )
-        size, version = upet_resolve_model(
-            model=model,
-            requested_size=size,
-            requested_version=requested_version,
-        )
-
-        model_name = f"{model}-{size}-v{version}"
-        if model_name in DEPRECATED_MODELS:
-            warn_msg = (
-                f"Model {model_name} is deprecated and may not be supported in "
-                "future versions. Please switch to a newer model for better "
-                "performance and support."
-            )
-            warnings.warn(warn_msg, category=DeprecationWarning, stacklevel=2)
-
-        model_string = f"{model_name}.ckpt"
-        logging.info(f"Loading pre-trained model: {model_string}")
-        path = hf_hub_download(
-            repo_id="lab-cosmo/upet",
-            filename=model_string,
-            subfolder="models",
-        )
+        size, version, path = _resolve_and_download_checkpoint(model, size, version)
 
     with warnings.catch_warnings():
         warnings.filterwarnings(
@@ -337,124 +350,3 @@ def list_upet(
                 print(f"  - {entry['model']}-{entry['size']} v{entry['version']}")
 
     return result
-
-
-BASE_URL_PET_MAD_DOS = "https://huggingface.co/lab-cosmo/pet-mad-dos/resolve/{tag}/models/pet-mad-dos-{version}.ckpt"
-BASE_URL_BANDGAP_MODEL = (
-    "https://huggingface.co/lab-cosmo/pet-mad-dos/resolve/{tag}/models/bandgap-model.pt"
-)
-BASE_URL_FERMI_MODEL = (
-    "https://huggingface.co/lab-cosmo/pet-mad-dos/resolve/{tag}/models/fermi-model.pt"
-)
-
-
-def get_pet_mad_dos(
-    *, version: str = "latest", model_path: Optional[str] = None
-) -> AtomisticModel:
-    """Get a metatomic ``AtomisticModel`` for PET-MAD-DOS.
-
-    :param version: PET-MAD-DOS version to use. Defaults to latest available version.
-    :param model_path: path to a Torch-Scripted metatomic ``AtomisticModel``. If
-        provided, the `version` parameter is ignored.
-    """
-    if version == "latest":
-        version = Version(PET_MAD_DOS_LATEST_STABLE_VERSION)
-    if not isinstance(version, Version):
-        version = Version(version)
-
-    if version not in [Version(v) for v in PET_MAD_DOS_AVAILABLE_VERSIONS]:
-        raise ValueError(
-            f"Version {version} is not supported. Supported versions are "
-            f"{PET_MAD_DOS_AVAILABLE_VERSIONS}"
-        )
-
-    if model_path is not None:
-        print(f"Loading PET-MAD-DOS model from checkpoint: {model_path}")
-        path = model_path
-    else:
-        print(f"Downloading PET-MAD-DOS model version: {version}")
-        path = BASE_URL_PET_MAD_DOS.format(tag="main", version=f"v{version}")
-
-    model = load_metatrain_model(path)
-    metadata = get_pet_mad_dos_metadata(version)
-    exported_model = model.export(metadata)
-    return exported_model
-
-
-def _get_bandgap_model(version: str = "latest", model_path: Optional[str] = None):
-    """
-    Get a bandgap model for PET-MAD-DOS
-    """
-    if version == "latest":
-        version = Version(PET_MAD_DOS_LATEST_STABLE_VERSION)
-    if not isinstance(version, Version):
-        version = Version(version)
-
-    if version not in [Version(v) for v in PET_MAD_DOS_AVAILABLE_VERSIONS]:
-        raise ValueError(
-            f"Version {version} is not supported. Supported versions are "
-            f"{PET_MAD_DOS_AVAILABLE_VERSIONS}"
-        )
-
-    if model_path is not None:
-        logging.info(
-            f"Loading the PET-MAD-DOS bandgap model from checkpoint: {model_path}"
-        )
-        path = model_path
-    else:
-        logging.info(f"Downloading bandgap model version: {version}")
-        path = BASE_URL_BANDGAP_MODEL.format(tag="main")
-        path = str(path)
-        url = urlparse(path)
-
-        if url.scheme:
-            if url.netloc == "huggingface.co":
-                path = hf_hub_download_url(url=url.geturl(), hf_token=None)
-            else:
-                # Avoid caching generic URLs due to lack of a model hash for proper
-                # cache invalidation
-                path, _ = urlretrieve(url=url.geturl())
-
-    model = CNNModel()
-    model.load_state_dict(torch.load(path, weights_only=False, map_location="cpu"))
-    return model
-
-
-def _get_fermi_model(version: str = "latest", model_path: Optional[str] = None):
-    """
-    Get a Fermi level model for PET-MAD-DOS
-    """
-    if version == "latest":
-        version = Version(PET_MAD_DOS_LATEST_STABLE_VERSION)
-    if not isinstance(version, Version):
-        version = Version(version)
-
-    if version not in [Version(v) for v in PET_MAD_DOS_AVAILABLE_VERSIONS]:
-        raise ValueError(
-            f"Version {version} is not supported. Supported versions are "
-            f"{PET_MAD_DOS_AVAILABLE_VERSIONS}"
-        )
-
-    if model_path is not None:
-        logging.info(
-            f"Loading the PET-MAD-DOS Fermi level model from checkpoint: {model_path}"
-        )
-        path = model_path
-    else:
-        logging.info(f"Downloading Fermi level model version: {version}")
-        # Set to main for now until the next version gets published
-        path = BASE_URL_FERMI_MODEL.format(tag="main")
-        path = str(path)
-        url = urlparse(path)
-
-        if url.scheme:
-            if url.netloc == "huggingface.co":
-                path = hf_hub_download_url(url=url.geturl(), hf_token=None)
-            else:
-                # Avoid caching generic URLs due to lack of a model hash for proper
-                # cache invalidation
-                path, _ = urlretrieve(url=url.geturl())
-
-    model = CNNModel()
-    model.load_state_dict(torch.load(path, weights_only=False, map_location="cpu"))
-    return model

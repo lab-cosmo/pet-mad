@@ -4,7 +4,7 @@ ASE interface
 =============
 
 UPET ships an ASE-compatible calculator,
-:py:class:`~upet.calculator.UPETCalculator`, that wraps any UPET model and
+:py:class:`~upet.ase.UPETCalculator`, that wraps any UPET model and
 exposes the standard ASE ``get_potential_energy`` / ``get_forces`` /
 ``get_stress`` API. This page covers the full surface of ASE-driven
 workflows: basic evaluation, loading from a local checkpoint,
@@ -24,13 +24,13 @@ Basic usage
 -----------
 
 To perform a single-structure evaluation, build an ASE ``Atoms`` object
-and attach a :py:class:`~upet.calculator.UPETCalculator`. The model name
+and attach a :py:class:`~upet.ase.UPETCalculator`. The model name
 is formed by combining the model family and the size, e.g. ``pet-mad-s``,
 ``pet-omat-l``. See :ref:`models` for the full list.
 
 .. code-block:: python
 
-   from upet.calculator import UPETCalculator
+   from upet.ase import UPETCalculator
    from ase.build import bulk
 
    atoms = bulk("Si", cubic=True, a=5.43, crystalstructure="diamond")
@@ -52,7 +52,7 @@ version of the model is downloaded and used by default:
 
 .. code-block:: python
 
-   from upet.calculator import UPETCalculator
+   from upet.ase import UPETCalculator
 
    # uses the latest version of the PET-MAD-S model by default
    calculator = UPETCalculator(model="pet-mad-s", device="cpu")
@@ -84,7 +84,7 @@ checkpoints or reproducibility):
 
 .. code-block:: python
 
-   from upet.calculator import UPETCalculator
+   from upet.ase import UPETCalculator
 
    calculator = UPETCalculator(checkpoint_path="pet-mad-s-v1.5.0.ckpt", device="cpu")
 
@@ -107,7 +107,7 @@ when constructing the calculator:
 
 .. code-block:: python
 
-   from upet.calculator import UPETCalculator
+   from upet.ase import UPETCalculator
    from ase.build import bulk
 
    atoms = bulk("Si", cubic=True, a=5.43, crystalstructure="diamond")
@@ -143,11 +143,11 @@ coefficients, and so on).
    and ``pet-mad-s`` v1.5.0). See :ref:`models` for the full list.
 
 Use the ``get_energy_uncertainty`` and ``get_energy_ensemble`` methods of
-:py:class:`~upet.calculator.UPETCalculator`:
+:py:class:`~upet.ase.UPETCalculator`:
 
 .. code-block:: python
 
-   from upet.calculator import UPETCalculator
+   from upet.ase import UPETCalculator
    from ase.build import bulk
 
    atoms = bulk("Si", cubic=True, a=5.43, crystalstructure="diamond")
@@ -178,7 +178,7 @@ Pass a ``rotational_average_order`` to the calculator:
 
 .. code-block:: python
 
-   from upet.calculator import UPETCalculator
+   from upet.ase import UPETCalculator
    from ase.build import bulk
 
    atoms = bulk("Si", cubic=True, a=5.43, crystalstructure="diamond")
@@ -203,7 +203,7 @@ by setting ``rotational_average_batch_size`` to a smaller value:
 
 .. code-block:: python
 
-   from upet.calculator import UPETCalculator
+   from upet.ase import UPETCalculator
 
    calculator = UPETCalculator(
        model="pet-mad-s",
@@ -241,7 +241,7 @@ Then combine both calculators with ``ase.calculators.mixing.SumCalculator``:
    import torch
    from ase.calculators.mixing import SumCalculator
    from torch_dftd.torch_dftd3_calculator import TorchDFTD3Calculator
-   from upet.calculator import UPETCalculator
+   from upet.ase import UPETCalculator
 
    device = "cuda" if torch.cuda.is_available() else "cpu"
 
@@ -259,12 +259,12 @@ DOS, Fermi levels and bandgaps (PET-MAD-DOS)
 
 The UPET package also exposes the **PET-MAD-DOS** model for predicting
 electronic density of states of materials, their Fermi levels and
-bandgaps, via :py:class:`~upet.calculator.PETMADDOSCalculator`:
+bandgaps, via :py:class:`~upet.ase.dos.PETMADDOSCalculator`:
 
 .. code-block:: python
 
    from ase.build import bulk
-   from upet.calculator import PETMADDOSCalculator
+   from upet.ase.dos import PETMADDOSCalculator
 
    atoms = bulk("Si", cubic=True, a=5.43, crystalstructure="diamond")
    pet_mad_dos_calculator = PETMADDOSCalculator(version="latest", device="cpu")
@@ -321,7 +321,7 @@ visualization.
 
    import ase.io
    import chemiscope
-   from upet.explore import PETMADFeaturizer
+   from upet.ase.explore import PETMADFeaturizer
 
    featurizer = PETMADFeaturizer(version="latest")
 

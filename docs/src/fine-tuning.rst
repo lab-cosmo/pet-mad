@@ -29,7 +29,7 @@ giving a good trade-off for most applications.
 Head selection
 --------------
 
-By default, :py:class:`~upet.calculator.UPETCalculator` uses the energy
+By default, :py:class:`~upet.ase.UPETCalculator` uses the energy
 and non-conservative forces/stresses heads **provided with the
 pre-trained models**. If you fine-tune a model and create a new head for
 your energy target, you need to explicitly select the corresponding
@@ -48,7 +48,7 @@ Load the fine-tuned checkpoint and construct the calculator with the
 
 .. code-block:: python
 
-   from upet.calculator import UPETCalculator
+   from upet.ase import UPETCalculator
 
    # For the new energy head called "energy/finetune"
    calc = UPETCalculator(checkpoint_path="finetuned.ckpt", variants={"energy": "finetune"})

@@ -5,7 +5,7 @@ Energy and forces
 Single-point evaluation of a bulk silicon cell with the smallest PET-MAD
 model (``pet-mad-xs``). Two atoms are displaced off their equilibrium
 positions so the predicted forces are non-trivial; we then attach a
-:py:class:`~upet.calculator.UPETCalculator`, read energy and forces via
+:py:class:`~upet.ase.UPETCalculator`, read energy and forces via
 the standard ASE API, and render the unit cell with the forces drawn as
 arrows on top of the atoms.
 """
@@ -15,7 +15,7 @@ import numpy as np
 from ase.build import bulk
 from ase.visualize.plot import plot_atoms
 
-from upet.calculator import UPETCalculator
+from upet.ase import UPETCalculator
 
 
 atoms = bulk("Si", cubic=True, a=5.43, crystalstructure="diamond")

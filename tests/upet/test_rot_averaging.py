@@ -3,7 +3,7 @@ import pytest
 from ase.build import bulk
 
 from upet._version import UPET_AVAILABLE_MODELS
-from upet.calculator import UPETCalculator
+from upet.ase import UPETCalculator
 
 
 GRID_ORDERS = [3, 5]

@@ -15,7 +15,7 @@ from ase.build import bulk
 from ase.md.velocitydistribution import MaxwellBoltzmannDistribution
 from ase.md.verlet import VelocityVerlet
 
-from upet.calculator import UPETCalculator
+from upet.ase import UPETCalculator
 
 
 atoms = bulk("Si", cubic=True, a=5.43, crystalstructure="diamond")

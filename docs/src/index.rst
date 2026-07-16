@@ -27,7 +27,7 @@ PET architecture and is trained on the MAD dataset.
 
    .. code-block:: python
 
-      from upet.calculator import UPETCalculator
+      from upet.ase import UPETCalculator
       calculator = UPETCalculator(model="pet-mad-s", version="1.5.0", device="cuda")
 
 .. note::
@@ -40,7 +40,7 @@ PET architecture and is trained on the MAD dataset.
 
    .. code-block:: python
 
-      from upet.calculator import UPETCalculator
+      from upet.ase import UPETCalculator
       calculator = UPETCalculator(model="pet-oam-xl", version="1.0.0", device="cuda")
 
 .. warning::

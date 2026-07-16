@@ -15,7 +15,7 @@ from ase.build import bulk
 from ase.md.langevin import Langevin
 from ase.md.velocitydistribution import MaxwellBoltzmannDistribution
 
-from upet.calculator import UPETCalculator
+from upet.ase import UPETCalculator
 
 
 T_TARGET = 300.0  # K

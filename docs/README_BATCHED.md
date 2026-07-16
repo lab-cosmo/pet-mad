@@ -9,7 +9,7 @@ more efficient batched evaluator in the `compute_energy` method.
 
 ```python
 import torch
-from upet.calculator import UPETCalculator
+from upet.ase import UPETCalculator
 from ase.build import bulk
 
 
