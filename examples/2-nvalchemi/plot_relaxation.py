@@ -1,5 +1,5 @@
 """
-UPETWrapper: geometry optimization with FIRE
+Geometry optimization (FIRE)
 ===============================================
 
 :py:class:`~nvalchemi.dynamics.FIRE` drives atomic positions toward a local

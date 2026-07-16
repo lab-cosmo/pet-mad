@@ -1,5 +1,5 @@
 """
-UPETWrapper: NPT molecular dynamics
+NPT molecular dynamics
 ======================================
 
 :py:class:`~nvalchemi.dynamics.NPT` samples the isothermal-isobaric ensemble

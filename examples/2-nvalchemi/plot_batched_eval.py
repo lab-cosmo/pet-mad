@@ -1,5 +1,5 @@
 """
-UPETWrapper: batched evaluation
+Batched evaluation
 =================================
 
 This example evaluates energy, forces, and stress for several structures at

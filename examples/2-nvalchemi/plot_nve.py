@@ -1,5 +1,5 @@
 """
-UPETWrapper: NVE molecular dynamics
+NVE molecular dynamics
 ======================================
 
 :py:class:`~nvalchemi.dynamics.NVE` integrates Newton's equations of motion

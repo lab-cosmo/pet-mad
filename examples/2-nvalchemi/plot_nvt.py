@@ -1,5 +1,5 @@
 """
-UPETWrapper: NVT molecular dynamics
+NVT molecular dynamics
 ======================================
 
 :py:class:`~nvalchemi.dynamics.NVTLangevin` samples the canonical ensemble

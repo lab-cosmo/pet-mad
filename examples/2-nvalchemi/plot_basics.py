@@ -1,5 +1,5 @@
 """
-UPETWrapper basics: single-structure evaluation
+Basics: single-structure evaluation
 =================================================
 
 :py:class:`~upet.nvalchemi.UPETWrapper` wraps a UPET / PET-MAD checkpoint as
