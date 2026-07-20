@@ -16,6 +16,10 @@ Top-level functions
 
 .. autofunction:: save_upet
 
+.. autofunction:: create_weighted_sum_checkpoint
+
+.. autofunction:: extract_wrapped_checkpoint
+
 
 Calculators
 -----------

@@ -3,6 +3,10 @@ Changelog
 
 Unreleased changes
 ------------------
+- Added support for attaching fixed-coefficient weighted-sum heads to a
+  multi-head checkpoint, via ``upet.create_weighted_sum_checkpoint``,
+  ``upet.extract_wrapped_checkpoint``, and the ``upet._weighted_sum`` CLI.
+  See :ref:`fine-tuning` for usage.
 
 0.2.5
 -----
