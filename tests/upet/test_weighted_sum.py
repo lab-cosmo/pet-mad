@@ -262,6 +262,31 @@ def test_weighted_sum_custom_sum_one_tolerance_still_rejects_large_deviation(
         )
 
 
+def test_weighted_sum_default_description_is_auto_generated(base_model):
+    wrapped = WeightedSumModel(
+        base_model, {"energy/mix": {"sources": {"energy/a": 0.3, "energy/b": 0.7}}}
+    )
+    assert wrapped.descriptions == ["0.3 * energy/a + 0.7 * energy/b"]
+    assert (
+        wrapped.supported_outputs()["energy/mix"].description
+        == "0.3 * energy/a + 0.7 * energy/b"
+    )
+
+
+def test_weighted_sum_custom_description_overrides_default(base_model):
+    wrapped = WeightedSumModel(
+        base_model,
+        {
+            "energy/mix": {
+                "sources": {"energy/a": 0.3, "energy/b": 0.7},
+                "description": "30/70 a/b mix",
+            }
+        },
+    )
+    assert wrapped.descriptions == ["30/70 a/b mix"]
+    assert wrapped.supported_outputs()["energy/mix"].description == "30/70 a/b mix"
+
+
 def test_weighted_sum_forward_matches_manual_combination(base_model, water_system):
     wrapped = WeightedSumModel(
         base_model, {"energy/mix": {"sources": {"energy/a": 0.3, "energy/b": 0.7}}}
@@ -335,6 +360,7 @@ def test_weighted_sum_checkpoint_round_trip(base_model, water_system):
     assert reloaded.coefficients == wrapped.coefficients
     assert reloaded.enforce_sum_one == wrapped.enforce_sum_one == [True, False]
     assert reloaded.sum_one_tolerance == wrapped.sum_one_tolerance == [1e-3, 1e-6]
+    assert reloaded.descriptions == wrapped.descriptions
 
     outputs = {
         "energy/mix": ModelOutput(sample_kind="system"),
@@ -375,6 +401,7 @@ def test_create_and_extract_weighted_sum_checkpoint(base_model, tmp_path):
             "sources": {"energy/a": 0.3, "energy/b": 0.7},
             "enforce_sum_one": True,
             "sum_one_tolerance": 1e-6,
+            "description": "0.3 * energy/a + 0.7 * energy/b",
         }
     }
 

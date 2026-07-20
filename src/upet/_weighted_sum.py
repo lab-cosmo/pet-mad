@@ -105,16 +105,20 @@ class WeightedSumModel(torch.nn.Module):
     :param model: a loaded, export-ready model (in practice a
         :class:`metatrain.pet.PET` instance) with multiple conservative targets.
     :param specs: ``{new_head_name: {"sources": {source_target_name: coefficient,
-        ...}, "enforce_sum_one": bool, "sum_one_tolerance": float}, ...}``. Each
-        ``source_target_name`` must name an existing target of ``model``.
-        ``"enforce_sum_one"`` is optional and defaults to ``True``, requiring the
-        head's coefficients to sum to 1 (as for a weighted average across
-        several targets, and to catch the common mistake of forgetting to
+        ...}, "enforce_sum_one": bool, "sum_one_tolerance": float, "description":
+        str}, ...}``. Each ``source_target_name`` must name an existing target of
+        ``model``. ``"enforce_sum_one"`` is optional and defaults to ``True``,
+        requiring the head's coefficients to sum to 1 (as for a weighted average
+        across several targets, and to catch the common mistake of forgetting to
         normalize them); set it to ``False`` for combinations that legitimately
         don't sum to 1, e.g. a difference or rescaling head. ``"sum_one_tolerance"``
         is optional (default :data:`DEFAULT_SUM_ONE_TOLERANCE`) and only relevant
         when ``"enforce_sum_one"`` is ``True``; loosen it if the coefficients come
         from a fitting/calibration procedure that doesn't converge to exactly 1.
+        ``"description"`` is optional and defaults to an auto-generated
+        ``"c1 * source1 + c2 * source2 + ..."`` string; set it to give the head a
+        human-readable description (stored on the exported ``ModelOutput``)
+        instead, e.g. for a head with many sources.
     """
 
     __checkpoint_version__ = 1
@@ -125,8 +129,9 @@ class WeightedSumModel(torch.nn.Module):
     coefficients: List[List[float]]
     enforce_sum_one: List[bool]
     sum_one_tolerance: List[float]
+    descriptions: List[str]
 
-    _SPEC_KEYS = {"sources", "enforce_sum_one", "sum_one_tolerance"}
+    _SPEC_KEYS = {"sources", "enforce_sum_one", "sum_one_tolerance", "description"}
 
     def __init__(self, model: PET, specs: Dict[str, Dict[str, Any]]) -> None:
         super().__init__()
@@ -140,6 +145,7 @@ class WeightedSumModel(torch.nn.Module):
         self.coefficients = []
         self.enforce_sum_one = []
         self.sum_one_tolerance = []
+        self.descriptions = []
         self.outputs: Dict[str, ModelOutput] = dict(model.outputs)
 
         for new_name in self.new_names:
@@ -149,7 +155,7 @@ class WeightedSumModel(torch.nn.Module):
                 raise ValueError(
                     f"in head '{new_name}': unknown key(s) {sorted(unknown_keys)}; "
                     f"expected 'sources' and optionally 'enforce_sum_one', "
-                    f"'sum_one_tolerance'"
+                    f"'sum_one_tolerance', 'description'"
                 )
             if "sources" not in head_spec:
                 raise ValueError(f"in head '{new_name}': missing 'sources'")
@@ -218,17 +224,21 @@ class WeightedSumModel(torch.nn.Module):
                             f"components or properties"
                         )
 
+            default_description = " + ".join(
+                f"{c} * {s}" for s, c in zip(sources, coefficients, strict=True)
+            )
+            description = str(head_spec.get("description", default_description))
+
             self.sources.append(sources)
             self.coefficients.append(coefficients)
             self.enforce_sum_one.append(enforce_sum_one)
             self.sum_one_tolerance.append(sum_one_tolerance)
+            self.descriptions.append(description)
             self.outputs[new_name] = ModelOutput(
                 quantity=reference.quantity,
                 unit=reference.unit,
                 sample_kind="atom",
-                description=" + ".join(
-                    f"{c} * {s}" for s, c in zip(sources, coefficients, strict=True)
-                ),
+                description=description,
             )
 
     def supported_outputs(self) -> Dict[str, ModelOutput]:
@@ -316,6 +326,7 @@ class WeightedSumModel(torch.nn.Module):
                 ),
                 "enforce_sum_one": self.enforce_sum_one[i],
                 "sum_one_tolerance": self.sum_one_tolerance[i],
+                "description": self.descriptions[i],
             }
         return {
             "architecture_name": ARCHITECTURE_NAME,
@@ -388,10 +399,10 @@ class WeightedSumModel(torch.nn.Module):
 
 def load_specs_yaml(path: str) -> Dict[str, Dict[str, Any]]:
     """Load a ``{heads: {name: {sources: {source: coeff, ...}, enforce_sum_one:
-    bool, sum_one_tolerance: float}, ...}}`` YAML file, as produced by hand or by
-    an upstream calibration procedure. ``enforce_sum_one`` and
-    ``sum_one_tolerance`` are optional per head; see :class:`WeightedSumModel`
-    for their meaning and defaults.
+    bool, sum_one_tolerance: float, description: str}, ...}}`` YAML file, as
+    produced by hand or by an upstream calibration procedure. ``enforce_sum_one``,
+    ``sum_one_tolerance`` and ``description`` are optional per head; see
+    :class:`WeightedSumModel` for their meaning and defaults.
 
     Example::
 
@@ -400,6 +411,7 @@ def load_specs_yaml(path: str) -> Dict[str, Dict[str, Any]]:
             sources:
               energy/pbe:  0.25
               energy/pbe0: 0.75
+            description: "25/75 PBE/PBE0 mix"
           energy/diff:
             sources:
               energy/pbe:  1.0

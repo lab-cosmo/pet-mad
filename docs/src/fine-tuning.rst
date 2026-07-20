@@ -104,6 +104,13 @@ the coefficients instead come from a fitting/calibration procedure that
 doesn't converge to exactly 1, loosen the check per head with
 ``sum_one_tolerance`` instead of disabling it.
 
+Each head also gets a description, stored on the exported output and shown
+by tools that introspect a model's capabilities. By default it is
+auto-generated from the sources and coefficients (e.g. ``"0.25 *
+energy/pbe + 0.75 * energy/pbe0"``); set ``description`` per head for a
+more readable label, which is especially useful for heads with many
+sources.
+
 Command line
 ~~~~~~~~~~~~
 
@@ -118,6 +125,7 @@ Describe the heads to attach in a YAML file, one entry per head under
        sources:
          energy/pbe: 0.25
          energy/pbe0: 0.75
+       description: "25/75 PBE/PBE0 mix"
      energy/diff:
        sources:
          energy/pbe: 1.0
@@ -168,6 +176,7 @@ Python API
        specs={
            "energy/mix": {
                "sources": {"energy/pbe": 0.25, "energy/pbe0": 0.75},
+               "description": "25/75 PBE/PBE0 mix",
            },
            "energy/diff": {
                "sources": {"energy/pbe": 1.0, "energy/pbe0": -1.0},
