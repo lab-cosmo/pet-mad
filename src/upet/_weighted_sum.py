@@ -58,6 +58,7 @@ model to a TorchScript ``.pt`` for MD.
 """
 
 import argparse
+import math
 from typing import Any, Dict, List, Optional, Tuple
 
 import torch
@@ -83,6 +84,11 @@ from metatrain.utils.metadata import merge_metadata
 #: metatrain architecture name (see module docstring).
 ARCHITECTURE_NAME = "pet_weighted_sum"
 
+#: Default ``rel_tol``/``abs_tol`` (both, passed to :func:`math.isclose`) used to
+#: check a head's coefficients sum to 1, unless overridden per-head via
+#: ``"sum_one_tolerance"`` in its spec.
+DEFAULT_SUM_ONE_TOLERANCE = 1e-6
+
 
 class WeightedSumModel(torch.nn.Module):
     """A wrapped model plus N extra outputs, each a fixed weighted sum of existing
@@ -98,8 +104,17 @@ class WeightedSumModel(torch.nn.Module):
 
     :param model: a loaded, export-ready model (in practice a
         :class:`metatrain.pet.PET` instance) with multiple conservative targets.
-    :param specs: ``{new_head_name: {source_target_name: coefficient, ...}, ...}``.
-        Each ``source_target_name`` must name an existing target of ``model``.
+    :param specs: ``{new_head_name: {"sources": {source_target_name: coefficient,
+        ...}, "enforce_sum_one": bool, "sum_one_tolerance": float}, ...}``. Each
+        ``source_target_name`` must name an existing target of ``model``.
+        ``"enforce_sum_one"`` is optional and defaults to ``True``, requiring the
+        head's coefficients to sum to 1 (as for a weighted average across
+        several targets, and to catch the common mistake of forgetting to
+        normalize them); set it to ``False`` for combinations that legitimately
+        don't sum to 1, e.g. a difference or rescaling head. ``"sum_one_tolerance"``
+        is optional (default :data:`DEFAULT_SUM_ONE_TOLERANCE`) and only relevant
+        when ``"enforce_sum_one"`` is ``True``; loosen it if the coefficients come
+        from a fitting/calibration procedure that doesn't converge to exactly 1.
     """
 
     __checkpoint_version__ = 1
@@ -108,8 +123,12 @@ class WeightedSumModel(torch.nn.Module):
     new_names: List[str]
     sources: List[List[str]]
     coefficients: List[List[float]]
+    enforce_sum_one: List[bool]
+    sum_one_tolerance: List[float]
 
-    def __init__(self, model: PET, specs: Dict[str, Dict[str, float]]) -> None:
+    _SPEC_KEYS = {"sources", "enforce_sum_one", "sum_one_tolerance"}
+
+    def __init__(self, model: PET, specs: Dict[str, Dict[str, Any]]) -> None:
         super().__init__()
         self.model = model
 
@@ -119,12 +138,29 @@ class WeightedSumModel(torch.nn.Module):
         self.new_names = list(specs.keys())
         self.sources = []
         self.coefficients = []
+        self.enforce_sum_one = []
+        self.sum_one_tolerance = []
         self.outputs: Dict[str, ModelOutput] = dict(model.outputs)
 
         for new_name in self.new_names:
-            spec = specs[new_name]
-            sources = list(spec.keys())
-            coefficients = [float(spec[s]) for s in sources]
+            head_spec = specs[new_name]
+            unknown_keys = set(head_spec) - self._SPEC_KEYS
+            if unknown_keys:
+                raise ValueError(
+                    f"in head '{new_name}': unknown key(s) {sorted(unknown_keys)}; "
+                    f"expected 'sources' and optionally 'enforce_sum_one', "
+                    f"'sum_one_tolerance'"
+                )
+            if "sources" not in head_spec:
+                raise ValueError(f"in head '{new_name}': missing 'sources'")
+
+            source_coefficients = head_spec["sources"]
+            enforce_sum_one = bool(head_spec.get("enforce_sum_one", True))
+            sum_one_tolerance = float(
+                head_spec.get("sum_one_tolerance", DEFAULT_SUM_ONE_TOLERANCE)
+            )
+            sources = list(source_coefficients.keys())
+            coefficients = [float(source_coefficients[s]) for s in sources]
 
             if len(sources) == 0:
                 raise ValueError(f"'{new_name}' has no sources")
@@ -139,6 +175,20 @@ class WeightedSumModel(torch.nn.Module):
                         f"unknown source target '{source}' for head '{new_name}'; "
                         f"the model provides {model.target_names}"
                     )
+            if enforce_sum_one and not math.isclose(
+                sum(coefficients),
+                1.0,
+                rel_tol=sum_one_tolerance,
+                abs_tol=sum_one_tolerance,
+            ):
+                raise ValueError(
+                    f"in head '{new_name}': coefficients sum to "
+                    f"{sum(coefficients)}, not 1 within tolerance "
+                    f"{sum_one_tolerance}; set enforce_sum_one: false for this "
+                    f"head if that's intentional (e.g. a difference or rescaling "
+                    f"head), or raise sum_one_tolerance if the deviation is "
+                    f"expected (e.g. from a fitting/calibration procedure)"
+                )
 
             # Blocks are combined positionally in `forward`, so the sources of a
             # given head must agree on layout, quantity and unit. Checking here is
@@ -170,6 +220,8 @@ class WeightedSumModel(torch.nn.Module):
 
             self.sources.append(sources)
             self.coefficients.append(coefficients)
+            self.enforce_sum_one.append(enforce_sum_one)
+            self.sum_one_tolerance.append(sum_one_tolerance)
             self.outputs[new_name] = ModelOutput(
                 quantity=reference.quantity,
                 unit=reference.unit,
@@ -256,12 +308,15 @@ class WeightedSumModel(torch.nn.Module):
         return out
 
     def get_checkpoint(self) -> Dict[str, Any]:
-        specs = {
-            new_name: dict(zip(sources, coefficients, strict=True))
-            for new_name, sources, coefficients in zip(
-                self.new_names, self.sources, self.coefficients, strict=True
-            )
-        }
+        specs = {}
+        for i, new_name in enumerate(self.new_names):
+            specs[new_name] = {
+                "sources": dict(
+                    zip(self.sources[i], self.coefficients[i], strict=True)
+                ),
+                "enforce_sum_one": self.enforce_sum_one[i],
+                "sum_one_tolerance": self.sum_one_tolerance[i],
+            }
         return {
             "architecture_name": ARCHITECTURE_NAME,
             "model_ckpt_version": self.__checkpoint_version__,
@@ -331,16 +386,30 @@ class WeightedSumModel(torch.nn.Module):
         return AtomisticModel(self.eval(), metadata, capabilities)
 
 
-def load_specs_yaml(path: str) -> Dict[str, Dict[str, float]]:
-    """Load a ``{heads: {name: {source: coeff, ...}, ...}}`` YAML file, as
-    produced by hand or by an upstream calibration procedure.
+def load_specs_yaml(path: str) -> Dict[str, Dict[str, Any]]:
+    """Load a ``{heads: {name: {sources: {source: coeff, ...}, enforce_sum_one:
+    bool, sum_one_tolerance: float}, ...}}`` YAML file, as produced by hand or by
+    an upstream calibration procedure. ``enforce_sum_one`` and
+    ``sum_one_tolerance`` are optional per head; see :class:`WeightedSumModel`
+    for their meaning and defaults.
 
     Example::
 
         heads:
           energy/mix:
-            energy/pbe:  0.25
-            energy/pbe0: 0.75
+            sources:
+              energy/pbe:  0.25
+              energy/pbe0: 0.75
+          energy/diff:
+            sources:
+              energy/pbe:  1.0
+              energy/pbe0: -1.0
+            enforce_sum_one: false
+          energy/calibrated-mix:
+            sources:
+              energy/pbe:  0.2503
+              energy/pbe0: 0.7502
+            sum_one_tolerance: 1.0e-3
     """
     with open(path) as f:
         config = yaml.safe_load(f)
@@ -351,29 +420,35 @@ def load_specs_yaml(path: str) -> Dict[str, Dict[str, float]]:
     raise ValueError(f"'{path}' has no 'heads' section")
 
 
-def parse_inline_head(text: str) -> Tuple[str, Dict[str, float]]:
-    """Parse ``'energy/mix = energy/pbe:0.25, energy/pbe0:0.75'``."""
+def parse_inline_head(text: str) -> Tuple[str, Dict[str, Any]]:
+    """Parse ``'energy/mix = energy/pbe:0.25, energy/pbe0:0.75'``.
+
+    Inline heads only specify sources: coefficients must sum to 1 (the default
+    for ``enforce_sum_one``); use a YAML file if you need to opt out for a
+    particular head.
+    """
     if "=" not in text:
         raise ValueError(
             f"'{text}' is neither a head name from the YAML nor an inline "
             f"definition of the form 'name = source:coeff, source:coeff'"
         )
     name, _, body = text.partition("=")
-    spec: Dict[str, float] = {}
+    sources: Dict[str, float] = {}
     for term in body.split(","):
         if ":" not in term:
             raise ValueError(f"malformed term '{term.strip()}' in '{text}'")
         source, _, coefficient = term.rpartition(":")
-        spec[source.strip()] = float(coefficient)
-    return name.strip(), spec
+        sources[source.strip()] = float(coefficient)
+    return name.strip(), {"sources": sources}
 
 
 def collect_specs(
     config_path: Optional[str],
     requested: Optional[List[str]],
-) -> Dict[str, Dict[str, float]]:
-    """Resolve a YAML file and ``--head`` flags into ``{name: {source: coeff}}``."""
-    available: Dict[str, Dict[str, float]] = {}
+) -> Dict[str, Dict[str, Any]]:
+    """Resolve a YAML file and ``--head`` flags into
+    ``{name: {"sources": {source: coeff}, ...}}``."""
+    available: Dict[str, Dict[str, Any]] = {}
     if config_path is not None:
         available = load_specs_yaml(config_path)
 
@@ -382,7 +457,7 @@ def collect_specs(
             raise ValueError("nothing to do: no YAML heads and no --head given")
         return available
 
-    specs: Dict[str, Dict[str, float]] = {}
+    specs: Dict[str, Dict[str, Any]] = {}
     for item in requested:
         if item in available:
             specs[item] = available[item]
@@ -394,7 +469,7 @@ def collect_specs(
 
 def create_weighted_sum_checkpoint(
     checkpoint_path: str,
-    specs: Dict[str, Dict[str, float]],
+    specs: Dict[str, Dict[str, Any]],
     output_checkpoint_path: str,
 ) -> None:
     """Attach fixed-coefficient weighted-sum heads to a trained checkpoint and
@@ -409,11 +484,12 @@ def create_weighted_sum_checkpoint(
     :param checkpoint_path: path to a trained checkpoint (e.g. a PET ``.ckpt``
         with several energy, non-conservative-force, and/or
         non-conservative-stress targets).
-    :param specs: ``{new_head_name: {source_target_name: coefficient, ...}, ...}``.
-        Sources for a given head must all be present in the same checkpoint and
-        share the same quantity, unit, and block layout (e.g. combine
-        ``energy/...`` sources into an ``energy/...`` head, or
-        ``non_conservative_stress/...`` sources into a
+    :param specs: ``{new_head_name: {"sources": {source_target_name:
+        coefficient, ...}, "enforce_sum_one": bool, "sum_one_tolerance": float},
+        ...}`` (see :class:`WeightedSumModel`). Sources for a given head must
+        all be present in the same checkpoint and share the same quantity,
+        unit, and block layout (e.g. combine ``energy/...`` sources into an
+        ``energy/...`` head, or ``non_conservative_stress/...`` sources into a
         ``non_conservative_stress/...`` head -- not a mix of different
         quantities).
     :param output_checkpoint_path: where to write the resulting ``.ckpt``.
@@ -488,7 +564,7 @@ def _main() -> None:
 
     print(f"wrote {args.output} with {len(specs)} weighted-sum head(s):")
     for new_name, spec in specs.items():
-        description = " + ".join(f"{c} * {s}" for s, c in spec.items())
+        description = " + ".join(f"{c} * {s}" for s, c in spec["sources"].items())
         print(f"  {new_name} = {description}")
 
 
