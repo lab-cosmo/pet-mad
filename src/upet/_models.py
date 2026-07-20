@@ -10,6 +10,7 @@ from urllib.request import urlretrieve
 import torch
 from huggingface_hub import HfApi, hf_hub_download
 from metatomic.torch import AtomisticModel
+from metatrain.utils.io import is_exported_file
 from metatrain.utils.io import load_model as load_metatrain_model
 from packaging.version import Version
 
@@ -19,6 +20,8 @@ from ._version import (
     PET_MAD_DOS_AVAILABLE_VERSIONS,
     PET_MAD_DOS_LATEST_STABLE_VERSION,
 )
+from ._weighted_sum import ARCHITECTURE_NAME as WEIGHTED_SUM_ARCHITECTURE_NAME
+from ._weighted_sum import WeightedSumModel
 from .modules import CNNModel
 from .utils import hf_hub_download_url
 
@@ -26,6 +29,29 @@ from .utils import hf_hub_download_url
 CHECKPOINT_NAME_PATTERN = re.compile(
     r"^(?P<model>pet-[\w]+)-(?P<size>xs|s|m|l|xl)-v?(?P<version>\d+\.\d+\.\d+)\.ckpt$"
 )
+
+
+def _load_model_with_custom_heads(path: str):
+    """Like ``metatrain.utils.io.load_model``, but also understands checkpoints
+    written by :func:`upet._weighted_sum.create_weighted_sum_checkpoint`.
+
+    Those checkpoints are not registered as a metatrain architecture (metatrain
+    only discovers architectures that live inside its own package), so plain
+    ``load_model``/``mtt export`` cannot load them. This checks the checkpoint's
+    ``architecture_name`` first and, for the weighted-sum case, reconstructs the
+    model directly via :meth:`WeightedSumModel.load_checkpoint` instead of going
+    through metatrain's architecture registry. Every other checkpoint (including
+    already-exported ``.pt`` files) is handled exactly as before.
+    """
+    if not is_exported_file(path):
+        raw_checkpoint = torch.load(path, map_location="cpu", weights_only=False)
+        if (
+            isinstance(raw_checkpoint, dict)
+            and raw_checkpoint.get("architecture_name")
+            == WEIGHTED_SUM_ARCHITECTURE_NAME
+        ):
+            return WeightedSumModel.load_checkpoint(raw_checkpoint, context="export")
+    return load_metatrain_model(path)
 
 
 @lru_cache(maxsize=1)
@@ -215,7 +241,7 @@ def _get_upet_exported_atomistic_model(
             action="ignore",
             message="PET assumes that Cartesian tensors of rank 2 are stress-like",
         )
-        loaded_model = load_metatrain_model(path)
+        loaded_model = _load_model_with_custom_heads(path)
 
     metadata = get_upet_metadata(model=model, size=size, version=str(version))
     exported_model = loaded_model.export(metadata)
