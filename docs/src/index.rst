@@ -95,6 +95,7 @@ them directly if you have not received an answer after a couple of days.
    usage/index
    models
    fine-tuning
+   weighted-sum-heads
    api
    generated_examples/index
    miscellaneous

@@ -9,7 +9,7 @@ Unreleased changes
   default a head's coefficients must sum to 1 (within ``sum_one_tolerance``,
   default ``1e-6``); opt out per head with ``enforce_sum_one: false``. Each
   head's exported description can be overridden with ``description``. See
-  :ref:`fine-tuning` for usage.
+  :ref:`weighted-sum-heads` for usage.
 
 0.2.5
 -----
