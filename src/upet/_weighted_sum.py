@@ -248,7 +248,9 @@ class WeightedSumModel(torch.nn.Module):
         return self.model.requested_neighbor_lists()
 
     def requested_inputs(self) -> Dict[str, ModelOutput]:
-        return self.model.requested_inputs()
+        if hasattr(self.model, "requested_inputs"):
+            return self.model.requested_inputs()
+        return {}
 
     def forward(
         self,
