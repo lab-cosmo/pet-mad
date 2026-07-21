@@ -109,16 +109,16 @@ class WeightedSumModel(torch.nn.Module):
         str}, ...}``. Each ``source_target_name`` must name an existing target of
         ``model``. ``"enforce_sum_one"`` is optional and defaults to ``True``,
         requiring the head's coefficients to sum to 1 (as for a weighted average
-        across several targets, and to catch the common mistake of forgetting to
-        normalize them); set it to ``False`` for combinations that legitimately
-        don't sum to 1, e.g. a difference or rescaling head. ``"sum_one_tolerance"``
-        is optional (default :data:`DEFAULT_SUM_ONE_TOLERANCE`) and only relevant
-        when ``"enforce_sum_one"`` is ``True``; loosen it if the coefficients come
-        from a fitting/calibration procedure that doesn't converge to exactly 1.
-        ``"description"`` is optional and defaults to an auto-generated
+        across several targets); set it to ``False`` for combinations that
+        legitimately don't sum to 1, e.g. a difference or rescaling head.
+        ``"sum_one_tolerance"`` is optional (default
+        :data:`DEFAULT_SUM_ONE_TOLERANCE`) and only relevant when
+        ``"enforce_sum_one"`` is ``True``; loosen it if the coefficients do not
+        exactly converge to 1 due to rounding errors. ``"description"`` is
+        optional and defaults to an auto-generated
         ``"c1 * source1 + c2 * source2 + ..."`` string; set it to give the head a
-        human-readable description (stored on the exported ``ModelOutput``)
-        instead, e.g. for a head with many sources.
+        different, custom description (stored on the exported ``ModelOutput``)
+        instead.
     """
 
     __checkpoint_version__ = 1
@@ -191,9 +191,9 @@ class WeightedSumModel(torch.nn.Module):
                     f"in head '{new_name}': coefficients sum to "
                     f"{sum(coefficients)}, not 1 within tolerance "
                     f"{sum_one_tolerance}; set enforce_sum_one: false for this "
-                    f"head if that's intentional (e.g. a difference or rescaling "
-                    f"head), or raise sum_one_tolerance if the deviation is "
-                    f"expected (e.g. from a fitting/calibration procedure)"
+                    f"head if that's intentional, or raise sum_one_tolerance "
+                    f"if the deviation is expected (e.g. from a "
+                    f"fitting/calibration procedure)"
                 )
 
             # Blocks are combined positionally in `forward`, so the sources of a
@@ -412,17 +412,17 @@ def load_specs_yaml(path: str) -> Dict[str, Dict[str, Any]]:
           energy/mix:
             sources:
               energy/pbe:  0.25
-              energy/pbe0: 0.75
-            description: "25/75 PBE/PBE0 mix"
+              energy/pbesol: 0.75
+            description: "25/75 PBE/PBEsol mix"
           energy/diff:
             sources:
               energy/pbe:  1.0
-              energy/pbe0: -1.0
+              energy/pbesol: -1.0
             enforce_sum_one: false
           energy/calibrated-mix:
             sources:
               energy/pbe:  0.2503
-              energy/pbe0: 0.7502
+              energy/pbesol: 0.7502
             sum_one_tolerance: 1.0e-3
     """
     with open(path) as f:
@@ -435,7 +435,7 @@ def load_specs_yaml(path: str) -> Dict[str, Dict[str, Any]]:
 
 
 def parse_inline_head(text: str) -> Tuple[str, Dict[str, Any]]:
-    """Parse ``'energy/mix = energy/pbe:0.25, energy/pbe0:0.75'``.
+    """Parse ``'energy/mix = energy/pbe:0.25, energy/pbesol:0.75'``.
 
     Inline heads only specify sources: coefficients must sum to 1 (the default
     for ``enforce_sum_one``); use a YAML file if you need to opt out for a
