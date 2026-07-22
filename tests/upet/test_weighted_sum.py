@@ -129,20 +129,20 @@ def test_load_specs_yaml(tmp_path):
     }
 
 
-def test_load_specs_yaml_with_enforce_sum_one(tmp_path):
+def test_load_specs_yaml_with_normalize_coefficients(tmp_path):
     path = tmp_path / "heads.yaml"
     path.write_text(
         "heads:\n"
-        "  energy/diff:\n"
+        "  energy/mix:\n"
         "    sources:\n"
-        "      energy/a: 1.0\n"
-        "      energy/b: -1.0\n"
-        "    enforce_sum_one: false\n"
+        "      energy/a: 1\n"
+        "      energy/b: 3\n"
+        "    normalize_coefficients: true\n"
     )
     assert load_specs_yaml(str(path)) == {
-        "energy/diff": {
-            "sources": {"energy/a": 1.0, "energy/b": -1.0},
-            "enforce_sum_one": False,
+        "energy/mix": {
+            "sources": {"energy/a": 1, "energy/b": 3},
+            "normalize_coefficients": True,
         }
     }
 
@@ -250,57 +250,35 @@ def test_weighted_sum_rejects_mismatched_units():
         )
 
 
-def test_weighted_sum_rejects_coefficients_not_summing_to_one_by_default(base_model):
-    with pytest.raises(ValueError, match="coefficients sum to 0.6, not 1"):
-        WeightedSumModel(
-            base_model, {"energy/mix": {"sources": {"energy/a": 0.3, "energy/b": 0.3}}}
-        )
-
-
-def test_weighted_sum_allows_non_summing_coefficients_when_opted_out(base_model):
+def test_weighted_sum_allows_non_summing_coefficients_by_default(base_model):
     wrapped = WeightedSumModel(
         base_model,
-        {
-            "energy/diff": {
-                "sources": {"energy/a": 1.0, "energy/b": -1.0},
-                "enforce_sum_one": False,
-            }
-        },
+        {"energy/diff": {"sources": {"energy/a": 1.0, "energy/b": -1.0}}},
     )
-    assert wrapped.enforce_sum_one == [False]
+    assert wrapped.coefficients == [[1.0, -1.0]]
 
 
-def test_weighted_sum_default_sum_one_tolerance_is_strict(base_model):
-    with pytest.raises(ValueError, match="not 1 within tolerance 1e-06"):
-        WeightedSumModel(
-            base_model,
-            {"energy/mix": {"sources": {"energy/a": 0.2503, "energy/b": 0.7502}}},
-        )
-
-
-def test_weighted_sum_custom_sum_one_tolerance_allows_near_one_sum(base_model):
+def test_weighted_sum_normalize_coefficients_rescales_to_sum_one(base_model):
     wrapped = WeightedSumModel(
         base_model,
         {
             "energy/mix": {
-                "sources": {"energy/a": 0.2503, "energy/b": 0.7502},
-                "sum_one_tolerance": 1e-3,
+                "sources": {"energy/a": 1, "energy/b": 3},
+                "normalize_coefficients": True,
             }
         },
     )
-    assert wrapped.sum_one_tolerance == [1e-3]
+    assert wrapped.coefficients == [[0.25, 0.75]]
 
 
-def test_weighted_sum_custom_sum_one_tolerance_still_rejects_large_deviation(
-    base_model,
-):
-    with pytest.raises(ValueError, match="not 1 within tolerance 0.001"):
+def test_weighted_sum_normalize_coefficients_rejects_zero_sum(base_model):
+    with pytest.raises(ValueError, match="coefficients sum to 0.0, cannot normalize"):
         WeightedSumModel(
             base_model,
             {
                 "energy/mix": {
-                    "sources": {"energy/a": 0.3, "energy/b": 0.3},
-                    "sum_one_tolerance": 1e-3,
+                    "sources": {"energy/a": 1.0, "energy/b": -1.0},
+                    "normalize_coefficients": True,
                 }
             },
         )
@@ -359,12 +337,7 @@ def test_weighted_sum_forward_matches_manual_combination(base_model, water_syste
 def test_weighted_sum_forward_with_difference_head(base_model, water_system):
     wrapped = WeightedSumModel(
         base_model,
-        {
-            "energy/diff": {
-                "sources": {"energy/a": 1.0, "energy/b": -1.0},
-                "enforce_sum_one": False,
-            }
-        },
+        {"energy/diff": {"sources": {"energy/a": 1.0, "energy/b": -1.0}}},
     )
 
     with torch.no_grad():
@@ -388,22 +361,20 @@ def test_weighted_sum_forward_with_difference_head(base_model, water_system):
 def test_weighted_sum_checkpoint_round_trip(base_model, water_system):
     specs = {
         "energy/mix": {
-            "sources": {"energy/a": 0.2503, "energy/b": 0.7502},
-            "sum_one_tolerance": 1e-3,
+            "sources": {"energy/a": 1, "energy/b": 3},
+            "normalize_coefficients": True,
         },
         "energy/diff": {
             "sources": {"energy/a": 1.0, "energy/b": -1.0},
-            "enforce_sum_one": False,
         },
     }
     wrapped = WeightedSumModel(base_model, specs)
+    assert wrapped.coefficients == [[0.25, 0.75], [1.0, -1.0]]
 
     reloaded = WeightedSumModel.load_checkpoint(wrapped.get_checkpoint())
     assert reloaded.new_names == wrapped.new_names
     assert reloaded.sources == wrapped.sources
     assert reloaded.coefficients == wrapped.coefficients
-    assert reloaded.enforce_sum_one == wrapped.enforce_sum_one == [True, False]
-    assert reloaded.sum_one_tolerance == wrapped.sum_one_tolerance == [1e-3, 1e-6]
     assert reloaded.descriptions == wrapped.descriptions
 
     outputs = {
@@ -443,8 +414,6 @@ def test_create_and_extract_weighted_sum_checkpoint(base_model, tmp_path):
     assert raw["weighted_sum_heads"] == {
         "energy/mix": {
             "sources": {"energy/a": 0.3, "energy/b": 0.7},
-            "enforce_sum_one": True,
-            "sum_one_tolerance": 1e-6,
             "description": "0.3 * energy/a + 0.7 * energy/b",
         }
     }

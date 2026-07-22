@@ -5,11 +5,11 @@ Unreleased changes
 ------------------
 - Added support for attaching fixed-coefficient weighted-sum heads to a
   multi-head checkpoint, via ``upet.create_weighted_sum_checkpoint``,
-  ``upet.extract_wrapped_checkpoint``, and the ``upet._weighted_sum`` CLI. By
-  default a head's coefficients must sum to 1 (within ``sum_one_tolerance``,
-  default ``1e-6``); opt out per head with ``enforce_sum_one: false``. Each
-  head's exported description can be overridden with ``description``. See
-  :ref:`weighted-sum-heads` for usage.
+  ``upet.extract_wrapped_checkpoint``, and the ``upet._weighted_sum`` CLI.
+  Coefficients are used as given; set ``normalize_coefficients: true`` per
+  head to rescale un-normalized weights (e.g. ``{"a": 1, "b": 2, "c": 1}``) so
+  they sum to 1. Each head's exported description can be overridden with
+  ``description``. See :ref:`weighted-sum-heads` for usage.
 
 0.2.5
 -----

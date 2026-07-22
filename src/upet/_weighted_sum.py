@@ -91,11 +91,6 @@ from metatrain.utils.metadata import merge_metadata
 #: metatrain architecture name (see module docstring).
 ARCHITECTURE_NAME = "pet_weighted_sum"
 
-#: Default ``rel_tol``/``abs_tol`` (both, passed to :func:`math.isclose`) used to
-#: check a head's coefficients sum to 1, unless overridden per-head via
-#: ``"sum_one_tolerance"`` in its spec.
-DEFAULT_SUM_ONE_TOLERANCE = 1e-6
-
 
 class WeightedSumModel(torch.nn.Module):
     """A wrapped model plus N extra outputs, each a fixed weighted sum of existing
@@ -112,20 +107,18 @@ class WeightedSumModel(torch.nn.Module):
     :param model: a loaded, export-ready model (in practice a
         :class:`metatrain.pet.PET` instance) with multiple conservative targets.
     :param specs: ``{new_head_name: {"sources": {source_target_name: coefficient,
-        ...}, "enforce_sum_one": bool, "sum_one_tolerance": float, "description":
-        str}, ...}``. Each ``source_target_name`` must name an existing target of
-        ``model``. ``"enforce_sum_one"`` is optional and defaults to ``True``,
-        requiring the head's coefficients to sum to 1 (as for a weighted average
-        across several targets); set it to ``False`` for combinations that
-        legitimately don't sum to 1, e.g. a difference or rescaling head.
-        ``"sum_one_tolerance"`` is optional (default
-        :data:`DEFAULT_SUM_ONE_TOLERANCE`) and only relevant when
-        ``"enforce_sum_one"`` is ``True``; loosen it if the coefficients do not
-        exactly converge to 1 due to rounding errors. ``"description"`` is
-        optional and defaults to an auto-generated
-        ``"c1 * source1 + c2 * source2 + ..."`` string; set it to give the head a
-        different, custom description (stored on the exported ``ModelOutput``)
-        instead.
+        ...}, "normalize_coefficients": bool, "description": str}, ...}``. Each
+        ``source_target_name`` must name an existing target of ``model``.
+        Coefficients are used as given (so a difference or an arbitrary
+        rescaling works with no extra flag); set ``"normalize_coefficients"``
+        to ``True`` to instead rescale them (dividing each by their sum) so
+        that they end up summing to 1, e.g. for a weighted average given as
+        un-normalized weights such as ``{"a": 1, "b": 2, "c": 1}``. It
+        defaults to ``False``. ``"description"`` is optional and defaults to
+        an auto-generated ``"c1 * source1 + c2 * source2 + ..."`` string
+        (using the coefficients actually applied, i.e. after normalization if
+        requested); set it to give the head a different, custom description
+        (stored on the exported ``ModelOutput``) instead.
     """
 
     __checkpoint_version__ = 1
@@ -134,11 +127,9 @@ class WeightedSumModel(torch.nn.Module):
     new_names: List[str]
     sources: List[List[str]]
     coefficients: List[List[float]]
-    enforce_sum_one: List[bool]
-    sum_one_tolerance: List[float]
     descriptions: List[str]
 
-    _SPEC_KEYS = {"sources", "enforce_sum_one", "sum_one_tolerance", "description"}
+    _SPEC_KEYS = {"sources", "normalize_coefficients", "description"}
 
     def __init__(self, model: PET, specs: Dict[str, Dict[str, Any]]) -> None:
         super().__init__()
@@ -150,8 +141,6 @@ class WeightedSumModel(torch.nn.Module):
         self.new_names = list(specs.keys())
         self.sources = []
         self.coefficients = []
-        self.enforce_sum_one = []
-        self.sum_one_tolerance = []
         self.descriptions = []
         self.outputs: Dict[str, ModelOutput] = dict(model.outputs)
 
@@ -161,16 +150,15 @@ class WeightedSumModel(torch.nn.Module):
             if unknown_keys:
                 raise ValueError(
                     f"in head '{new_name}': unknown key(s) {sorted(unknown_keys)}; "
-                    f"expected 'sources' and optionally 'enforce_sum_one', "
-                    f"'sum_one_tolerance', 'description'"
+                    f"expected 'sources' and optionally "
+                    f"'normalize_coefficients', 'description'"
                 )
             if "sources" not in head_spec:
                 raise ValueError(f"in head '{new_name}': missing 'sources'")
 
             source_coefficients = head_spec["sources"]
-            enforce_sum_one = bool(head_spec.get("enforce_sum_one", True))
-            sum_one_tolerance = float(
-                head_spec.get("sum_one_tolerance", DEFAULT_SUM_ONE_TOLERANCE)
+            normalize_coefficients = bool(
+                head_spec.get("normalize_coefficients", False)
             )
             sources = list(source_coefficients.keys())
             coefficients = [float(source_coefficients[s]) for s in sources]
@@ -188,20 +176,16 @@ class WeightedSumModel(torch.nn.Module):
                         f"unknown source target '{source}' for head '{new_name}'; "
                         f"the model provides {model.target_names}"
                     )
-            if enforce_sum_one and not math.isclose(
-                sum(coefficients),
-                1.0,
-                rel_tol=sum_one_tolerance,
-                abs_tol=sum_one_tolerance,
-            ):
-                raise ValueError(
-                    f"in head '{new_name}': coefficients sum to "
-                    f"{sum(coefficients)}, not 1 within tolerance "
-                    f"{sum_one_tolerance}; set enforce_sum_one: false for this "
-                    f"head if that's intentional, or raise sum_one_tolerance "
-                    f"if the deviation is expected (e.g. from a "
-                    f"fitting/calibration procedure)"
-                )
+            if normalize_coefficients:
+                total = sum(coefficients)
+                if math.isclose(total, 0.0, abs_tol=1e-12):
+                    raise ValueError(
+                        f"in head '{new_name}': coefficients sum to {total}, "
+                        f"cannot normalize (would divide by zero); pass "
+                        f"coefficients that already reflect the combination "
+                        f"you want, or set normalize_coefficients: false"
+                    )
+                coefficients = [c / total for c in coefficients]
 
             # Blocks are combined positionally in `forward`, so the sources of a
             # given head must agree on layout, quantity and unit. Checking here is
@@ -238,8 +222,6 @@ class WeightedSumModel(torch.nn.Module):
 
             self.sources.append(sources)
             self.coefficients.append(coefficients)
-            self.enforce_sum_one.append(enforce_sum_one)
-            self.sum_one_tolerance.append(sum_one_tolerance)
             self.descriptions.append(description)
             self.outputs[new_name] = ModelOutput(
                 quantity=reference.quantity,
@@ -330,11 +312,11 @@ class WeightedSumModel(torch.nn.Module):
         specs = {}
         for i, new_name in enumerate(self.new_names):
             specs[new_name] = {
+                # already normalized (if requested) at construction time, so
+                # `normalize_coefficients` itself doesn't need to round-trip
                 "sources": dict(
                     zip(self.sources[i], self.coefficients[i], strict=True)
                 ),
-                "enforce_sum_one": self.enforce_sum_one[i],
-                "sum_one_tolerance": self.sum_one_tolerance[i],
                 "description": self.descriptions[i],
             }
         return {
@@ -407,10 +389,10 @@ class WeightedSumModel(torch.nn.Module):
 
 
 def load_specs_yaml(path: str) -> Dict[str, Dict[str, Any]]:
-    """Load a ``{heads: {name: {sources: {source: coeff, ...}, enforce_sum_one:
-    bool, sum_one_tolerance: float, description: str}, ...}}`` YAML file, as
-    produced by hand or by an upstream calibration procedure. ``enforce_sum_one``,
-    ``sum_one_tolerance`` and ``description`` are optional per head; see
+    """Load a ``{heads: {name: {sources: {source: coeff, ...},
+    normalize_coefficients: bool, description: str}, ...}}`` YAML file, as
+    produced by hand or by an upstream calibration procedure.
+    ``normalize_coefficients`` and ``description`` are optional per head; see
     :class:`WeightedSumModel` for their meaning and defaults.
 
     Example::
@@ -425,12 +407,11 @@ def load_specs_yaml(path: str) -> Dict[str, Dict[str, Any]]:
             sources:
               energy/pbe:  1.0
               energy/pbesol: -1.0
-            enforce_sum_one: false
           energy/calibrated-mix:
             sources:
-              energy/pbe:  0.2503
-              energy/pbesol: 0.7502
-            sum_one_tolerance: 1.0e-3
+              energy/pbe:  1
+              energy/pbesol: 3
+            normalize_coefficients: true
     """
     with open(path) as f:
         config = yaml.safe_load(f)
@@ -444,9 +425,8 @@ def load_specs_yaml(path: str) -> Dict[str, Dict[str, Any]]:
 def parse_inline_head(text: str) -> Tuple[str, Dict[str, Any]]:
     """Parse ``'energy/mix = energy/pbe:0.25, energy/pbesol:0.75'``.
 
-    Inline heads only specify sources: coefficients must sum to 1 (the default
-    for ``enforce_sum_one``); use a YAML file if you need to opt out for a
-    particular head.
+    Inline heads only specify sources, used as given; use a YAML file if a
+    head needs ``normalize_coefficients: true``.
     """
     if "=" not in text:
         raise ValueError(
@@ -506,10 +486,10 @@ def create_weighted_sum_checkpoint(
         with several energy, non-conservative-force, and/or
         non-conservative-stress targets).
     :param specs: ``{new_head_name: {"sources": {source_target_name:
-        coefficient, ...}, "enforce_sum_one": bool, "sum_one_tolerance": float},
-        ...}`` (see :class:`WeightedSumModel`). Sources for a given head must
-        all be present in the same checkpoint and share the same quantity,
-        unit, and block layout (e.g. combine ``energy/...`` sources into an
+        coefficient, ...}, "normalize_coefficients": bool}, ...}`` (see
+        :class:`WeightedSumModel`). Sources for a given head must all be
+        present in the same checkpoint and share the same quantity, unit, and
+        block layout (e.g. combine ``energy/...`` sources into an
         ``energy/...`` head, or ``non_conservative_stress/...`` sources into a
         ``non_conservative_stress/...`` head -- not a mix of different
         quantities).

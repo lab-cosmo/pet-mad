@@ -13,12 +13,11 @@ stresses for a combined energy head follow automatically from a single
 backward pass. Since the extra head does not have free parameters, no
 retraining is needed.
 
-By default, a head's coefficients must sum to 1, within a tolerance of
-``1e-6``. If the coefficients do not sum exactly to one due to rounding
-errors, it is possible to loosen the check per head with
-``sum_one_tolerance``. Heads that legitimately don't sum to 1 (such as a
-difference or correction head, or an arbitrary rescale) need to opt out
-explicitly, per head, with ``enforce_sum_one: false``.
+Coefficients are used as given, so heads that don't sum to 1 (such as a
+difference or correction head, or an arbitrary rescale) need nothing special.
+For a weighted average given as un-normalized weights (e.g. ``{"a": 1, "b":
+2, "c": 1}``), set ``normalize_coefficients: true`` on that head to rescale
+them (dividing each by their sum) so they end up summing to 1.
 
 Each linear combination head also gets a description, stored on the
 exported output and shown by tools that introspect a model's capabilities.
@@ -46,12 +45,11 @@ Describe the heads to attach in a YAML file, one entry per head under
        sources:
          energy/pbe: 1.0
          energy/pbesol: -1.0
-       enforce_sum_one: false
      energy/calibrated-mix:
        sources:
-         energy/pbe: 0.2503
-         energy/pbesol: 0.7502
-       sum_one_tolerance: 1.0e-3
+         energy/pbe: 1
+         energy/pbesol: 3
+       normalize_coefficients: true
 
 and attach them to a trained checkpoint:
 
@@ -62,9 +60,8 @@ and attach them to a trained checkpoint:
 
 This writes every head listed in the YAML file. Use one or more ``--head``
 flags to attach only a subset, either by name from the YAML or as an
-inline definition. Inline heads only specify sources -- their coefficients
-must sum to 1; use the YAML file for a head that needs
-``enforce_sum_one: false``:
+inline definition. Inline heads only specify sources, used as given; use
+the YAML file for a head that needs ``normalize_coefficients: true``:
 
 .. code-block:: bash
 
@@ -96,11 +93,10 @@ Python API
            },
            "energy/diff": {
                "sources": {"energy/pbe": 1.0, "energy/pbesol": -1.0},
-               "enforce_sum_one": False,
            },
            "energy/calibrated-mix": {
-               "sources": {"energy/pbe": 0.2503, "energy/pbesol": 0.7502},
-               "sum_one_tolerance": 1e-3,
+               "sources": {"energy/pbe": 1, "energy/pbesol": 3},
+               "normalize_coefficients": True,
            },
        },
        output_checkpoint_path="model-wsum.ckpt",
