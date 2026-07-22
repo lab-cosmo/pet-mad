@@ -31,13 +31,20 @@ the wrapped model predicts directly as a value -- in practice, for PET:
   are predicted directly (no autograd involved), so combining them is a plain
   linear combination of the predicted values themselves.
 
-Either way, requesting several combined heads at once still costs a single
-forward pass of the wrapped model, since sources shared between them are only
-requested once. The combination only touches predicted *values*, not explicit
-gradient blocks -- a source requested with ``explicit_gradients`` would not
-have those gradients combined, so combined heads should be built from targets
-that are evaluated without explicit gradients (the normal case for both
-conservative-energy and non-conservative-force/stress targets).
+Either way, if a *single* ``forward`` call requests several combined heads at
+once, it still costs one forward pass of the wrapped model, since sources
+shared between them are only requested once (see ``forward``'s ``inner``
+dict). This is a property of the model API, not a guarantee about any
+particular caller: it only pays off when the caller actually batches several
+named outputs into one request, e.g. via ``MetatomicCalculator``'s
+``additional_outputs``. Typical MD stepping (ASE dynamics, ``pair_style
+metatomic``) requests one head at a time, each in its own forward call, so
+there is nothing to deduplicate there. The combination only touches
+predicted *values*, not explicit gradient blocks -- a source requested with
+``explicit_gradients`` would not have those gradients combined, so combined
+heads should be built from targets that are evaluated without explicit
+gradients (the normal case for both conservative-energy and
+non-conservative-force/stress targets).
 
 Checkpoint compatibility
 -------------------------
