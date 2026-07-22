@@ -18,7 +18,7 @@ By default, a head's coefficients must sum to 1, within a tolerance of
 errors, it is possible to loosen the check per head with
 ``sum_one_tolerance``. Heads that legitimately don't sum to 1 (such as a
 difference or correction head, or an arbitrary rescale) need to opt out
-explicitly, per head, with ``enforce_sum_one: false``. 
+explicitly, per head, with ``enforce_sum_one: false``.
 
 Each linear combination head also gets a description, stored on the
 exported output and shown by tools that introspect a model's capabilities.
