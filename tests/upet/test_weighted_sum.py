@@ -1,4 +1,5 @@
 import copy
+import sys
 
 import pytest
 import torch
@@ -17,7 +18,9 @@ from metatrain.utils.neighbor_lists import get_system_with_neighbor_lists
 from upet._models import _load_model_with_custom_heads
 from upet._weighted_sum import (
     ARCHITECTURE_NAME,
+    WeightedSumHead,
     WeightedSumModel,
+    _main,
     collect_specs,
     create_weighted_sum_checkpoint,
     extract_wrapped_checkpoint,
@@ -125,7 +128,7 @@ def test_load_specs_yaml(tmp_path):
         "      energy/b: 0.7\n"
     )
     assert load_specs_yaml(str(path)) == {
-        "energy/mix": {"sources": {"energy/a": 0.3, "energy/b": 0.7}}
+        "energy/mix": WeightedSumHead(sources={"energy/a": 0.3, "energy/b": 0.7})
     }
 
 
@@ -140,10 +143,9 @@ def test_load_specs_yaml_with_normalize_coefficients(tmp_path):
         "    normalize_coefficients: true\n"
     )
     assert load_specs_yaml(str(path)) == {
-        "energy/mix": {
-            "sources": {"energy/a": 1, "energy/b": 3},
-            "normalize_coefficients": True,
-        }
+        "energy/mix": WeightedSumHead(
+            sources={"energy/a": 1, "energy/b": 3}, normalize_coefficients=True
+        )
     }
 
 
@@ -153,7 +155,7 @@ def test_load_specs_yaml_legacy_single_head(tmp_path):
         "name: energy/mix\nspec:\n  sources:\n    energy/a: 0.3\n    energy/b: 0.7\n"
     )
     assert load_specs_yaml(str(path)) == {
-        "energy/mix": {"sources": {"energy/a": 0.3, "energy/b": 0.7}}
+        "energy/mix": WeightedSumHead(sources={"energy/a": 0.3, "energy/b": 0.7})
     }
 
 
@@ -167,7 +169,7 @@ def test_load_specs_yaml_missing_heads_section(tmp_path):
 def test_parse_inline_head():
     name, spec = parse_inline_head("energy/mix = energy/a:0.3, energy/b:0.7")
     assert name == "energy/mix"
-    assert spec == {"sources": {"energy/a": 0.3, "energy/b": 0.7}}
+    assert spec == WeightedSumHead(sources={"energy/a": 0.3, "energy/b": 0.7})
 
 
 def test_parse_inline_head_malformed():
@@ -185,13 +187,15 @@ def test_collect_specs_from_yaml(tmp_path):
         "      energy/b: 0.7\n"
     )
     assert collect_specs(str(path), None) == {
-        "energy/mix": {"sources": {"energy/a": 0.3, "energy/b": 0.7}}
+        "energy/mix": WeightedSumHead(sources={"energy/a": 0.3, "energy/b": 0.7})
     }
 
 
 def test_collect_specs_inline_only():
     specs = collect_specs(None, ["energy/mix = energy/a:0.5, energy/b:0.5"])
-    assert specs == {"energy/mix": {"sources": {"energy/a": 0.5, "energy/b": 0.5}}}
+    assert specs == {
+        "energy/mix": WeightedSumHead(sources={"energy/a": 0.5, "energy/b": 0.5})
+    }
 
 
 def test_collect_specs_nothing_to_do():
@@ -199,61 +203,55 @@ def test_collect_specs_nothing_to_do():
         collect_specs(None, None)
 
 
+def test_weighted_sum_head_requires_sources():
+    # `sources` has no default, so a typo'd or forgotten field is a TypeError at
+    # construction time -- the whole point of moving off an untyped Dict[str, Any].
+    with pytest.raises(TypeError):
+        WeightedSumHead()
+
+
+def test_weighted_sum_head_rejects_unknown_field():
+    with pytest.raises(TypeError):
+        WeightedSumHead(sources={"energy/a": 0.5, "energy/b": 0.5}, typo_key=True)
+
+
 def test_weighted_sum_rejects_empty_specs(base_model):
     with pytest.raises(ValueError, match="no weighted-sum heads requested"):
         WeightedSumModel(base_model, {})
 
 
-def test_weighted_sum_rejects_missing_sources_key(base_model):
-    with pytest.raises(ValueError, match="missing 'sources'"):
-        WeightedSumModel(base_model, {"x": {}})
-
-
-def test_weighted_sum_rejects_unknown_spec_key(base_model):
-    with pytest.raises(ValueError, match="unknown key\\(s\\)"):
-        WeightedSumModel(
-            base_model,
-            {
-                "energy/mix": {
-                    "sources": {"energy/a": 0.5, "energy/b": 0.5},
-                    "typo_key": True,
-                }
-            },
-        )
-
-
-def test_weighted_sum_rejects_old_flat_format(base_model):
-    with pytest.raises(ValueError, match="unknown key\\(s\\)"):
-        WeightedSumModel(base_model, {"energy/mix": {"energy/a": 0.5, "energy/b": 0.5}})
-
-
 def test_weighted_sum_rejects_head_with_no_sources(base_model):
     with pytest.raises(ValueError, match="'x' has no sources"):
-        WeightedSumModel(base_model, {"x": {"sources": {}}})
+        WeightedSumModel(base_model, {"x": WeightedSumHead(sources={})})
 
 
 def test_weighted_sum_rejects_existing_output_name(base_model):
     with pytest.raises(ValueError, match="already exists as a model output"):
-        WeightedSumModel(base_model, {"energy/a": {"sources": {"energy/b": 1.0}}})
+        WeightedSumModel(
+            base_model, {"energy/a": WeightedSumHead(sources={"energy/b": 1.0})}
+        )
 
 
 def test_weighted_sum_rejects_unknown_source(base_model):
     with pytest.raises(ValueError, match="unknown source target 'energy/nope'"):
-        WeightedSumModel(base_model, {"energy/mix": {"sources": {"energy/nope": 1.0}}})
+        WeightedSumModel(
+            base_model, {"energy/mix": WeightedSumHead(sources={"energy/nope": 1.0})}
+        )
 
 
 def test_weighted_sum_rejects_mismatched_units():
     model = PET(_minimal_hypers(), _dataset_info(units=("eV", "kcal/mol")))
     with pytest.raises(ValueError, match="incompatible with"):
         WeightedSumModel(
-            model, {"energy/mix": {"sources": {"energy/a": 0.3, "energy/b": 0.7}}}
+            model,
+            {"energy/mix": WeightedSumHead(sources={"energy/a": 0.3, "energy/b": 0.7})},
         )
 
 
 def test_weighted_sum_allows_non_summing_coefficients_by_default(base_model):
     wrapped = WeightedSumModel(
         base_model,
-        {"energy/diff": {"sources": {"energy/a": 1.0, "energy/b": -1.0}}},
+        {"energy/diff": WeightedSumHead(sources={"energy/a": 1.0, "energy/b": -1.0})},
     )
     assert wrapped.coefficients == [[1.0, -1.0]]
 
@@ -262,10 +260,9 @@ def test_weighted_sum_normalize_coefficients_rescales_to_sum_one(base_model):
     wrapped = WeightedSumModel(
         base_model,
         {
-            "energy/mix": {
-                "sources": {"energy/a": 1, "energy/b": 3},
-                "normalize_coefficients": True,
-            }
+            "energy/mix": WeightedSumHead(
+                sources={"energy/a": 1, "energy/b": 3}, normalize_coefficients=True
+            )
         },
     )
     assert wrapped.coefficients == [[0.25, 0.75]]
@@ -276,17 +273,18 @@ def test_weighted_sum_normalize_coefficients_rejects_zero_sum(base_model):
         WeightedSumModel(
             base_model,
             {
-                "energy/mix": {
-                    "sources": {"energy/a": 1.0, "energy/b": -1.0},
-                    "normalize_coefficients": True,
-                }
+                "energy/mix": WeightedSumHead(
+                    sources={"energy/a": 1.0, "energy/b": -1.0},
+                    normalize_coefficients=True,
+                )
             },
         )
 
 
 def test_weighted_sum_default_description_is_auto_generated(base_model):
     wrapped = WeightedSumModel(
-        base_model, {"energy/mix": {"sources": {"energy/a": 0.3, "energy/b": 0.7}}}
+        base_model,
+        {"energy/mix": WeightedSumHead(sources={"energy/a": 0.3, "energy/b": 0.7})},
     )
     assert wrapped.descriptions == ["0.3 * energy/a + 0.7 * energy/b"]
     assert (
@@ -299,10 +297,10 @@ def test_weighted_sum_custom_description_overrides_default(base_model):
     wrapped = WeightedSumModel(
         base_model,
         {
-            "energy/mix": {
-                "sources": {"energy/a": 0.3, "energy/b": 0.7},
-                "description": "30/70 a/b mix",
-            }
+            "energy/mix": WeightedSumHead(
+                sources={"energy/a": 0.3, "energy/b": 0.7},
+                description="30/70 a/b mix",
+            )
         },
     )
     assert wrapped.descriptions == ["30/70 a/b mix"]
@@ -311,7 +309,8 @@ def test_weighted_sum_custom_description_overrides_default(base_model):
 
 def test_weighted_sum_forward_matches_manual_combination(base_model, water_system):
     wrapped = WeightedSumModel(
-        base_model, {"energy/mix": {"sources": {"energy/a": 0.3, "energy/b": 0.7}}}
+        base_model,
+        {"energy/mix": WeightedSumHead(sources={"energy/a": 0.3, "energy/b": 0.7})},
     )
     assert "energy/mix" in wrapped.supported_outputs()
 
@@ -337,7 +336,7 @@ def test_weighted_sum_forward_matches_manual_combination(base_model, water_syste
 def test_weighted_sum_forward_with_difference_head(base_model, water_system):
     wrapped = WeightedSumModel(
         base_model,
-        {"energy/diff": {"sources": {"energy/a": 1.0, "energy/b": -1.0}}},
+        {"energy/diff": WeightedSumHead(sources={"energy/a": 1.0, "energy/b": -1.0})},
     )
 
     with torch.no_grad():
@@ -360,13 +359,10 @@ def test_weighted_sum_forward_with_difference_head(base_model, water_system):
 
 def test_weighted_sum_checkpoint_round_trip(base_model, water_system):
     specs = {
-        "energy/mix": {
-            "sources": {"energy/a": 1, "energy/b": 3},
-            "normalize_coefficients": True,
-        },
-        "energy/diff": {
-            "sources": {"energy/a": 1.0, "energy/b": -1.0},
-        },
+        "energy/mix": WeightedSumHead(
+            sources={"energy/a": 1, "energy/b": 3}, normalize_coefficients=True
+        ),
+        "energy/diff": WeightedSumHead(sources={"energy/a": 1.0, "energy/b": -1.0}),
     }
     wrapped = WeightedSumModel(base_model, specs)
     assert wrapped.coefficients == [[0.25, 0.75], [1.0, -1.0]]
@@ -392,7 +388,8 @@ def test_weighted_sum_checkpoint_round_trip(base_model, water_system):
 
 def test_weighted_sum_export_produces_atomistic_model(base_model):
     wrapped = WeightedSumModel(
-        base_model, {"energy/mix": {"sources": {"energy/a": 0.3, "energy/b": 0.7}}}
+        base_model,
+        {"energy/mix": WeightedSumHead(sources={"energy/a": 0.3, "energy/b": 0.7})},
     )
     exported = wrapped.export()
     assert "energy/mix" in exported.capabilities().outputs
@@ -405,7 +402,7 @@ def test_create_and_extract_weighted_sum_checkpoint(base_model, tmp_path):
     wsum_ckpt = tmp_path / "wsum.ckpt"
     create_weighted_sum_checkpoint(
         str(base_ckpt),
-        {"energy/mix": {"sources": {"energy/a": 0.3, "energy/b": 0.7}}},
+        {"energy/mix": WeightedSumHead(sources={"energy/a": 0.3, "energy/b": 0.7})},
         str(wsum_ckpt),
     )
 
@@ -426,6 +423,44 @@ def test_create_and_extract_weighted_sum_checkpoint(base_model, tmp_path):
     extract_wrapped_checkpoint(str(wsum_ckpt), str(extracted_ckpt))
     extracted = torch.load(extracted_ckpt, map_location="cpu", weights_only=False)
     assert extracted["architecture_name"] == "pet"
+
+
+def test_main_cli_writes_checkpoint_and_prints_summary(
+    base_model, tmp_path, monkeypatch, capsys
+):
+    # Exercises _main end to end (argv -> collect_specs ->
+    # create_weighted_sum_checkpoint -> summary print), which every other test
+    # bypasses by calling collect_specs / create_weighted_sum_checkpoint directly.
+    base_ckpt = tmp_path / "base.ckpt"
+    torch.save(base_model.get_checkpoint(), base_ckpt)
+
+    config_path = tmp_path / "heads.yaml"
+    config_path.write_text(
+        "heads:\n"
+        "  energy/mix:\n"
+        "    sources:\n"
+        "      energy/a: 0.3\n"
+        "      energy/b: 0.7\n"
+    )
+    output_ckpt = tmp_path / "wsum.ckpt"
+
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["upet-weighted-sum", str(base_ckpt), str(config_path), str(output_ckpt)],
+    )
+    _main()
+
+    captured = capsys.readouterr()
+    assert f"wrote {output_ckpt} with 1 weighted-sum head(s):" in captured.out
+    assert "energy/mix = 0.3 * energy/a + 0.7 * energy/b" in captured.out
+
+    raw = torch.load(output_ckpt, map_location="cpu", weights_only=False)
+    assert raw["architecture_name"] == ARCHITECTURE_NAME
+    assert raw["weighted_sum_heads"]["energy/mix"]["sources"] == {
+        "energy/a": 0.3,
+        "energy/b": 0.7,
+    }
 
 
 def test_extract_wrapped_checkpoint_rejects_plain_checkpoint(base_model, tmp_path):
@@ -452,7 +487,8 @@ def test_weighted_sum_forward_preserves_gradients_for_conservative_energy(base_m
     # the sources' values, so exercise it end to end with `requires_grad` positions
     # instead of `torch.no_grad()`, which every other forward test uses.
     wrapped = WeightedSumModel(
-        base_model, {"energy/mix": {"sources": {"energy/a": 0.3, "energy/b": 0.7}}}
+        base_model,
+        {"energy/mix": WeightedSumHead(sources={"energy/a": 0.3, "energy/b": 0.7})},
     )
 
     positions_separate = torch.tensor(
@@ -493,7 +529,8 @@ def test_weighted_sum_forward_per_atom_with_selected_atoms(base_model, water_sys
     # with `selected_atoms` -- see the comment in `WeightedSumModel.forward`.
     # Every other forward test uses `sample_kind="system"` and no `selected_atoms`.
     wrapped = WeightedSumModel(
-        base_model, {"energy/mix": {"sources": {"energy/a": 0.3, "energy/b": 0.7}}}
+        base_model,
+        {"energy/mix": WeightedSumHead(sources={"energy/a": 0.3, "energy/b": 0.7})},
     )
     selected_atoms = Labels(
         names=["system", "atom"],
@@ -535,12 +572,12 @@ def test_weighted_sum_combines_non_conservative_force_sources(
     wrapped = WeightedSumModel(
         nc_force_model,
         {
-            "non_conservative_force/mix": {
-                "sources": {
+            "non_conservative_force/mix": WeightedSumHead(
+                sources={
                     "non_conservative_force/a": 0.3,
                     "non_conservative_force/b": 0.7,
                 }
-            }
+            )
         },
     )
 
@@ -590,13 +627,19 @@ def test_weighted_sum_rejects_mismatched_components_or_properties():
     )
     with pytest.raises(ValueError, match="different components or properties"):
         WeightedSumModel(
-            model, {"generic/mix": {"sources": {"generic/a": 0.5, "generic/b": 0.5}}}
+            model,
+            {
+                "generic/mix": WeightedSumHead(
+                    sources={"generic/a": 0.5, "generic/b": 0.5}
+                )
+            },
         )
 
 
 def test_weighted_sum_upgrade_checkpoint_rejects_version_mismatch(base_model):
     wrapped = WeightedSumModel(
-        base_model, {"energy/mix": {"sources": {"energy/a": 0.3, "energy/b": 0.7}}}
+        base_model,
+        {"energy/mix": WeightedSumHead(sources={"energy/a": 0.3, "energy/b": 0.7})},
     )
     checkpoint = wrapped.get_checkpoint()
     checkpoint["model_ckpt_version"] = 999
@@ -612,7 +655,8 @@ def test_weighted_sum_export_rejects_unsupported_dtype():
     model.eval()
     model.to(torch.float16)
     wrapped = WeightedSumModel(
-        model, {"energy/mix": {"sources": {"energy/a": 0.3, "energy/b": 0.7}}}
+        model,
+        {"energy/mix": WeightedSumHead(sources={"energy/a": 0.3, "energy/b": 0.7})},
     )
     with pytest.raises(ValueError, match="unsupported dtype"):
         wrapped.export()
@@ -623,7 +667,8 @@ def test_weighted_sum_export_matches_wrapped_module_output(base_model, water_sys
     # capabilities; nothing runs the exported AtomisticModel itself to confirm it
     # numerically reproduces what the pre-export module computes.
     wrapped = WeightedSumModel(
-        base_model, {"energy/mix": {"sources": {"energy/a": 0.3, "energy/b": 0.7}}}
+        base_model,
+        {"energy/mix": WeightedSumHead(sources={"energy/a": 0.3, "energy/b": 0.7})},
     )
     with torch.no_grad():
         before = wrapped(

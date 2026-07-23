@@ -83,21 +83,22 @@ Python API
 .. code-block:: python
 
    from upet import create_weighted_sum_checkpoint
+   from upet._weighted_sum import WeightedSumHead
 
    create_weighted_sum_checkpoint(
        checkpoint_path="model.ckpt",
        specs={
-           "energy/mix": {
-               "sources": {"energy/pbe": 0.25, "energy/pbesol": 0.75},
-               "description": "25/75 PBE/PBEsol mix",
-           },
-           "energy/diff": {
-               "sources": {"energy/pbe": 1.0, "energy/pbesol": -1.0},
-           },
-           "energy/calibrated-mix": {
-               "sources": {"energy/pbe": 1, "energy/pbesol": 3},
-               "normalize_coefficients": True,
-           },
+           "energy/mix": WeightedSumHead(
+               sources={"energy/pbe": 0.25, "energy/pbesol": 0.75},
+               description="25/75 PBE/PBEsol mix",
+           ),
+           "energy/diff": WeightedSumHead(
+               sources={"energy/pbe": 1.0, "energy/pbesol": -1.0},
+           ),
+           "energy/calibrated-mix": WeightedSumHead(
+               sources={"energy/pbe": 1, "energy/pbesol": 3},
+               normalize_coefficients=True,
+           ),
        },
        output_checkpoint_path="model-wsum.ckpt",
    )
