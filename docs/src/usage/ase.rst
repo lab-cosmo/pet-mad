@@ -164,6 +164,24 @@ methodology, see the `LLPR <https://doi.org/10.1088/2632-2153/ad594a>`_
 and `shallow ensembles
 <https://doi.org/10.1088/2632-2153/ad805f>`_ papers.
 
+Forces and stresses carry the same estimates, obtained by differentiating
+the energy ensemble:
+
+.. code-block:: python
+
+   forces_uncertainty = calculator.get_forces_uncertainty(atoms)
+   forces_ensemble = calculator.get_forces_ensemble(atoms)
+   stress_uncertainty = calculator.get_stress_uncertainty(atoms)
+   stress_ensemble = calculator.get_stress_ensemble(atoms)
+
+   # both from a single backward pass
+   forces_ensemble, stress_ensemble = calculator.get_forces_and_stress_ensemble(atoms)
+
+Models trained with a non-conservative forces head also expose their own
+force ensemble, which is much cheaper than differentiating the energy
+ensemble but not conservative. Select it with
+``get_forces_ensemble(atoms, method="direct")``.
+
 
 Rotational averaging
 --------------------
