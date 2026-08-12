@@ -221,13 +221,25 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
         self.calculator.calculate(atoms, properties, system_changes)
         self.results = self.calculator.results
 
+    @property
+    def _base_calculator(self) -> MetatomicCalculator:
+        """The underlying calculator, unwrapped from rotational averaging.
+
+        Uncertainty outputs are not rotationally averaged: they are requested
+        from the base model directly.
+        """
+        calc = self.calculator
+        if isinstance(calc, SymmetrizedCalculator):
+            return calc.base_calculator
+        return calc
+
     def _run_uq(
         self,
         atoms: Optional[Atoms] = None,
         per_atom: bool = False,
         key: str = "energy_uncertainty",
     ) -> np.ndarray:
-        if not self.calculator._calculate_uncertainty:
+        if not self._base_calculator._calculate_uncertainty:
             raise NotImplementedError(
                 "Energy uncertainty and ensemble are not available for the selected "
                 "model. For uncertainty estimates, please use one of the following "
@@ -242,7 +254,7 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
             else:
                 atoms = self.atoms
 
-        outputs = self.calculator.run_model(
+        outputs = self._base_calculator.run_model(
             atoms,
             outputs={
                 key: ModelOutput(
@@ -264,7 +276,7 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
         :param per_atom: Whether to return the energy uncertainty per atom.
         :return: Energy uncertainty in numpy.ndarray format.
         """
-        key = self.calculator._energy_uq_key
+        key = self._base_calculator._energy_uq_key
         return self._run_uq(atoms=atoms, per_atom=per_atom, key=key)
 
     def get_energy_ensemble(
@@ -278,7 +290,7 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
         :param per_atom: Whether to return the energies per atom.
         :return: Energy uncertainty in numpy.ndarray format.
         """
-        key = self.calculator._energy_uq_key.replace("_uncertainty", "_ensemble")
+        key = self._base_calculator._energy_uq_key.replace("_uncertainty", "_ensemble")
         return self._run_uq(atoms=atoms, per_atom=per_atom, key=key)
 
 
