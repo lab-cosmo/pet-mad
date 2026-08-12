@@ -244,7 +244,11 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
 
         outputs = self.calculator.run_model(
             atoms,
-            outputs={key: ModelOutput(quantity="energy", unit="eV", per_atom=per_atom)},
+            outputs={
+                key: ModelOutput(
+                    unit="eV", sample_kind="atom" if per_atom else "system"
+                )
+            },
         )
 
         return outputs[key].block().values.detach().cpu().numpy()
@@ -412,7 +416,10 @@ class PETMADDOSCalculator(ase.calculators.calculator.Calculator):
         :return: Energy grid and corresponding DOS values in torch.Tensor format.
         """
         results = self.calculator.run_model(
-            atoms, outputs={"mtt::dos": ModelOutput(per_atom=per_atom)}
+            atoms,
+            outputs={
+                "mtt::dos": ModelOutput(sample_kind="atom" if per_atom else "system")
+            },
         )
         dos = results["mtt::dos"].block().values
 
