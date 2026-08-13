@@ -20,6 +20,13 @@ from ._models import (
     parse_checkpoint_filename,
     upet_resolve_model,
 )
+from ._uncertainty import (
+    run_direct_forces_uncertainty,
+    run_direct_forces_uq,
+    run_energy_uq,
+    run_forces_stress_uq,
+    stress_ensemble_to_voigt,
+)
 from ._version import (
     PET_MAD_DOS_LATEST_STABLE_VERSION,
     UPET_AVAILABLE_MODELS,
@@ -40,26 +47,6 @@ DTYPE_TO_STR = {
     torch.float32: "float32",
     torch.float64: "float64",
 }
-
-
-def _stress_ensemble_to_voigt(stress_ensemble: np.ndarray) -> np.ndarray:
-    """Convert a [3, 3, n_ensemble] stress ensemble to Voigt [6, n_ensemble].
-
-    ASE's public ``full_3x3_to_voigt_6_stress`` averages each off-diagonal
-    component with itself instead of with its transpose, so the symmetrized
-    conversion is written out here.
-    """
-    s = stress_ensemble
-    return np.stack(
-        [
-            s[0, 0],
-            s[1, 1],
-            s[2, 2],
-            (s[1, 2] + s[2, 1]) / 2,
-            (s[0, 2] + s[2, 0]) / 2,
-            (s[0, 1] + s[1, 0]) / 2,
-        ]
-    )
 
 
 class UPETCalculator(ase.calculators.calculator.Calculator):
@@ -327,18 +314,9 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
                 "uncertainty estimates."
             )
 
-        atoms = self._resolve_atoms(atoms)
-
-        outputs = self._base_calculator.run_model(
-            atoms,
-            outputs={
-                key: ModelOutput(
-                    unit="eV", sample_kind="atom" if per_atom else "system"
-                )
-            },
+        return run_energy_uq(
+            self._base_calculator, self._resolve_atoms(atoms), key, per_atom
         )
-
-        return outputs[key].block().values.detach().cpu().numpy()
 
     def get_energy_uncertainty(
         self, atoms: Optional[Atoms] = None, per_atom: bool = False
@@ -392,9 +370,6 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
         requested. Forces ensemble has shape [n_atoms, 3, n_ensemble], stress ensemble
         has shape [3, 3, n_ensemble].
         """
-        assert compute_forces or compute_stress
-
-        calc = self._base_calculator
         if not self.supports_uncertainty:
             raise NotImplementedError(
                 "Forces/stress uncertainty and ensemble are not available for "
@@ -402,103 +377,47 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
                 "providing uncertainty estimates."
             )
 
-        atoms = self._resolve_atoms(atoms)
-
         ensemble_key = self._energy_ensemble_key
         assert ensemble_key is not None
 
-        explicit_gradients = []
-        if compute_forces:
-            explicit_gradients.append("positions")
-        if compute_stress:
-            explicit_gradients.append("strain")
-
-        outputs_request = {
-            ensemble_key: ModelOutput(
-                unit="eV", sample_kind="system", explicit_gradients=explicit_gradients
-            )
-        }
-        if self._energy_key is not None:
-            # PET models refuse an ensemble request that does not also ask for the
-            # energy it is built from; the value itself is unused here
-            outputs_request[self._energy_key] = ModelOutput(
-                unit="eV", sample_kind="system"
-            )
-
-        block = calc.run_model(atoms, outputs_request)[ensemble_key].block()
-
-        forces_ensemble = None
-        stress_ensemble = None
-
-        if compute_forces:
-            # gradient shape: [n_atoms, 3, n_ensemble]
-            forces_ensemble = (
-                -block.gradient("positions").values.detach().cpu().double().numpy()
-            )
-            # remove the mean over atoms for each ensemble member to impose
-            # translational invariance
-            forces_ensemble = forces_ensemble - np.mean(
-                forces_ensemble, axis=0, keepdims=True
-            )
-
-        if compute_stress:
-            # gradient shape: [1, 3, 3, n_ensemble] (single system)
-            # -> [3, 3, n_ensemble]
-            stress_ensemble = (
-                block.gradient("strain").values.detach().cpu().double().numpy()[0]
-                / atoms.cell.volume
-            )
-
-        return forces_ensemble, stress_ensemble
+        return run_forces_stress_uq(
+            self._base_calculator,
+            self._resolve_atoms(atoms),
+            ensemble_key,
+            self._energy_key,
+            compute_forces,
+            compute_stress,
+        )
 
     def _run_direct_forces_uq(self, atoms: Optional[Atoms] = None) -> np.ndarray:
         """Get the direct forces ensemble, shape [n_atoms, 3, n_ensemble]."""
-        atoms = self._resolve_atoms(atoms)
-
         if not self._has_direct_ensemble:
             raise NotImplementedError(
                 f"Direct forces ensemble ({self._direct_ensemble_key}) is not "
                 "available for the selected model."
             )
 
-        outputs = self._base_calculator.run_model(
-            atoms,
-            outputs={
-                self._direct_ensemble_key: ModelOutput(
-                    unit="eV/Angstrom", sample_kind="atom"
-                )
-            },
+        return run_direct_forces_uq(
+            self._base_calculator,
+            self._resolve_atoms(atoms),
+            self._direct_ensemble_key,
         )
-
-        # shape: [n_atoms, 3, n_ensemble]
-        return outputs[self._direct_ensemble_key].block().values.detach().cpu().numpy()
 
     def _run_direct_forces_uncertainty(
         self, atoms: Optional[Atoms] = None
     ) -> np.ndarray:
         """Get the model's built-in direct forces uncertainty, shape [n_atoms, 3]."""
-        atoms = self._resolve_atoms(atoms)
-
         if not self._has_direct_uncertainty:
             raise NotImplementedError(
                 f"Direct forces uncertainty ({self._direct_uncertainty_key}) is not "
                 "available for the selected model."
             )
 
-        outputs = self._base_calculator.run_model(
-            atoms,
-            outputs={
-                self._direct_uncertainty_key: ModelOutput(
-                    unit="eV/Angstrom", sample_kind="atom"
-                )
-            },
+        return run_direct_forces_uncertainty(
+            self._base_calculator,
+            self._resolve_atoms(atoms),
+            self._direct_uncertainty_key,
         )
-
-        # shape: [n_atoms, 3, 1] -> [n_atoms, 3]
-        values = (
-            outputs[self._direct_uncertainty_key].block().values.detach().cpu().numpy()
-        )
-        return values.squeeze(-1)
 
     def get_forces_ensemble(
         self,
@@ -604,7 +523,7 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
             atoms=atoms, compute_forces=False, compute_stress=True
         )
         if voigt:
-            stress_ensemble = _stress_ensemble_to_voigt(stress_ensemble)
+            stress_ensemble = stress_ensemble_to_voigt(stress_ensemble)
         return stress_ensemble
 
     def get_stress_uncertainty(
@@ -653,7 +572,7 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
             atoms=atoms, compute_forces=True, compute_stress=True
         )
         if voigt:
-            stress_ensemble = _stress_ensemble_to_voigt(stress_ensemble)
+            stress_ensemble = stress_ensemble_to_voigt(stress_ensemble)
         return forces_ensemble, stress_ensemble
 
 
