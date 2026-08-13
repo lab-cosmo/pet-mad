@@ -84,9 +84,10 @@ def test_basic_usage(model_name):
     if "-xl" in model_name or "-l" in model_name:
         pytest.skip("Skipping XL models and L models due to large size.")
     atoms = (
-        bulk("C", cubic=True, a=5.43, crystalstructure="diamond")
-        if "spice" not in model_name
-        else molecule("H2O")
+        molecule("H2O")
+        # models trained on molecular data only
+        if any(name in model_name for name in ("spice", "mols"))
+        else bulk("C", cubic=True, a=5.43, crystalstructure="diamond")
     )
 
     model, size = model_name.rsplit("-", 1)

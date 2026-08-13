@@ -116,6 +116,11 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
 
             - PET-MAD models with version < 1.1.0
             - PET-SPICE models
+            - PET-MOLS models
+
+            Models trained on non-periodic data only predict non-conservative
+            forces, and their stress is computed by backpropagation regardless of
+            this setting.
         :param check_consistency: whether internal consistency checks should be
             performed. Mainly for developers, defaults to False.
         """
@@ -155,17 +160,23 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
             )
 
         model_outputs = loaded_model.capabilities().outputs
+        nc_regime: Union[bool, Literal["forces", "stress"]] = non_conservative
         if non_conservative:
             selected_variant = None if variants is None else variants.get("energy")
             variant_postfix = f"/{selected_variant}" if selected_variant else ""
             nc_forces_key = "non_conservative_force" + variant_postfix
             nc_stress_key = "non_conservative_stress" + variant_postfix
-            if nc_forces_key not in model_outputs or nc_stress_key not in model_outputs:
+            if nc_forces_key not in model_outputs:
                 raise NotImplementedError(
                     "Non-conservative forces and stresses are not available for the "
                     f"model {model}, v{version}. Please run without "
                     "non_conservative=True, or choose another model."
                 )
+            if nc_stress_key not in model_outputs:
+                # models trained on non-periodic data have no non-conservative
+                # stress: the forces still come directly from the model, and the
+                # stress is left to be computed by backpropagation
+                nc_regime = "forces"
 
         if dtype is not None:
             if isinstance(dtype, str):
@@ -180,7 +191,7 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
             check_consistency=check_consistency,
             device=device,
             variants=variants,
-            non_conservative=non_conservative,
+            non_conservative=nc_regime,
         )
         self.implemented_properties = self.calculator.implemented_properties
 
