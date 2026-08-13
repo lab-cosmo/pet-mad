@@ -199,9 +199,6 @@ support ``non_conservative=True``:
 - ``pet-mols-s`` v1.0.0
 - ``pet-mols-s`` v1.1.0
 
-The ``pet-omol`` checkpoints predict non-conservative forces but no
-non-conservative stress, which is computed by backpropagation instead.
-
 PET-MAD-DOS
 -----------
 
