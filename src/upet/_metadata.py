@@ -3,6 +3,31 @@ from typing import Optional
 from metatomic.torch import ModelMetadata
 
 
+# Official spelling of the training dataset, when it differs from the one that
+# can be derived from the model name.
+DATASET_NAMES = {"pet-omol": "OMol25"}
+
+# Same order as the model paper (doi:10.1088/2632-2153/ae6417).
+OMOL_AUTHORS = [
+    "Filippo Bigi (filippo.bigi@epfl.ch)",
+    "Paolo Pegolo (paolo.pegolo@epfl.ch)",
+    "Arslan Mazitov (arslan.mazitov@epfl.ch)",
+    "Jonathan Schmidt",
+    "Michele Ceriotti (michele.ceriotti@epfl.ch)",
+]
+
+# ``dataset`` is not an accepted key of ModelMetadata.references, so the OMol25
+# dataset paper is listed together with the model one.
+OMOL_REFERENCES = {
+    # the original PET preprint is added by PET's own default metadata
+    "architecture": ["https://doi.org/10.1088/2632-2153/ae6417"],
+    "model": [
+        "https://doi.org/10.1088/2632-2153/ae6417",
+        "https://arxiv.org/abs/2505.08762",
+    ],
+}
+
+
 def get_upet_metadata(
     model: Optional[str] = None,
     size: Optional[str] = None,
@@ -22,8 +47,11 @@ def get_upet_metadata(
     }
 
     if model and size and version:
-        dataset = model.split("-")[1].upper()
-        if "mad" in model.lower():
+        dataset = DATASET_NAMES.get(model, model.split("-")[1].upper())
+        if "omol" in model.lower():
+            authors = OMOL_AUTHORS
+            references = OMOL_REFERENCES
+        elif "mad" in model.lower():
             authors = [
                 "Arslan Mazitov (arslan.mazitov@epfl.ch)",
                 "Filippo Bigi",

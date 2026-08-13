@@ -12,6 +12,9 @@ UPET_AVAILABLE_MODELS = [
     "pet-omad-s",
     "pet-omad-l",
     "pet-omatpes-l",
+    "pet-omol-s",
+    "pet-omol-m",
+    "pet-omol-l",
     "pet-spice-s",
     "pet-spice-l",
 ]
