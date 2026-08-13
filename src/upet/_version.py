@@ -15,6 +15,7 @@ UPET_AVAILABLE_MODELS = [
     "pet-omol-s",
     "pet-omol-m",
     "pet-omol-l",
+    "pet-mols-s",
     "pet-spice-s",
     "pet-spice-l",
 ]
@@ -29,6 +30,8 @@ UPET_UQ_SUPPORTED_MODELS = [
     "pet-mad-s-v1.0.2",
     "pet-mad-xs-v1.5.0",
     "pet-mad-s-v1.5.0",
+    "pet-mols-s-v1.0.0",
+    "pet-mols-s-v1.1.0",
 ]
 
 DEPRECATED_MODELS: list[str] = []

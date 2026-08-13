@@ -28,6 +28,29 @@ OMOL_REFERENCES = {
 }
 
 
+# PET-MOLS is not a universal potential, so it does not use the generic
+# description below.
+MOLS_DESCRIPTION = (
+    r"A machine-learning interatomic potential to study organic molecular "
+    r"crystals, trained on periodic PBE0+MBD reference data, covering 12 "
+    r"elements and a broad range of organic motifs subsampled from the "
+    r"Cambridge Structural Database. Model size: {}. Model version: {}."
+)
+
+# Same order as the model paper (arXiv:2603.06236).
+MOLS_AUTHORS = [
+    "Matthias Kellner (matthias.kellner@epfl.ch)",
+    "Ruben Rodriguez-Madrid",
+    "Jacob B. Holmes",
+    "Victor Paul Principe",
+    "Seio Inoue",
+    "Lyndon Emsley",
+    "Michele Ceriotti (michele.ceriotti@epfl.ch)",
+]
+
+MOLS_REFERENCES = {"model": ["https://arxiv.org/abs/2603.06236"]}
+
+
 def get_upet_metadata(
     model: Optional[str] = None,
     size: Optional[str] = None,
@@ -48,7 +71,12 @@ def get_upet_metadata(
 
     if model and size and version:
         dataset = DATASET_NAMES.get(model, model.split("-")[1].upper())
-        if "omol" in model.lower():
+        description_text = description.format(dataset, size, version)
+        if "mols" in model.lower():
+            authors = MOLS_AUTHORS
+            references = MOLS_REFERENCES
+            description_text = MOLS_DESCRIPTION.format(size, version)
+        elif "omol" in model.lower():
             authors = OMOL_AUTHORS
             references = OMOL_REFERENCES
         elif "mad" in model.lower():
@@ -72,7 +100,7 @@ def get_upet_metadata(
             ]
         metadata = ModelMetadata(
             name=f"{model.upper()}-{size.upper()} v{version}",
-            description=description.format(dataset, size, version),
+            description=description_text,
             authors=authors,
             references=references,
         )
