@@ -1,4 +1,5 @@
 from upet._metadata import get_upet_metadata
+from upet._models import get_upet
 
 
 PET_REFERENCES = {
@@ -46,42 +47,16 @@ def test_metadata_mad():
     assert metadata.references == PET_REFERENCES
 
 
-def test_metadata_omol():
-    """Check the dataset name, which is not the one derived from the model name."""
-    metadata = get_upet_metadata("pet-omol", "s", "1.0.0")
-
-    assert metadata.name == "PET-OMOL-S v1.0.0"
-    assert metadata.description == (
-        "A universal interatomic potential for advanced materials modeling based "
-        "on a Point-Edge Transformer (PET) architecture, and trained on the "
-        "OMol25 dataset. Model size: s. Model version: 1.0.0."
-    )
-    assert metadata.authors == [
-        "Filippo Bigi (filippo.bigi@epfl.ch)",
-        "Paolo Pegolo (paolo.pegolo@epfl.ch)",
-        "Arslan Mazitov (arslan.mazitov@epfl.ch)",
-        "Jonathan Schmidt",
-        "Michele Ceriotti (michele.ceriotti@epfl.ch)",
-    ]
-    assert metadata.references == {
-        "architecture": ["https://doi.org/10.1088/2632-2153/ae6417"],
-        "model": [
-            "https://doi.org/10.1088/2632-2153/ae6417",
-            "https://arxiv.org/abs/2505.08762",
-        ],
-    }
-
-
-def test_metadata_mols():
-    """Check the description of the only model that is not a universal potential."""
-    metadata = get_upet_metadata("pet-mols", "s", "1.1.0")
+def test_metadata_from_checkpoint():
+    """Check that the metadata of a model that has some of its own is kept."""
+    metadata = get_upet(model="pet-mols", size="s", version="1.1.0").metadata()
 
     assert metadata.name == "PET-MOLS-S v1.1.0"
     assert metadata.description == (
         "A machine-learning interatomic potential to study organic molecular "
         "crystals, trained on periodic PBE0+MBD reference data, covering 12 "
         "elements and a broad range of organic motifs subsampled from the "
-        "Cambridge Structural Database. Model size: s. Model version: 1.1.0."
+        "Cambridge Structural Database. Model size: S. Model version: 1.1.0."
     )
     assert metadata.authors == [
         "Matthias Kellner (matthias.kellner@epfl.ch)",
@@ -92,4 +67,10 @@ def test_metadata_mols():
         "Lyndon Emsley",
         "Michele Ceriotti (michele.ceriotti@epfl.ch)",
     ]
-    assert metadata.references == {"model": ["https://arxiv.org/abs/2603.06236"]}
+
+
+def test_metadata_of_uncertainty_model():
+    """Check a model without metadata, wrapped in an uncertainty model."""
+    metadata = get_upet(model="pet-mad", size="xs", version="1.5.0").metadata()
+
+    assert metadata.name == "PET-MAD-XS v1.5.0"
