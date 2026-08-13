@@ -374,9 +374,8 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
         key = self._energy_ensemble_key
         if key is None:
             raise NotImplementedError(
-                "Energy ensemble is not available for the selected model. For "
-                "uncertainty estimates, please use one of the following models: "
-                f"{UPET_UQ_SUPPORTED_MODELS}"
+                "Energy ensemble is not available for the selected model. The "
+                "documentation lists the models providing uncertainty estimates."
             )
         return self._run_uq(atoms=atoms, per_atom=per_atom, key=key)
 
@@ -396,11 +395,11 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
         assert compute_forces or compute_stress
 
         calc = self._base_calculator
-        if not calc._calculate_uncertainty:
+        if not self.supports_uncertainty:
             raise NotImplementedError(
-                "Forces/stress uncertainty and ensemble are not available for the "
-                "selected model. For uncertainty estimates, please use one of the "
-                f"following models: {UPET_UQ_SUPPORTED_MODELS}"
+                "Forces/stress uncertainty and ensemble are not available for "
+                "the selected model. The documentation lists the models "
+                "providing uncertainty estimates."
             )
 
         atoms = self._resolve_atoms(atoms)

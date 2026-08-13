@@ -62,11 +62,11 @@ def test_forces_stress_uncertainty_quantification(model_name):
             model=model_name,
             version=version,
         )
-        if f"{model_name}-v{version}" not in UPET_UQ_SUPPORTED_MODELS:
+        if not calc.supports_uncertainty:
             message = (
-                "Forces/stress uncertainty and ensemble are not available for the "
-                "selected model. For uncertainty estimates, please use one of the "
-                f"following models: {UPET_UQ_SUPPORTED_MODELS}"
+                "Forces/stress uncertainty and ensemble are not available for "
+                "the selected model. The documentation lists the models "
+                "providing uncertainty estimates."
             )
             with pytest.raises(NotImplementedError, match=f"^{re.escape(message)}$"):
                 calc.get_forces_uncertainty(atoms)
