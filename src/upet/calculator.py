@@ -78,6 +78,11 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
             - "pet-omatpes-l": PET-OMATPES model (size "l", materials, r2SCAN)
             - "pet-spice-s": PET-SPICE model (size "s", molecules, ωB97M-D3)
             - "pet-spice-l": PET-SPICE model (size "l", molecules, ωB97M-D3)
+            - "pet-omol-s": PET-OMol model (size "s", molecules, ωB97M-V)
+            - "pet-omol-m": PET-OMol model (size "m", molecules, ωB97M-V)
+            - "pet-omol-l": PET-OMol model (size "l", molecules, ωB97M-V)
+            - "pet-mols-s": PET-MOLS model (size "s", organic molecular crystals,
+              PBE0+MBD)
         :param version: version of the model to use. Defaults to the latest stable
             version. Deprecated model versions:
 
@@ -118,9 +123,8 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
             - PET-SPICE models
             - PET-MOLS models
 
-            Models trained on non-periodic data only predict non-conservative
-            forces, and their stress is computed by backpropagation regardless of
-            this setting.
+            PET-OMol models only predict non-conservative forces, so their stress
+            is computed by backpropagation even when this is set.
         :param check_consistency: whether internal consistency checks should be
             performed. Mainly for developers, defaults to False.
         """
@@ -168,14 +172,12 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
             nc_stress_key = "non_conservative_stress" + variant_postfix
             if nc_forces_key not in model_outputs:
                 raise NotImplementedError(
-                    "Non-conservative forces and stresses are not available for the "
+                    "Non-conservative forces are not available for the "
                     f"model {model}, v{version}. Please run without "
                     "non_conservative=True, or choose another model."
                 )
             if nc_stress_key not in model_outputs:
-                # models trained on non-periodic data have no non-conservative
-                # stress: the forces still come directly from the model, and the
-                # stress is left to be computed by backpropagation
+                # the stress is left to backpropagation
                 nc_regime = "forces"
 
         if dtype is not None:
@@ -234,11 +236,7 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
 
     @property
     def _base_calculator(self) -> MetatomicCalculator:
-        """The underlying calculator, unwrapped from rotational averaging.
-
-        Uncertainty outputs are not rotationally averaged: they are requested
-        from the base model directly.
-        """
+        """The underlying calculator, unwrapped from rotational averaging."""
         calc = self.calculator
         if isinstance(calc, SymmetrizedCalculator):
             return calc.base_calculator
@@ -286,6 +284,9 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
             used.
         :param per_atom: Whether to return the energy uncertainty per atom.
         :return: Energy uncertainty in numpy.ndarray format.
+
+        The uncertainty is not rotationally averaged, even when the calculator
+        is: it is requested from the base model directly.
         """
         key = self._base_calculator._energy_uq_key
         return self._run_uq(atoms=atoms, per_atom=per_atom, key=key)
@@ -300,6 +301,9 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
             used.
         :param per_atom: Whether to return the energies per atom.
         :return: Energy uncertainty in numpy.ndarray format.
+
+        The ensemble is not rotationally averaged, even when the calculator is:
+        it is requested from the base model directly.
         """
         key = self._base_calculator._energy_uq_key.replace("_uncertainty", "_ensemble")
         return self._run_uq(atoms=atoms, per_atom=per_atom, key=key)

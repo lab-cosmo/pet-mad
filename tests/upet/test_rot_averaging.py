@@ -1,8 +1,10 @@
+import re
+
 import numpy as np
 import pytest
 from ase.build import bulk
 
-from upet._models import upet_resolve_model
+from upet._models import get_versions_for_model
 from upet._version import UPET_AVAILABLE_MODELS, UPET_NO_NC_SUPPORT_MODELS
 from upet.calculator import UPETCalculator
 
@@ -43,10 +45,14 @@ def test_calc_rot_averaging(model_name):
 def test_calc_rot_averaging_non_conservative(model_name):
     if "-xl" in model_name or "-l" in model_name:
         pytest.skip("Skipping XL models and L models due to large size.")
-    _, latest_version = upet_resolve_model(*model_name.rsplit("-", 1))
-    if f"{model_name}-v{latest_version}" in UPET_NO_NC_SUPPORT_MODELS:
-        msg = "Non-conservative forces and stresses are not available"
-        with pytest.raises(NotImplementedError, match=msg):
+    version = max(get_versions_for_model(*model_name.rsplit("-", 1)))
+    if f"{model_name}-v{version}" in UPET_NO_NC_SUPPORT_MODELS:
+        message = (
+            f"Non-conservative forces are not available for the model "
+            f"{model_name}, v{version}. Please run without "
+            "non_conservative=True, or choose another model."
+        )
+        with pytest.raises(NotImplementedError, match=re.escape(message)):
             _ = UPETCalculator(model=model_name, non_conservative=True)
     else:
         atoms = bulk("Si", cubic=True, a=5.43, crystalstructure="diamond")

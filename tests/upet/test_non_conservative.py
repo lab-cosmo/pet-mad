@@ -1,3 +1,5 @@
+import re
+
 import pytest
 from ase.build import bulk, molecule
 
@@ -12,7 +14,6 @@ def test_non_conservative(model_name):
         pytest.skip("Skipping XL models and L models due to large size.")
     atoms = (
         molecule("H2O")
-        # models trained on molecular data only
         if any(name in model_name for name in ("spice", "mols"))
         else bulk("C", cubic=True, a=5.43, crystalstructure="diamond")
     )
@@ -22,10 +23,12 @@ def test_non_conservative(model_name):
 
     for version in all_model_versions:
         if f"{model_name}-v{version}" in UPET_NO_NC_SUPPORT_MODELS:
-            with pytest.raises(
-                NotImplementedError,
-                match="Non-conservative forces and stresses are not available",
-            ):
+            message = (
+                f"Non-conservative forces are not available for the model "
+                f"{model_name}, v{version}. Please run without "
+                "non_conservative=True, or choose another model."
+            )
+            with pytest.raises(NotImplementedError, match=re.escape(message)):
                 calc = UPETCalculator(
                     model=model_name, version=version, non_conservative=True
                 )
