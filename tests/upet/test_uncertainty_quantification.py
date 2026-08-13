@@ -1,9 +1,11 @@
+import re
+
 import numpy as np
 import pytest
 from ase.build import bulk
 
 from upet._models import get_versions_for_model
-from upet._version import UPET_AVAILABLE_MODELS, UPET_UQ_SUPPORTED_MODELS
+from upet._version import UPET_AVAILABLE_MODELS
 from upet.calculator import UPETCalculator
 
 
@@ -21,9 +23,13 @@ def test_uncertainty_quantification(model_name):
             model=model_name,
             version=version,
         )
-        if f"{model_name}-v{version}" not in UPET_UQ_SUPPORTED_MODELS:
-            msg = "Energy uncertainty and ensemble are not available "
-            with pytest.raises(NotImplementedError, match=msg):
+        if not calc.supports_uncertainty:
+            message = (
+                "Energy uncertainty and ensemble are not available for the "
+                "selected model. The documentation lists the models providing "
+                "uncertainty estimates."
+            )
+            with pytest.raises(NotImplementedError, match=re.escape(message)):
                 calc.get_energy_uncertainty(atoms)
         else:
             energy_uncertainty = calc.get_energy_uncertainty(atoms)

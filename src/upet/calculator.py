@@ -20,7 +20,6 @@ from ._models import (
 from ._version import (
     PET_MAD_DOS_LATEST_STABLE_VERSION,
     UPET_AVAILABLE_MODELS,
-    UPET_UQ_SUPPORTED_MODELS,
 )
 from .utils import (
     dos_from_eigenvalues,
@@ -164,13 +163,15 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
             )
 
         model_outputs = loaded_model.capabilities().outputs
+        selected_variant = None if variants is None else variants.get("energy")
+        variant_postfix = f"/{selected_variant}" if selected_variant else ""
+        nc_forces_key = "non_conservative_force" + variant_postfix
+        nc_stress_key = "non_conservative_stress" + variant_postfix
+        self._supports_non_conservative = nc_forces_key in model_outputs
+
         nc_regime: Union[bool, Literal["forces", "stress"]] = non_conservative
         if non_conservative:
-            selected_variant = None if variants is None else variants.get("energy")
-            variant_postfix = f"/{selected_variant}" if selected_variant else ""
-            nc_forces_key = "non_conservative_force" + variant_postfix
-            nc_stress_key = "non_conservative_stress" + variant_postfix
-            if nc_forces_key not in model_outputs:
+            if not self._supports_non_conservative:
                 raise NotImplementedError(
                     "Non-conservative forces are not available for the "
                     f"model {model}, v{version}. Please run without "
@@ -235,6 +236,24 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
         self.results = self.calculator.results
 
     @property
+    def supports_non_conservative(self) -> bool:
+        """Whether the model predicts non-conservative forces.
+
+        These are only available for the models that were trained on them; the
+        other ones can only be run with ``non_conservative=False``.
+        """
+        return self._supports_non_conservative
+
+    @property
+    def supports_uncertainty(self) -> bool:
+        """Whether the model predicts an uncertainty on its energy.
+
+        This is what :py:meth:`get_energy_uncertainty` and
+        :py:meth:`get_energy_ensemble` need to be usable.
+        """
+        return self._base_calculator._calculate_uncertainty
+
+    @property
     def _base_calculator(self) -> MetatomicCalculator:
         """The underlying calculator, unwrapped from rotational averaging."""
         calc = self.calculator
@@ -248,11 +267,11 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
         per_atom: bool = False,
         key: str = "energy_uncertainty",
     ) -> np.ndarray:
-        if not self._base_calculator._calculate_uncertainty:
+        if not self.supports_uncertainty:
             raise NotImplementedError(
-                "Energy uncertainty and ensemble are not available for the selected "
-                "model. For uncertainty estimates, please use one of the following "
-                f"models: {UPET_UQ_SUPPORTED_MODELS}"
+                "Energy uncertainty and ensemble are not available for the "
+                "selected model. The documentation lists the models providing "
+                "uncertainty estimates."
             )
 
         if atoms is None:

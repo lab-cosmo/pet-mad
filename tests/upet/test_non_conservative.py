@@ -4,7 +4,7 @@ import pytest
 from ase.build import bulk, molecule
 
 from upet._models import get_versions_for_model
-from upet._version import UPET_AVAILABLE_MODELS, UPET_NO_NC_SUPPORT_MODELS
+from upet._version import UPET_AVAILABLE_MODELS
 from upet.calculator import UPETCalculator
 
 
@@ -22,7 +22,9 @@ def test_non_conservative(model_name):
     all_model_versions = get_versions_for_model(model, size)
 
     for version in all_model_versions:
-        if f"{model_name}-v{version}" in UPET_NO_NC_SUPPORT_MODELS:
+        if not UPETCalculator(
+            model=model_name, version=version
+        ).supports_non_conservative:
             message = (
                 f"Non-conservative forces are not available for the model "
                 f"{model_name}, v{version}. Please run without "

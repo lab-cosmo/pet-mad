@@ -182,7 +182,9 @@ and :py:meth:`~upet.calculator.UPETCalculator.get_energy_ensemble`
 - ``pet-mols-s`` v1.0.0
 - ``pet-mols-s`` v1.1.0
 
-Calling these methods on other checkpoints will raise an error.
+Calling these methods on other checkpoints will raise an error;
+:py:attr:`~upet.calculator.UPETCalculator.supports_uncertainty` tells whether
+the model at hand provides them.
 
 Non-conservative forces
 -----------------------
@@ -191,7 +193,9 @@ All UPET checkpoints support conservative forces (the derivative of the
 predicted energy). Most also expose a direct, non-conservative force head
 that is 2–3× faster at inference; see :ref:`ase-non-conservative`. The
 following checkpoints are conservative-only and therefore do **not**
-support ``non_conservative=True``:
+support ``non_conservative=True``
+(:py:attr:`~upet.calculator.UPETCalculator.supports_non_conservative` tells
+them apart):
 
 - ``pet-mad-s`` v1.0.2
 - ``pet-spice-s`` v0.2.0

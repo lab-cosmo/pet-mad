@@ -5,7 +5,7 @@ import pytest
 from ase.build import bulk
 
 from upet._models import get_versions_for_model
-from upet._version import UPET_AVAILABLE_MODELS, UPET_NO_NC_SUPPORT_MODELS
+from upet._version import UPET_AVAILABLE_MODELS
 from upet.calculator import UPETCalculator
 
 
@@ -46,7 +46,7 @@ def test_calc_rot_averaging_non_conservative(model_name):
     if "-xl" in model_name or "-l" in model_name:
         pytest.skip("Skipping XL models and L models due to large size.")
     version = max(get_versions_for_model(*model_name.rsplit("-", 1)))
-    if f"{model_name}-v{version}" in UPET_NO_NC_SUPPORT_MODELS:
+    if not UPETCalculator(model=model_name).supports_non_conservative:
         message = (
             f"Non-conservative forces are not available for the model "
             f"{model_name}, v{version}. Please run without "
