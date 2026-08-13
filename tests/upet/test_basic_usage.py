@@ -4,6 +4,8 @@ import pytest
 from ase.build import bulk, molecule
 
 from upet._models import (
+    get_available_models,
+    get_sizes_for_model,
     get_upet,
     get_versions_for_model,
     list_upet,
@@ -56,6 +58,22 @@ def test_get_upet(model_name):
 
     for version in all_model_versions:
         get_upet(model=model, size=size, version=version)
+
+
+def test_available_models_are_published():
+    """Check that every model offered here can be downloaded.
+
+    Models published on the hub but missing from the list are not an error:
+    a model can be uploaded before it is offered here.
+    """
+    published = {
+        f"{model}-{size}"
+        for model in get_available_models()
+        for size in get_sizes_for_model(model)
+    }
+    missing = sorted(set(UPET_AVAILABLE_MODELS) - published)
+
+    assert missing == [], f"not published on the hub: {missing}"
 
 
 def test_list_models():
