@@ -43,14 +43,17 @@ def test_calc_rot_averaging(model_name):
 
 @pytest.mark.parametrize("model_name", UPET_AVAILABLE_MODELS)
 def test_calc_rot_averaging_non_conservative(model_name):
+    non_conservative = True
     if "-xl" in model_name or "-l" in model_name:
         pytest.skip("Skipping XL models and L models due to large size.")
     version = max(get_versions_for_model(*model_name.rsplit("-", 1)))
     if f"{model_name}-v{version}" in UPET_NO_NC_SUPPORT_MODELS:
         message = (
-            f"Non-conservative forces are not available for the model "
-            f"{model_name}, v{version}. Please run without "
-            "non_conservative=True, or choose another model."
+            f"`non-conservative={non_conservative}` option is not available "
+            f"for the model {model_name}, v{version}, and a target variant "
+            f"`energy`. Please choose another `non-conservative` option, "
+            "use another target variant, switch to a conservative regime "
+            "or choose another model."
         )
         with pytest.raises(NotImplementedError, match=re.escape(message)):
             _ = UPETCalculator(model=model_name, non_conservative=True)
