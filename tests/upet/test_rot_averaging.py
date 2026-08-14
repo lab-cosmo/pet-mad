@@ -56,11 +56,11 @@ def test_calc_rot_averaging_non_conservative(model_name):
             "or choose another model."
         )
         with pytest.raises(NotImplementedError, match=re.escape(message)):
-            _ = UPETCalculator(model=model_name, non_conservative=True)
+            _ = UPETCalculator(model=model_name, non_conservative=non_conservative)
     else:
         atoms = bulk("Si", cubic=True, a=5.43, crystalstructure="diamond")
         atoms.rattle(0.05)
-        atoms.calc = UPETCalculator(model=model_name, non_conservative=True)
+        atoms.calc = UPETCalculator(model=model_name, non_conservative=non_conservative)
 
         target_energy = atoms.get_potential_energy()
         target_forces = atoms.get_forces()
@@ -68,7 +68,7 @@ def test_calc_rot_averaging_non_conservative(model_name):
 
         atoms.calc = UPETCalculator(
             model=model_name,
-            non_conservative=True,
+            non_conservative=non_conservative,
             rotational_average_order=3,
             rotational_average_batch_size=8,
         )
