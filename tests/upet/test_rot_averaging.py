@@ -43,7 +43,7 @@ def test_calc_rot_averaging(model_name):
 
 @pytest.mark.parametrize("model_name", UPET_AVAILABLE_MODELS)
 def test_calc_rot_averaging_non_conservative(model_name):
-    non_conservative = True
+    non_conservative = "forces"
     if "-xl" in model_name or "-l" in model_name:
         pytest.skip("Skipping XL models and L models due to large size.")
     version = max(get_versions_for_model(*model_name.rsplit("-", 1)))
