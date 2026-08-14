@@ -174,15 +174,22 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
             nc_forces_key = "non_conservative_force" + variant_postfix
             nc_stress_key = "non_conservative_stress" + variant_postfix
 
-            if (
-                non_conservative == "forces" and nc_forces_key not in model_outputs
-            ) or (non_conservative == "stress" and nc_stress_key not in model_outputs):
+            missing_nc_forces = (
+                non_conservative in ("forces", True)
+                and nc_forces_key not in model_outputs
+            )
+            missing_nc_stress = (
+                non_conservative in ("stress", True)
+                and nc_stress_key not in model_outputs
+            )
+
+            if missing_nc_forces or missing_nc_stress:
                 raise NotImplementedError(
-                    f"Non-conservative {non_conservative} are not available for the "
-                    f"model {model}, v{version}, and a target variant "
-                    f"{selected_variant or 'energy'}. Please choose another "
-                    "non-conservative option or target vairant, switch to a "
-                    "conservative regime or choose another model."
+                    f"`non-conservative={non_conservative}` option is not available "
+                    f"for the model {model}, v{version}, and a target variant "
+                    f"`{selected_variant or 'energy'}`. Please choose another "
+                    f"`non-conservative` option, use another target variant, "
+                    "switch to a conservative regime or choose another model."
                 )
 
         if dtype is not None:
