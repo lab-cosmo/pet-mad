@@ -123,8 +123,6 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
             - PET-SPICE models
             - PET-MOLS models
 
-            PET-OMol models only predict non-conservative forces, so their stress
-            is computed by backpropagation even when this is set.
         :param check_consistency: whether internal consistency checks should be
             performed. Mainly for developers, defaults to False.
         """
