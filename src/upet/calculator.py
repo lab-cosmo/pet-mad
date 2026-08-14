@@ -56,7 +56,7 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
         rotational_average_batch_size: Optional[int] = None,
         *,
         device: Optional[str] = None,
-        non_conservative: bool = False,
+        non_conservative: Union[bool, Literal["forces", "stress"]] = False,
         check_consistency: bool = False,
     ):
         """
@@ -116,8 +116,14 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
         :param device: torch device to use for the calculation. If `None`, we will try
             the options in the model's `supported_device` in order.
         :param non_conservative: whether to use the non-conservative regime of forces
-            and stresses prediction. Defaults to False. Available for all models,
-            except:
+            and / or stresses prediction. Available options are:
+
+            - False: use the conservative regime (default)
+            - True: use the non-conservative regime for both forces and stresses
+            - "forces": use the non-conservative regime for forces only
+            - "stress": use the non-conservative regime for stresses only
+
+            Defaults to False. Available for all models, except:
 
             - PET-MAD models with version < 1.1.0
             - PET-SPICE models
@@ -161,22 +167,23 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
                 checkpoint_path=checkpoint_path,
             )
 
-        model_outputs = loaded_model.capabilities().outputs
-        nc_regime: Union[bool, Literal["forces", "stress"]] = non_conservative
         if non_conservative:
+            model_outputs = loaded_model.capabilities().outputs
             selected_variant = None if variants is None else variants.get("energy")
             variant_postfix = f"/{selected_variant}" if selected_variant else ""
             nc_forces_key = "non_conservative_force" + variant_postfix
             nc_stress_key = "non_conservative_stress" + variant_postfix
-            if nc_forces_key not in model_outputs:
+
+            if (
+                non_conservative == "forces" and nc_forces_key not in model_outputs
+            ) or (non_conservative == "stress" and nc_stress_key not in model_outputs):
                 raise NotImplementedError(
-                    "Non-conservative forces are not available for the "
-                    f"model {model}, v{version}. Please run without "
-                    "non_conservative=True, or choose another model."
+                    f"Non-conservative {non_conservative} are not available for the "
+                    f"model {model}, v{version}, and a target variant "
+                    f"{selected_variant or 'energy'}. Please choose another "
+                    "non-conservative option or target vairant, switch to a "
+                    "conservative regime or choose another model."
                 )
-            if nc_stress_key not in model_outputs:
-                # the stress is left to backpropagation
-                nc_regime = "forces"
 
         if dtype is not None:
             if isinstance(dtype, str):
@@ -191,7 +198,7 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
             check_consistency=check_consistency,
             device=device,
             variants=variants,
-            non_conservative=nc_regime,
+            non_conservative=non_conservative,
         )
         self.implemented_properties = self.calculator.implemented_properties
 
