@@ -23,7 +23,48 @@ def get_upet_metadata(
 
     if model and size and version:
         dataset = model.split("-")[1].upper()
-        if "mad" in model.lower():
+        description_text = description.format(dataset, size, version)
+        if "mols" in model.lower():
+            # PET-MOLS is not a universal potential, so it does not use the
+            # generic description above
+            description_text = (
+                r"A machine-learning interatomic potential to study organic "
+                r"molecular crystals, trained on periodic PBE0+MBD reference "
+                r"data, covering 12 elements and a broad range of organic "
+                r"motifs subsampled from the Cambridge Structural Database. "
+                r"Model size: {}. Model version: {}.".format(size, version)
+            )
+            # same order as the model paper (arXiv:2603.06236)
+            authors = [
+                "Matthias Kellner (matthias.kellner@epfl.ch)",
+                "Ruben Rodriguez-Madrid",
+                "Jacob B. Holmes",
+                "Victor Paul Principe",
+                "Seio Inoue",
+                "Lyndon Emsley",
+                "Michele Ceriotti (michele.ceriotti@epfl.ch)",
+            ]
+            references = {"model": ["https://arxiv.org/abs/2603.06236"]}
+        elif "omol" in model.lower():
+            description_text = description.format("OMol25", size, version)
+            # same order as the model paper (doi:10.1088/2632-2153/ae6417)
+            authors = [
+                "Filippo Bigi (filippo.bigi@epfl.ch)",
+                "Paolo Pegolo (paolo.pegolo@epfl.ch)",
+                "Arslan Mazitov (arslan.mazitov@epfl.ch)",
+                "Jonathan Schmidt",
+                "Michele Ceriotti (michele.ceriotti@epfl.ch)",
+            ]
+            references = {
+                "architecture": ["https://doi.org/10.1088/2632-2153/ae6417"],
+                # ``dataset`` is not an accepted key of the references, so the
+                # OMol25 dataset paper is listed together with the model one
+                "model": [
+                    "https://doi.org/10.1088/2632-2153/ae6417",
+                    "https://arxiv.org/abs/2505.08762",
+                ],
+            }
+        elif "mad" in model.lower():
             authors = [
                 "Arslan Mazitov (arslan.mazitov@epfl.ch)",
                 "Filippo Bigi",
@@ -44,7 +85,7 @@ def get_upet_metadata(
             ]
         metadata = ModelMetadata(
             name=f"{model.upper()}-{size.upper()} v{version}",
-            description=description.format(dataset, size, version),
+            description=description_text,
             authors=authors,
             references=references,
         )

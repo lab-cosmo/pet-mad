@@ -56,7 +56,7 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
         rotational_average_batch_size: Optional[int] = None,
         *,
         device: Optional[str] = None,
-        non_conservative: bool = False,
+        non_conservative: Union[bool, Literal["forces", "stress"]] = False,
         check_consistency: bool = False,
     ):
         """
@@ -78,6 +78,11 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
             - "pet-omatpes-l": PET-OMATPES model (size "l", materials, r2SCAN)
             - "pet-spice-s": PET-SPICE model (size "s", molecules, ωB97M-D3)
             - "pet-spice-l": PET-SPICE model (size "l", molecules, ωB97M-D3)
+            - "pet-omol-s": PET-OMol model (size "s", molecules, ωB97M-V)
+            - "pet-omol-m": PET-OMol model (size "m", molecules, ωB97M-V)
+            - "pet-omol-l": PET-OMol model (size "l", molecules, ωB97M-V)
+            - "pet-mols-s": PET-MOLS model (size "s", organic molecular crystals,
+              PBE0+MBD)
         :param version: version of the model to use. Defaults to the latest stable
             version. Deprecated model versions:
 
@@ -111,11 +116,19 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
         :param device: torch device to use for the calculation. If `None`, we will try
             the options in the model's `supported_device` in order.
         :param non_conservative: whether to use the non-conservative regime of forces
-            and stresses prediction. Defaults to False. Available for all models,
-            except:
+            and / or stresses prediction. Available options are:
+
+            - False: use the conservative regime (default)
+            - True: use the non-conservative regime for both forces and stresses
+            - "forces": use the non-conservative regime for forces only
+            - "stress": use the non-conservative regime for stresses only
+
+            Defaults to False. Available for all models, except:
 
             - PET-MAD models with version < 1.1.0
             - PET-SPICE models
+            - PET-MOLS models
+
         :param check_consistency: whether internal consistency checks should be
             performed. Mainly for developers, defaults to False.
         """
@@ -154,17 +167,29 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
                 checkpoint_path=checkpoint_path,
             )
 
-        model_outputs = loaded_model.capabilities().outputs
         if non_conservative:
+            model_outputs = loaded_model.capabilities().outputs
             selected_variant = None if variants is None else variants.get("energy")
             variant_postfix = f"/{selected_variant}" if selected_variant else ""
             nc_forces_key = "non_conservative_force" + variant_postfix
             nc_stress_key = "non_conservative_stress" + variant_postfix
-            if nc_forces_key not in model_outputs or nc_stress_key not in model_outputs:
+
+            missing_nc_forces = (
+                non_conservative in ("forces", True)
+                and nc_forces_key not in model_outputs
+            )
+            missing_nc_stress = (
+                non_conservative in ("stress", True)
+                and nc_stress_key not in model_outputs
+            )
+
+            if missing_nc_forces or missing_nc_stress:
                 raise NotImplementedError(
-                    "Non-conservative forces and stresses are not available for the "
-                    f"model {model}, v{version}. Please run without "
-                    "non_conservative=True, or choose another model."
+                    f"`non-conservative={non_conservative}` option is not available "
+                    f"for the model {model}, v{version}, and a target variant "
+                    f"`{selected_variant or 'energy'}`. Please choose another "
+                    f"`non-conservative` option, use another target variant, "
+                    "switch to a conservative regime or choose another model."
                 )
 
         if dtype is not None:
@@ -221,13 +246,21 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
         self.calculator.calculate(atoms, properties, system_changes)
         self.results = self.calculator.results
 
+    @property
+    def _base_calculator(self) -> MetatomicCalculator:
+        """The underlying calculator, unwrapped from rotational averaging."""
+        calc = self.calculator
+        if isinstance(calc, SymmetrizedCalculator):
+            return calc.base_calculator
+        return calc
+
     def _run_uq(
         self,
         atoms: Optional[Atoms] = None,
         per_atom: bool = False,
         key: str = "energy_uncertainty",
     ) -> np.ndarray:
-        if not self.calculator._calculate_uncertainty:
+        if not self._base_calculator._calculate_uncertainty:
             raise NotImplementedError(
                 "Energy uncertainty and ensemble are not available for the selected "
                 "model. For uncertainty estimates, please use one of the following "
@@ -242,9 +275,13 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
             else:
                 atoms = self.atoms
 
-        outputs = self.calculator.run_model(
+        outputs = self._base_calculator.run_model(
             atoms,
-            outputs={key: ModelOutput(quantity="energy", unit="eV", per_atom=per_atom)},
+            outputs={
+                key: ModelOutput(
+                    unit="eV", sample_kind="atom" if per_atom else "system"
+                )
+            },
         )
 
         return outputs[key].block().values.detach().cpu().numpy()
@@ -259,8 +296,11 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
             used.
         :param per_atom: Whether to return the energy uncertainty per atom.
         :return: Energy uncertainty in numpy.ndarray format.
+
+        The uncertainty is not rotationally averaged, even when the calculator
+        is: it is requested from the base model directly.
         """
-        key = self.calculator._energy_uq_key
+        key = self._base_calculator._energy_uq_key
         return self._run_uq(atoms=atoms, per_atom=per_atom, key=key)
 
     def get_energy_ensemble(
@@ -273,8 +313,11 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
             used.
         :param per_atom: Whether to return the energies per atom.
         :return: Energy uncertainty in numpy.ndarray format.
+
+        The ensemble is not rotationally averaged, even when the calculator is:
+        it is requested from the base model directly.
         """
-        key = self.calculator._energy_uq_key.replace("_uncertainty", "_ensemble")
+        key = self._base_calculator._energy_uq_key.replace("_uncertainty", "_ensemble")
         return self._run_uq(atoms=atoms, per_atom=per_atom, key=key)
 
 
@@ -412,7 +455,10 @@ class PETMADDOSCalculator(ase.calculators.calculator.Calculator):
         :return: Energy grid and corresponding DOS values in torch.Tensor format.
         """
         results = self.calculator.run_model(
-            atoms, outputs={"mtt::dos": ModelOutput(per_atom=per_atom)}
+            atoms,
+            outputs={
+                "mtt::dos": ModelOutput(sample_kind="atom" if per_atom else "system")
+            },
         )
         dos = results["mtt::dos"].block().values
 

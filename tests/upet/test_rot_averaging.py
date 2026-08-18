@@ -1,8 +1,11 @@
+import re
+
 import numpy as np
 import pytest
 from ase.build import bulk
 
-from upet._version import UPET_AVAILABLE_MODELS
+from upet._models import get_versions_for_model
+from upet._version import UPET_AVAILABLE_MODELS, UPET_NO_NC_SUPPORT_MODELS
 from upet.calculator import UPETCalculator
 
 
@@ -40,16 +43,24 @@ def test_calc_rot_averaging(model_name):
 
 @pytest.mark.parametrize("model_name", UPET_AVAILABLE_MODELS)
 def test_calc_rot_averaging_non_conservative(model_name):
+    non_conservative = "forces"
     if "-xl" in model_name or "-l" in model_name:
         pytest.skip("Skipping XL models and L models due to large size.")
-    if model_name in ["pet-spice-s", "pet-spice-l"]:
-        msg = "Non-conservative forces and stresses are not available"
-        with pytest.raises(NotImplementedError, match=msg):
-            _ = UPETCalculator(model=model_name, non_conservative=True)
+    version = max(get_versions_for_model(*model_name.rsplit("-", 1)))
+    if f"{model_name}-v{version}" in UPET_NO_NC_SUPPORT_MODELS:
+        message = (
+            f"`non-conservative={non_conservative}` option is not available "
+            f"for the model {model_name}, v{version}, and a target variant "
+            f"`energy`. Please choose another `non-conservative` option, "
+            "use another target variant, switch to a conservative regime "
+            "or choose another model."
+        )
+        with pytest.raises(NotImplementedError, match=re.escape(message)):
+            _ = UPETCalculator(model=model_name, non_conservative=non_conservative)
     else:
         atoms = bulk("Si", cubic=True, a=5.43, crystalstructure="diamond")
         atoms.rattle(0.05)
-        atoms.calc = UPETCalculator(model=model_name, non_conservative=True)
+        atoms.calc = UPETCalculator(model=model_name, non_conservative=non_conservative)
 
         target_energy = atoms.get_potential_energy()
         target_forces = atoms.get_forces()
@@ -57,7 +68,7 @@ def test_calc_rot_averaging_non_conservative(model_name):
 
         atoms.calc = UPETCalculator(
             model=model_name,
-            non_conservative=True,
+            non_conservative=non_conservative,
             rotational_average_order=3,
             rotational_average_batch_size=8,
         )
