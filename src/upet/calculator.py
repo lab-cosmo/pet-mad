@@ -20,7 +20,6 @@ from ._models import (
 from ._version import (
     PET_MAD_DOS_LATEST_STABLE_VERSION,
     UPET_AVAILABLE_MODELS,
-    UPET_UQ_SUPPORTED_MODELS,
 )
 from .utils import (
     dos_from_eigenvalues,
@@ -167,26 +166,29 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
                 checkpoint_path=checkpoint_path,
             )
 
+        model_outputs = loaded_model.capabilities().outputs
+        selected_variant = None if variants is None else variants.get("energy")
+        variant_postfix = f"/{selected_variant}" if selected_variant else ""
+        nc_forces_key = "non_conservative_force" + variant_postfix
+        nc_stress_key = "non_conservative_stress" + variant_postfix
+
+        self._available_nc_quantities = []
+        for quantity, key in zip(
+            ["forces", "stress"], [nc_forces_key, nc_stress_key], strict=True
+        ):
+            if key in model_outputs:
+                self._available_nc_quantities.append(quantity)
+
         if non_conservative:
-            model_outputs = loaded_model.capabilities().outputs
-            selected_variant = None if variants is None else variants.get("energy")
-            variant_postfix = f"/{selected_variant}" if selected_variant else ""
-            nc_forces_key = "non_conservative_force" + variant_postfix
-            nc_stress_key = "non_conservative_stress" + variant_postfix
+            if non_conservative is True:
+                requested_nc_quantities = {"forces", "stress"}
+            else:
+                requested_nc_quantities = {non_conservative}
 
-            missing_nc_forces = (
-                non_conservative in ("forces", True)
-                and nc_forces_key not in model_outputs
-            )
-            missing_nc_stress = (
-                non_conservative in ("stress", True)
-                and nc_stress_key not in model_outputs
-            )
-
-            if missing_nc_forces or missing_nc_stress:
+            if not requested_nc_quantities.issubset(self._available_nc_quantities):
                 raise NotImplementedError(
                     f"`non-conservative={non_conservative}` option is not available "
-                    f"for the model {model}, v{version}, and a target variant "
+                    f"for the model {model} v{version}, and a target variant "
                     f"`{selected_variant or 'energy'}`. Please choose another "
                     f"`non-conservative` option, use another target variant, "
                     "switch to a conservative regime or choose another model."
@@ -254,17 +256,22 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
             return calc.base_calculator
         return calc
 
+    @property
+    def supports_uncertainty(self) -> bool:
+        """Whether the calculator supports uncertainty quantification."""
+        return self._base_calculator._calculate_uncertainty
+
     def _run_uq(
         self,
         atoms: Optional[Atoms] = None,
         per_atom: bool = False,
         key: str = "energy_uncertainty",
     ) -> np.ndarray:
-        if not self._base_calculator._calculate_uncertainty:
+        if not self.supports_uncertainty:
             raise NotImplementedError(
-                "Energy uncertainty and ensemble are not available for the selected "
-                "model. For uncertainty estimates, please use one of the following "
-                f"models: {UPET_UQ_SUPPORTED_MODELS}"
+                "Energy uncertainty and ensemble are not available for the "
+                "selected model. The documentation lists the models providing "
+                "uncertainty estimates."
             )
 
         if atoms is None:

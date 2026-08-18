@@ -5,8 +5,10 @@ import pytest
 from ase.build import bulk
 
 from upet._models import get_versions_for_model
-from upet._version import UPET_AVAILABLE_MODELS, UPET_NO_NC_SUPPORT_MODELS
+from upet._version import UPET_AVAILABLE_MODELS
 from upet.calculator import UPETCalculator
+
+from _utils import non_conservative_error_message, supports_non_conservative
 
 
 GRID_ORDERS = [3, 5]
@@ -47,14 +49,8 @@ def test_calc_rot_averaging_non_conservative(model_name):
     if "-xl" in model_name or "-l" in model_name:
         pytest.skip("Skipping XL models and L models due to large size.")
     version = max(get_versions_for_model(*model_name.rsplit("-", 1)))
-    if f"{model_name}-v{version}" in UPET_NO_NC_SUPPORT_MODELS:
-        message = (
-            f"`non-conservative={non_conservative}` option is not available "
-            f"for the model {model_name}, v{version}, and a target variant "
-            f"`energy`. Please choose another `non-conservative` option, "
-            "use another target variant, switch to a conservative regime "
-            "or choose another model."
-        )
+    if not supports_non_conservative(model_name, version):
+        message = non_conservative_error_message(model_name, version, non_conservative)
         with pytest.raises(NotImplementedError, match=re.escape(message)):
             _ = UPETCalculator(model=model_name, non_conservative=non_conservative)
     else:
