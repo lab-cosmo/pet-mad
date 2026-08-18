@@ -65,7 +65,7 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
         rotational_average_batch_size: Optional[int] = None,
         *,
         device: Optional[str] = None,
-        non_conservative: bool = False,
+        non_conservative: Union[bool, Literal["forces", "stress"]] = False,
         check_consistency: bool = False,
     ):
         """
@@ -125,15 +125,19 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
         :param device: torch device to use for the calculation. If `None`, we will try
             the options in the model's `supported_device` in order.
         :param non_conservative: whether to use the non-conservative regime of forces
-            and stresses prediction. Defaults to False. Available for all models,
-            except:
+            and / or stresses prediction. Available options are:
+
+            - False: use the conservative regime (default)
+            - True: use the non-conservative regime for both forces and stresses
+            - "forces": use the non-conservative regime for forces only
+            - "stress": use the non-conservative regime for stresses only
+
+            Defaults to False. Available for all models, except:
 
             - PET-MAD models with version < 1.1.0
             - PET-SPICE models
             - PET-MOLS models
 
-            PET-OMol models only predict non-conservative forces, so their stress
-            is computed by backpropagation even when this is set.
         :param check_consistency: whether internal consistency checks should be
             performed. Mainly for developers, defaults to False.
         """
@@ -177,19 +181,28 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
         variant_postfix = f"/{selected_variant}" if selected_variant else ""
         nc_forces_key = "non_conservative_force" + variant_postfix
         nc_stress_key = "non_conservative_stress" + variant_postfix
-        self._supports_non_conservative = nc_forces_key in model_outputs
 
-        nc_regime: Union[bool, Literal["forces", "stress"]] = non_conservative
+        self._available_nc_quantities = []
+        for quantity, key in zip(
+            ["forces", "stress"], [nc_forces_key, nc_stress_key], strict=True
+        ):
+            if key in model_outputs:
+                self._available_nc_quantities.append(quantity)
+
         if non_conservative:
-            if not self._supports_non_conservative:
+            if non_conservative is True:
+                requested_nc_quantities = {"forces", "stress"}
+            else:
+                requested_nc_quantities = {non_conservative}
+
+            if not requested_nc_quantities.issubset(self._available_nc_quantities):
                 raise NotImplementedError(
-                    "Non-conservative forces are not available for the "
-                    f"model {model}, v{version}. Please run without "
-                    "non_conservative=True, or choose another model."
+                    f"`non-conservative={non_conservative}` option is not available "
+                    f"for the model {model} v{version}, and a target variant "
+                    f"`{selected_variant or 'energy'}`. Please choose another "
+                    f"`non-conservative` option, use another target variant, "
+                    "switch to a conservative regime or choose another model."
                 )
-            if nc_stress_key not in model_outputs:
-                # the stress is left to backpropagation
-                nc_regime = "forces"
 
         if dtype is not None:
             if isinstance(dtype, str):
@@ -224,7 +237,7 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
             check_consistency=check_consistency,
             device=device,
             variants=variants,
-            non_conservative=nc_regime,
+            non_conservative=non_conservative,
         )
         self.implemented_properties = self.calculator.implemented_properties
 
@@ -272,7 +285,7 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
         These are only available for the models that were trained on them; the
         other ones can only be run with ``non_conservative=False``.
         """
-        return self._supports_non_conservative
+        return "forces" in self._available_nc_quantities
 
     @property
     def supports_uncertainty(self) -> bool:

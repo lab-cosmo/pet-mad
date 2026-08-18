@@ -1,6 +1,7 @@
 import re
 
 import pytest
+from _utils import non_conservative_error_message, supports_non_conservative
 from ase.build import bulk, molecule
 
 from upet._models import get_versions_for_model
@@ -10,6 +11,8 @@ from upet.calculator import UPETCalculator
 
 @pytest.mark.parametrize("model_name", UPET_AVAILABLE_MODELS)
 def test_non_conservative(model_name):
+    non_conservative = "forces"
+
     if "-xl" in model_name or "-l" in model_name:
         pytest.skip("Skipping XL models and L models due to large size.")
     atoms = (
@@ -22,21 +25,17 @@ def test_non_conservative(model_name):
     all_model_versions = get_versions_for_model(model, size)
 
     for version in all_model_versions:
-        if not UPETCalculator(
-            model=model_name, version=version
-        ).supports_non_conservative:
-            message = (
-                f"Non-conservative forces are not available for the model "
-                f"{model_name}, v{version}. Please run without "
-                "non_conservative=True, or choose another model."
+        if not supports_non_conservative(model_name, version):
+            message = non_conservative_error_message(
+                model_name, version, non_conservative
             )
             with pytest.raises(NotImplementedError, match=re.escape(message)):
-                calc = UPETCalculator(
-                    model=model_name, version=version, non_conservative=True
+                UPETCalculator(
+                    model=model_name, version=version, non_conservative=non_conservative
                 )
         else:
             calc = UPETCalculator(
-                model=model_name, version=version, non_conservative=True
+                model=model_name, version=version, non_conservative=non_conservative
             )
             atoms.calc = calc
             energy = atoms.get_potential_energy()
