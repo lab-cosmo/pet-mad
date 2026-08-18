@@ -24,8 +24,8 @@ maintainers = [
 
 dependencies = [
     "metatrain>=2026.4, <2026.5",
-    "metatomic-ase>=0.1.3, <0.2",
-    "nvalchemi-toolkit-ops",
+    "metatomic-ase>=0.1.2, <0.2",
+    "nvalchemi-toolkit-ops>=0.3.0,<0.4.0",
     "warp-lang",
     "huggingface_hub",
     "hf_xet",
