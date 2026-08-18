@@ -2,13 +2,12 @@ import re
 
 import numpy as np
 import pytest
+from _utils import non_conservative_error_message, supports_non_conservative
 from ase.build import bulk
 
 from upet._models import get_versions_for_model
 from upet._version import UPET_AVAILABLE_MODELS
 from upet.calculator import UPETCalculator
-
-from _utils import non_conservative_error_message, supports_non_conservative
 
 
 GRID_ORDERS = [3, 5]
