@@ -20,22 +20,6 @@ UPET_AVAILABLE_MODELS = [
     "pet-spice-l",
 ]
 
-UPET_NO_NC_SUPPORT_MODELS = [
-    "pet-mad-s-v1.0.2",
-    "pet-spice-s-v0.2.0",
-    "pet-spice-l-v0.2.0",
-    "pet-mols-s-v1.0.0",
-    "pet-mols-s-v1.1.0",
-]
-
-UPET_UQ_SUPPORTED_MODELS = [
-    "pet-mad-s-v1.0.2",
-    "pet-mad-xs-v1.5.0",
-    "pet-mad-s-v1.5.0",
-    "pet-mols-s-v1.0.0",
-    "pet-mols-s-v1.1.0",
-]
-
 DEPRECATED_MODELS: list[str] = []
 
 # PET-MAD DOS

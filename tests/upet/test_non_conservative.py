@@ -1,10 +1,11 @@
 import re
 
 import pytest
+from _utils import non_conservative_error_message, supports_non_conservative
 from ase.build import bulk, molecule
 
 from upet._models import get_versions_for_model
-from upet._version import UPET_AVAILABLE_MODELS, UPET_NO_NC_SUPPORT_MODELS
+from upet._version import UPET_AVAILABLE_MODELS
 from upet.calculator import UPETCalculator
 
 
@@ -24,16 +25,12 @@ def test_non_conservative(model_name):
     all_model_versions = get_versions_for_model(model, size)
 
     for version in all_model_versions:
-        if f"{model_name}-v{version}" in UPET_NO_NC_SUPPORT_MODELS:
-            message = (
-                f"`non-conservative={non_conservative}` option is not available "
-                f"for the model {model_name}, v{version}, and a target variant "
-                f"`energy`. Please choose another `non-conservative` option, "
-                "use another target variant, switch to a conservative regime "
-                "or choose another model."
+        if not supports_non_conservative(model_name, version):
+            message = non_conservative_error_message(
+                model_name, version, non_conservative
             )
             with pytest.raises(NotImplementedError, match=re.escape(message)):
-                calc = UPETCalculator(
+                UPETCalculator(
                     model=model_name, version=version, non_conservative=non_conservative
                 )
         else:

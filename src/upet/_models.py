@@ -158,6 +158,17 @@ def upet_resolve_model(
     return size, version
 
 
+def _model_holding_the_metadata(model: torch.nn.Module) -> torch.nn.Module:
+    """Give back the model whose metadata ends up in the exported model.
+
+    An uncertainty model has metadata of its own, but the one of the model it
+    wraps takes precedence when exporting, so that is the one to look at (and to
+    fill in, for a checkpoint that came without any).
+    """
+    wrapped = getattr(model, "model", None)
+    return model if wrapped is None else wrapped
+
+
 def _get_upet_exported_atomistic_model(
     model: Optional[str] = None,
     size: Optional[str] = None,
@@ -217,9 +228,13 @@ def _get_upet_exported_atomistic_model(
         )
         loaded_model = load_metatrain_model(path)
 
-    metadata = get_upet_metadata(model=model, size=size, version=str(version))
-    exported_model = loaded_model.export(metadata)
-    return exported_model
+    described_model = _model_holding_the_metadata(loaded_model)
+    if not described_model.metadata.name:
+        described_model.metadata = get_upet_metadata(
+            model=model, size=size, version=str(version)
+        )
+
+    return loaded_model.export()
 
 
 def get_upet(

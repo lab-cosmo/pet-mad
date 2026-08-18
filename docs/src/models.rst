@@ -182,7 +182,9 @@ and :py:meth:`~upet.calculator.UPETCalculator.get_energy_ensemble`
 - ``pet-mols-s`` v1.0.0
 - ``pet-mols-s`` v1.1.0
 
-Calling these methods on other checkpoints will raise an error.
+Calling these methods on other checkpoints will raise an error;
+:py:attr:`~upet.calculator.UPETCalculator.supports_uncertainty` tells whether
+the model at hand provides them.
 
 Non-conservative forces
 -----------------------
