@@ -165,6 +165,22 @@ def test_uncertainty_with_rotational_averaging():
     )
 
 
+def test_uncertainty_with_rotational_averaging():
+    # uncertainty outputs are requested from the base model, so they are available
+    # but not themselves rotationally averaged
+    atoms = bulk("Si", cubic=True, a=5.43, crystalstructure="diamond")
+    calc = UPETCalculator(
+        model="pet-mad-s", version="1.5.0", rotational_average_order=3
+    )
+    plain_calc = UPETCalculator(model="pet-mad-s", version="1.5.0")
+
+    assert np.allclose(
+        calc.get_energy_uncertainty(atoms),
+        plain_calc.get_energy_uncertainty(atoms),
+        atol=1e-6,
+    )
+
+
 def test_error_model_not_evaluated():
     atoms = bulk("Si", cubic=True, a=5.43, crystalstructure="diamond")
     calc = UPETCalculator(

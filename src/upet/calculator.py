@@ -23,7 +23,6 @@ from ._models import (
 from ._uncertainty import (
     run_direct_forces_uncertainty,
     run_direct_forces_uq,
-    run_energy_uq,
     run_forces_stress_uq,
     stress_ensemble_to_voigt,
 )
@@ -279,6 +278,19 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
         self.results = self.calculator.results
 
     @property
+    def _base_calculator(self) -> MetatomicCalculator:
+        """The underlying calculator, unwrapped from rotational averaging."""
+        calc = self.calculator
+        if isinstance(calc, SymmetrizedCalculator):
+            return calc.base_calculator
+        return calc
+
+    @property
+    def supports_uncertainty(self) -> bool:
+        """Whether the calculator supports uncertainty quantification."""
+        return self._base_calculator._calculate_uncertainty
+
+    @property
     def supports_non_conservative(self) -> bool:
         """Whether the model predicts non-conservative forces.
 
@@ -322,14 +334,25 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
     ) -> np.ndarray:
         if not self.supports_uncertainty:
             raise NotImplementedError(
-                "Energy uncertainty and ensemble are not available for the "
-                "selected model. The documentation lists the models providing "
-                "uncertainty estimates."
+                "Energy uncertainty and ensemble are not available for the selected "
+                "model. For uncertainty estimates, please use one of the following "
+                f"models: {UPET_UQ_SUPPORTED_MODELS}"
             )
 
-        return run_energy_uq(
-            self._base_calculator, self._resolve_atoms(atoms), key, per_atom
+        if atoms is None:
+            if self.atoms is None:
+                raise ValueError(
+                    "No `atoms` provided and no previously calculated atoms found."
+                )
+            else:
+                atoms = self.atoms
+
+        outputs = self.calculator.run_model(
+            atoms,
+            outputs={key: ModelOutput(quantity="energy", unit="eV", per_atom=per_atom)},
         )
+
+        return outputs[key].block().values.detach().cpu().numpy()
 
     def get_energy_uncertainty(
         self, atoms: Optional[Atoms] = None, per_atom: bool = False
@@ -362,12 +385,7 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
         The ensemble is not rotationally averaged, even when the calculator is:
         it is requested from the base model directly.
         """
-        key = self._energy_ensemble_key
-        if key is None:
-            raise NotImplementedError(
-                "Energy ensemble is not available for the selected model. The "
-                "documentation lists the models providing uncertainty estimates."
-            )
+        key = self.calculator._energy_uq_key.replace("_uncertainty", "_ensemble")
         return self._run_uq(atoms=atoms, per_atom=per_atom, key=key)
 
     def _run_forces_stress_uq(
