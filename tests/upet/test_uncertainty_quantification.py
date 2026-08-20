@@ -25,7 +25,7 @@ def test_uncertainty_quantification(model_name):
         )
         if not calc.supports_uncertainty:
             message = (
-                "Energy uncertainty and ensemble are not available for the "
+                "Energy uncertainty is not available for the "
                 "selected model. The documentation lists the models providing "
                 "uncertainty estimates."
             )

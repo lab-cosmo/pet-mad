@@ -311,7 +311,7 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
         """
         key = self._quantity_keys["energy"]["uncertainty"]
         if key not in self._model_outputs:
-            raise NotImplementedError(UQ_ERROR_MSG.format(key=key))
+            raise NotImplementedError(UQ_ERROR_MSG.format(key="Energy uncertainty"))
         return run_direct_uq(
             calculator=self._base_calculator,
             atoms=self._resolve_atoms(atoms),
@@ -335,7 +335,7 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
         """
         key = self._quantity_keys["energy"]["ensemble"]
         if key not in self._model_outputs:
-            raise NotImplementedError(UQ_ERROR_MSG.format(key=key))
+            raise NotImplementedError(UQ_ERROR_MSG.format(key="Energy ensemble"))
         return run_direct_uq(
             calculator=self._base_calculator,
             atoms=self._resolve_atoms(atoms),
@@ -350,7 +350,9 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
         if self._base_calculator.parameters["non_conservative"] in (True, "forces"):
             key = self._quantity_keys["non_conservative_forces"]["uncertainty"]
             if key not in self._model_outputs:
-                raise NotImplementedError(UQ_NC_ERROR_MSG.format(key=key))
+                raise NotImplementedError(
+                    UQ_NC_ERROR_MSG.format(key="Non-conservative forces uncertainty")
+                )
             return run_direct_uq(
                 calculator=self._base_calculator,
                 atoms=self._resolve_atoms(atoms),
@@ -367,7 +369,9 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
         if self._base_calculator.parameters["non_conservative"] in (True, "forces"):
             key = self._quantity_keys["non_conservative_forces"]["ensemble"]
             if key not in self._model_outputs:
-                raise NotImplementedError(UQ_NC_ERROR_MSG.format(key=key))
+                raise NotImplementedError(
+                    UQ_NC_ERROR_MSG.format(key="Non-conservative forces ensemble")
+                )
             return run_direct_uq(
                 calculator=self._base_calculator,
                 atoms=self._resolve_atoms(atoms),
@@ -377,7 +381,9 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
         else:
             key = self._quantity_keys["energy"]["ensemble"]
             if key not in self._model_outputs:
-                raise NotImplementedError(UQ_GRAD_ERROR_MSG.format(key=key))
+                raise NotImplementedError(
+                    UQ_GRAD_ERROR_MSG.format(key="Energy ensemble")
+                )
             forces_ensemble = run_gradient_ensemble_uq(
                 calculator=self._base_calculator,
                 atoms=self._resolve_atoms(atoms),
@@ -395,7 +401,9 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
         if self._base_calculator.parameters["non_conservative"] in (True, "stress"):
             key = self._quantity_keys["non_conservative_stress"]["uncertainty"]
             if key not in self._model_outputs:
-                raise NotImplementedError(UQ_NC_ERROR_MSG.format(key=key))
+                raise NotImplementedError(
+                    UQ_NC_ERROR_MSG.format(key="Non-conservative stress uncertainty")
+                )
             stress_uncertainty = run_direct_uq(
                 calculator=self._base_calculator,
                 atoms=self._resolve_atoms(atoms),
@@ -419,7 +427,9 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
         if self._base_calculator.parameters["non_conservative"] in (True, "stress"):
             key = self._quantity_keys["non_conservative_stress"]["ensemble"]
             if key not in self._model_outputs:
-                raise NotImplementedError(UQ_NC_ERROR_MSG.format(key=key))
+                raise NotImplementedError(
+                    UQ_NC_ERROR_MSG.format(key="Non-conservative stress ensemble")
+                )
             stress_ensemble = run_direct_uq(
                 calculator=self._base_calculator,
                 atoms=self._resolve_atoms(atoms),
@@ -429,7 +439,9 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
         else:
             key = self._quantity_keys["energy"]["ensemble"]
             if key not in self._model_outputs:
-                raise NotImplementedError(UQ_GRAD_ERROR_MSG.format(key=key))
+                raise NotImplementedError(
+                    UQ_GRAD_ERROR_MSG.format(key="Energy ensemble")
+                )
             stress_ensemble = run_gradient_ensemble_uq(
                 calculator=self._base_calculator,
                 atoms=self._resolve_atoms(atoms),
