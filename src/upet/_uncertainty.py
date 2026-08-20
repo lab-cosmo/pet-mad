@@ -58,12 +58,6 @@ def run_direct_uq(
     key: str,
     per_atom: bool = False,
 ) -> np.ndarray:
-    if not calculator._calculate_uncertainty:
-        raise NotImplementedError(
-            "Forces/stress uncertainty and ensemble are not available for "
-            "the selected model. The documentation lists the models "
-            "providing uncertainty estimates."
-        )
     if "force" in key:
         unit = "eV/A"
         per_atom = True
@@ -79,7 +73,7 @@ def run_direct_uq(
         },
     )
 
-    return outputs[key].block().values.detach().cpu().numpy()
+    return outputs[key].block().values.detach().cpu().numpy().squeeze()
 
 
 def run_gradient_ensemble_uq(

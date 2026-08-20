@@ -439,7 +439,7 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
 
         if voigt:
             stress_ensemble = stress_ensemble_to_voigt(stress_ensemble)
-        return stress_ensemble["strain"]
+        return stress_ensemble
 
 
 # For PET-MAD-DOS predictions
