@@ -19,8 +19,8 @@ UQ_ERROR_MSG = (
 )
 
 UQ_GRAD_ERROR_MSG = (
-    "{key} is required for evaluating the gradient ensemble and calculate uncertainty, "
-    "but is not available for the selected model. "
+    "{key} is required for calculating the gradient ensemble uncertainty "
+    "(forces, stress), but is not available for the selected model. "
     "The documentation lists the models providing uncertainty estimates."
 )
 
@@ -97,6 +97,7 @@ def run_gradient_ensemble_uq(
             output.gradient(gradient).values.detach().cpu().double().numpy()
         )
         if gradient == "positions":
+            gradient_ensemble *= -1.0
             gradient_ensemble -= np.mean(gradient_ensemble, axis=0, keepdims=True)
         elif gradient == "strain":
             gradient_ensemble = gradient_ensemble[0] / atoms.cell.volume

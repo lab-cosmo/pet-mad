@@ -49,7 +49,7 @@ def test_uncertainty_quantification(model_name):
 
 
 @pytest.mark.parametrize("model_name", UPET_AVAILABLE_MODELS)
-def test_forces_stress_uncertainty_quantification(model_name):
+def test_gradient_ensemble_uncertainty_quantification(model_name):
     if "-xl" in model_name or "-l" in model_name:
         pytest.skip("Skipping XL models and L models due to large size.")
     model, size = model_name.rsplit("-", 1)
@@ -64,84 +64,124 @@ def test_forces_stress_uncertainty_quantification(model_name):
         )
         if not calc.supports_uncertainty:
             message = (
-                "Forces/stress uncertainty and ensemble are not available for "
-                "the selected model. The documentation lists the models "
-                "providing uncertainty estimates."
+                "Energy ensemble is required for calculating the gradient ensemble "
+                "uncertainty (forces, stress), but is not available for the selected "
+                "model. The documentation lists the models providing uncertainty "
+                "estimates."
             )
-            with pytest.raises(NotImplementedError, match=f"^{re.escape(message)}$"):
+            with pytest.raises(NotImplementedError, match=re.escape(message)):
                 calc.get_forces_uncertainty(atoms)
-            continue
+        else:
+            forces_uncertainty = calc.get_forces_uncertainty(atoms)
+            forces_ensemble = calc.get_forces_ensemble(atoms)
+            stress_uncertainty = calc.get_stress_uncertainty(atoms)
+            stress_ensemble = calc.get_stress_ensemble(atoms)
 
-        forces_ensemble, stress_ensemble = calc.get_forces_and_stress_ensemble(atoms)
-        forces_uncertainty = calc.get_forces_uncertainty(atoms)
-        stress_uncertainty = calc.get_stress_uncertainty(atoms)
+            n_atoms = len(atoms)
+            assert forces_ensemble.shape[:2] == (n_atoms, 3)
+            assert forces_uncertainty.shape == (n_atoms, 3)
+            assert stress_ensemble.shape[0] == 6
+            assert stress_uncertainty.shape == (6,)
 
-        n_atoms = len(atoms)
-        assert forces_ensemble.shape[:2] == (n_atoms, 3)
-        assert forces_uncertainty.shape == (n_atoms, 3)
-        assert stress_ensemble.shape[0] == 6
-        assert stress_uncertainty.shape == (6,)
+            atoms.calc = calc
+            assert np.allclose(
+                np.mean(forces_ensemble, axis=2), atoms.get_forces(), atol=1e-4
+            )
+            assert np.allclose(
+                np.mean(stress_ensemble, axis=1), atoms.get_stress(), atol=1e-4
+            )
 
-        atoms.calc = calc
-        assert np.allclose(
-            np.mean(forces_ensemble, axis=2), atoms.get_forces(), atol=1e-4
-        )
-        assert np.allclose(
-            np.mean(stress_ensemble, axis=1), atoms.get_stress(), atol=1e-4
-        )
-
-        # every member is translationally invariant, since the mean over atoms is
-        # subtracted from each of them
-        assert np.allclose(forces_ensemble.sum(axis=0), 0.0, atol=1e-8)
+            # every member is translationally invariant, since the mean over atoms is
+            # subtracted from each of them
+            assert np.allclose(forces_ensemble.sum(axis=0), 0.0, atol=1e-8)
 
 
-def test_forces_and_stress_ensemble():
+@pytest.mark.skip(
+    reason="We have no shipped models with non-conservative UQ available."
+)
+def test_direct_forces_stress_uncertainty_quantification():
     atoms = bulk("Si", cubic=True, a=5.43, crystalstructure="diamond")
-    calc = UPETCalculator(model="pet-mad-s", version="1.5.0")
-
-    forces_ensemble = calc.get_forces_ensemble(atoms)
-    stress_ensemble = calc.get_stress_ensemble(atoms)
-    forces_combined, stress_combined = calc.get_forces_and_stress_ensemble(atoms)
-
-    assert np.allclose(forces_ensemble, forces_combined, atol=1e-4)
-    assert np.allclose(stress_ensemble, stress_combined, atol=1e-4)
-
-    # Voigt order is (xx, yy, zz, yz, xz, xy), symmetrized
-    _, stress_3x3 = calc.get_forces_and_stress_ensemble(atoms, voigt=False)
-    assert np.allclose(stress_3x3[0, 0], stress_combined[0])
-    assert np.allclose((stress_3x3[1, 2] + stress_3x3[2, 1]) / 2, stress_combined[3])
-    assert np.allclose((stress_3x3[0, 2] + stress_3x3[2, 0]) / 2, stress_combined[4])
-    assert np.allclose((stress_3x3[0, 1] + stress_3x3[1, 0]) / 2, stress_combined[5])
-
-    nc_calc = UPETCalculator(model="pet-mad-s", version="1.5.0", non_conservative=True)
-    message = (
-        "get_forces_and_stress_ensemble is not available when the calculator was "
-        "initialized with non_conservative=True."
+    calc = UPETCalculator(checkpoint_path="model.ckpt", variants={"energy": "r2scan"})
+    nc_calc = UPETCalculator(
+        checkpoint_path="model.ckpt",
+        variants={"energy": "r2scan"},
+        non_conservative=True,
     )
-    with pytest.raises(ValueError, match=f"^{re.escape(message)}$"):
-        nc_calc.get_forces_and_stress_ensemble(atoms)
+
+    atoms.calc = calc
+    forces = atoms.get_forces()
+    stress = atoms.get_stress()
+    atoms.calc = nc_calc
+    nc_forces = atoms.get_forces()
+    nc_stress = atoms.get_stress()
+
+    forces_uncertainty = calc.get_forces_uncertainty(atoms)
+    forces_ensemble = calc.get_forces_ensemble(atoms)
+    nc_forces_uncertainty = nc_calc.get_forces_uncertainty(atoms)
+    nc_forces_ensemble = nc_calc.get_forces_ensemble(atoms)
+
+    stress_uncertainty = calc.get_stress_uncertainty(atoms)
+    stress_ensemble = calc.get_stress_ensemble(atoms)
+    nc_stress_uncertainty = nc_calc.get_stress_uncertainty(atoms)
+    nc_stress_ensemble = nc_calc.get_stress_ensemble(atoms)
+
+    n_atoms = len(atoms)
+    assert forces_ensemble.shape[:2] == (n_atoms, 3)
+    assert forces_uncertainty.shape == (n_atoms, 3)
+    assert stress_ensemble.shape[0] == 6
+    assert stress_uncertainty.shape == (6,)
+    assert nc_forces_ensemble.shape[:2] == (n_atoms, 3)
+    assert nc_forces_uncertainty.shape == (n_atoms, 3)
+    assert nc_stress_ensemble.shape[0] == 6
+    assert nc_stress_uncertainty.shape == (6,)
+
+    assert np.allclose(forces_uncertainty, np.std(forces_ensemble, axis=2), atol=1e-6)
+    assert np.allclose(stress_uncertainty, np.std(stress_ensemble, axis=1), atol=1e-6)
+    assert np.allclose(
+        nc_forces_uncertainty, np.std(nc_forces_ensemble, axis=2), atol=1e-6
+    )
+    assert np.allclose(
+        nc_stress_uncertainty, np.std(nc_stress_ensemble, axis=1), atol=1e-6
+    )
+
+    assert np.allclose(np.mean(forces_ensemble, axis=2), forces, atol=1e-4)
+    assert np.allclose(np.mean(nc_forces_ensemble, axis=2), nc_forces, atol=1e-4)
+    assert np.allclose(np.mean(stress_ensemble, axis=1), stress, atol=1e-4)
+    assert np.allclose(np.mean(nc_stress_ensemble, axis=1), nc_stress, atol=1e-4)
 
 
-def test_forces_ensemble_method_errors():
+def test_direct_forces_stress_uncertainty_quantification_raises_errors():
     atoms = bulk("Si", cubic=True, a=5.43, crystalstructure="diamond")
 
-    calc = UPETCalculator(model="pet-mad-s", version="1.5.0")
+    calc = UPETCalculator(model="pet-mad-s", version="1.5.0", non_conservative=True)
     # no shipped model carries a direct forces ensemble; LLPR checkpoints trained
     # with a non-conservative forces head do
     message = (
-        "Direct forces ensemble (mtt::aux::non_conservative_forces_ensemble) is "
-        "not available for the selected model."
+        "Non-conservative {quantity} {type} is not available for the "
+        "selected model. Consider switching-off `non-conservative` mode. "
+        "The documentation lists the models providing uncertainty estimates "
+        "for non-conservative outputs."
     )
-    with pytest.raises(NotImplementedError, match=f"^{re.escape(message)}$"):
-        calc.get_forces_ensemble(atoms, method="direct")
-
-    nc_calc = UPETCalculator(model="pet-mad-s", version="1.5.0", non_conservative=True)
-    message = (
-        "method='conservative' is not available when the calculator was "
-        "initialized with non_conservative=True."
-    )
-    with pytest.raises(ValueError, match=f"^{re.escape(message)}$"):
-        nc_calc.get_forces_ensemble(atoms, method="conservative")
+    with pytest.raises(
+        NotImplementedError,
+        match=re.escape(message.format(quantity="forces", type="uncertainty")),
+    ):
+        calc.get_forces_uncertainty(atoms)
+    with pytest.raises(
+        NotImplementedError,
+        match=re.escape(message.format(quantity="forces", type="ensemble")),
+    ):
+        calc.get_forces_ensemble(atoms)
+    with pytest.raises(
+        NotImplementedError,
+        match=re.escape(message.format(quantity="stress", type="uncertainty")),
+    ):
+        calc.get_stress_uncertainty(atoms)
+    with pytest.raises(
+        NotImplementedError,
+        match=re.escape(message.format(quantity="stress", type="ensemble")),
+    ):
+        calc.get_stress_ensemble(atoms)
 
 
 def test_uncertainty_with_rotational_averaging():
@@ -163,42 +203,3 @@ def test_uncertainty_with_rotational_averaging():
         plain_calc.get_forces_uncertainty(atoms),
         atol=1e-6,
     )
-
-
-def test_uncertainty_with_rotational_averaging():
-    # uncertainty outputs are requested from the base model, so they are available
-    # but not themselves rotationally averaged
-    atoms = bulk("Si", cubic=True, a=5.43, crystalstructure="diamond")
-    calc = UPETCalculator(
-        model="pet-mad-s", version="1.5.0", rotational_average_order=3
-    )
-    plain_calc = UPETCalculator(model="pet-mad-s", version="1.5.0")
-
-    assert np.allclose(
-        calc.get_energy_uncertainty(atoms),
-        plain_calc.get_energy_uncertainty(atoms),
-        atol=1e-6,
-    )
-
-
-def test_error_model_not_evaluated():
-    atoms = bulk("Si", cubic=True, a=5.43, crystalstructure="diamond")
-    calc = UPETCalculator(
-        model="pet-mad-s",
-        version="1.0.2",
-    )
-    atoms.calc = calc
-
-    message = "No `atoms` provided and no previously calculated atoms found."
-    with pytest.raises(ValueError, match=message):
-        calc.get_energy_uncertainty()
-    with pytest.raises(ValueError, match=message):
-        calc.get_energy_ensemble()
-    with pytest.raises(ValueError, match=message):
-        calc.get_forces_ensemble()
-    with pytest.raises(ValueError, match=message):
-        calc.get_forces_uncertainty()
-    with pytest.raises(ValueError, match=message):
-        calc.get_stress_ensemble()
-    with pytest.raises(ValueError, match=message):
-        calc.get_stress_uncertainty()

@@ -372,12 +372,13 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
                 raise NotImplementedError(
                     UQ_NC_ERROR_MSG.format(key="Non-conservative forces ensemble")
                 )
-            return run_direct_uq(
+            forces_ensemble = run_direct_uq(
                 calculator=self._base_calculator,
                 atoms=self._resolve_atoms(atoms),
                 key=key,
                 per_atom=True,
             )
+            forces_ensemble -= np.mean(forces_ensemble, axis=0, keepdims=True)
         else:
             key = self._quantity_keys["energy"]["ensemble"]
             if key not in self._model_outputs:
@@ -389,8 +390,8 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
                 atoms=self._resolve_atoms(atoms),
                 key=key,
                 gradients=("positions",),
-            )
-            return forces_ensemble["positions"]
+            )["positions"]
+        return forces_ensemble
 
     def get_stress_uncertainty(
         self, atoms: Optional[Atoms] = None, voigt: bool = True
