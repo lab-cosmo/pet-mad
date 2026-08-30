@@ -131,10 +131,10 @@ Uncertainty quantification
 --------------------------
 
 UPET models can also estimate the uncertainty of the predictions through
-the last-layer prediction rigidity 
+the last-layer prediction rigidity
 (`LLPR <https://doi.org/10.1088/2632-2153/ad805f>`_) method, and propagating
 it to derived observables through `shallow-ensemble
-<https://doi.org/10.1088/2632-2153/ad594a>`_ method. 
+<https://doi.org/10.1088/2632-2153/ad594a>`_ method.
 This is important when probing the model on data that may be substantially
 different from its training distribution, or when propagating uncertainty
 to derived observables (phase transition temperatures, diffusion
@@ -177,12 +177,12 @@ over the ensemble for getting the uncertainty):
    stress_uncertainty = calculator.get_stress_uncertainty(atoms)
    stress_ensemble = calculator.get_stress_ensemble(atoms)
 
-Models trained with a non-conservative forces / stress heads also 
+Models trained with a non-conservative forces / stress heads also
 expose their own forces / stress ensemble, which are much cheaper to evaluate,
 yet can be less accurate. Non-conservative regime can be enabled by passing the
-``non_conservative=True`` to the corresponding methods: 
-``get_forces_uncertainty(atoms, non_conservative=True)``. In that case the 
-uncertainty is always computed as a standard deviation over the corresponding 
+``non_conservative=True`` to the corresponding methods:
+``get_forces_uncertainty(atoms, non_conservative=True)``. In that case the
+uncertainty is always computed as a standard deviation over the corresponding
 non-conservative ensemble. Non-conservative uncertainties and ensembles are available
 for both conservative and non-conservative calculator regimes, i.e. one can combine
 the conservative forces / stress evaluations with the non-conservative forces / stress
