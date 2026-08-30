@@ -177,7 +177,7 @@ over the ensemble for getting the uncertainty):
    stress_uncertainty = calculator.get_stress_uncertainty(atoms)
    stress_ensemble = calculator.get_stress_ensemble(atoms)
 
-Models trained with a non-conservative forces / stress heads also
+Models trained with non-conservative forces / stress heads also
 expose their own forces / stress ensemble, which are much cheaper to evaluate,
 yet can be less accurate. Non-conservative regime can be enabled by passing the
 ``non_conservative=True`` to the corresponding methods:
