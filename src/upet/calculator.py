@@ -284,11 +284,6 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
         return calc
 
     @property
-    def _non_conservative_forces(self) -> bool:
-        """Whether ``get_forces`` returns the model's direct forces."""
-        return self._base_calculator.parameters["non_conservative"] in (True, "forces")
-
-    @property
     def supports_uncertainty(self) -> bool:
         """Whether the calculator supports uncertainty quantification."""
         return self._base_calculator._calculate_uncertainty
@@ -307,15 +302,14 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
         self, atoms: Optional[Atoms] = None, per_atom: bool = False
     ) -> np.ndarray:
         """
-        Get the energy uncertainty for a given :py:class:`ase.Atoms` object.
+        Calculate the energy uncertainty for a given :py:class:`ase.Atoms` object.
+        Note, that the uncertainty is not rotationally averaged, even when the
+        calculator is: it is requested from the base model directly.
 
         :param atoms: ASE atoms object. If ``None``, the last calculated atoms will be
             used.
         :param per_atom: Whether to return the energy uncertainty per atom.
         :return: Energy uncertainty in numpy.ndarray format.
-
-        The uncertainty is not rotationally averaged, even when the calculator
-        is: it is requested from the base model directly.
         """
         key = self._quantity_keys["energy"]["uncertainty"]
         if key not in self._model_outputs:
@@ -331,15 +325,14 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
         self, atoms: Optional[Atoms] = None, per_atom: bool = False
     ) -> np.ndarray:
         """
-        Get the ensemble of energies for a given :py:class:`ase.Atoms` object.
+        Calculate the energy ensemble for a given :py:class:`ase.Atoms` object.
+        Note, that the ensemble is not rotationally averaged, even when the
+        calculator is: it is requested from the base model directly.
 
         :param atoms: ASE atoms object. If ``None``, the last calculated atoms will be
             used.
         :param per_atom: Whether to return the energies per atom.
         :return: Energy ensemble in numpy.ndarray format.
-
-        The ensemble is not rotationally averaged, even when the calculator is:
-        it is requested from the base model directly.
         """
         key = self._quantity_keys["energy"]["ensemble"]
         if key not in self._model_outputs:
@@ -351,59 +344,29 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
             per_atom=per_atom,
         )
 
-    def _resolve_forces_regime(self, non_conservative: Optional[bool]) -> bool:
-        """Which force regime an uncertainty request refers to, defaulting to the
-        one the calculator was built with."""
-        if non_conservative is None:
-            return self._non_conservative_forces
-        if non_conservative not in (True, False):
-            raise TypeError(
-                f"`non_conservative` must be a bool or None, got {non_conservative!r}."
-            )
-        if self._non_conservative_forces and not non_conservative:
-            raise ValueError(
-                "`non_conservative=False` is not available for a calculator built "
-                "with non-conservative forces: the conservative ensemble would not "
-                "match the forces this calculator returns. Build the calculator in "
-                "the conservative regime instead."
-            )
-        return non_conservative
-
     def get_forces_uncertainty(
         self,
         atoms: Optional[Atoms] = None,
         non_conservative: Optional[bool] = None,
     ) -> np.ndarray:
         """
-        Get the forces uncertainty for a given :py:class:`ase.Atoms` object.
+        Calculate the forces uncertainty for a given :py:class:`ase.Atoms` object
+        through a standard deviation of the forces ensemble. Can be calculated in
+        two ways: conservative or non-conservative, where the default is controlled
+        by the `non_conservative` parameter of the calculator. Optionnaly, the
+        non-conservative forces uncertainty can be requested explicitly for faster
+        evaluation through the ``non_conservative=True`` flag, even when the calculator
+        itself is initialized in the conservative regime.
+        Calculating the conservative forces uncertainty for a non-conservative forces
+        calculator is not supported.
 
         :param atoms: ASE atoms object. If ``None``, the last calculated atoms will be
             used.
-        :param non_conservative: which force uncertainty to use, see
-            :py:meth:`get_forces_ensemble`. Defaults to the regime the calculator
-            was built with. This is the spread of the corresponding ensemble, so it
-            refers to the same forces the calculator itself returns — except for a
-            model carrying a direct uncertainty but no direct ensemble, where the
-            model's own (unprojected, hence larger) uncertainty is returned instead.
+        :param non_conservative: whether to use the non-conservative regime of forces
+            uncertainty calculation. If ``None``, the regime of the calculator is used.
         :return: Forces uncertainty as numpy.ndarray with shape [n_atoms, 3],
             in eV/Angstrom.
         """
-        non_conservative = self._resolve_forces_regime(non_conservative)
-        keys = self._quantity_keys["non_conservative_forces"]
-        if non_conservative and keys["ensemble"] not in self._model_outputs:
-            # without an ensemble to take the spread of, the head's own uncertainty
-            # output is the only option, unprojected net force and all
-            key = keys["uncertainty"]
-            if key not in self._model_outputs:
-                raise NotImplementedError(
-                    UQ_NC_ERROR_MSG.format(key="Non-conservative forces uncertainty")
-                )
-            return run_direct_uq(
-                calculator=self._base_calculator,
-                atoms=self._resolve_atoms(atoms),
-                key=key,
-                per_atom=True,
-            )
         return self.get_forces_ensemble(atoms, non_conservative).std(axis=-1)
 
     def get_forces_ensemble(
@@ -412,43 +375,60 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
         non_conservative: Optional[bool] = None,
     ) -> np.ndarray:
         """
-        Get the ensemble of forces for a given :py:class:`ase.Atoms` object.
+        Calculate the forces ensemble for a given :py:class:`ase.Atoms` object.
+
+        Can be calculated in two ways: conservative or non-conservative, where
+        the default is controlled by the `non_conservative` parameter of the
+        calculator. Optionnaly, the non-conservative forces ensemble can be requested
+        explicitly for faster evaluation through the ``non_conservative=True`` flag,
+        even when the calculator itself is initialized in the conservative regime.
+        If the calculator is in the conservative regime, the non-conservative forces
+        ensemble is centered on the conservative forces values, while keeping the
+        non-conservative ensemble spread.
+        Calculating the conservative forces ensemble for a non-conservative forces
+        calculator is not supported.
 
         :param atoms: ASE atoms object. If ``None``, the last calculated atoms will be
             used.
-        :param non_conservative: how to build the ensemble.
-
-            - ``False``: gradients of the energy ensemble, so that every member is
-              conservative by construction.
-            - ``True``: ensemble of the model's own non-conservative force head.
-              Unless the calculator itself is in the non-conservative regime, the
-              ensemble is re-centered on the conservative forces, so that only its
-              spread comes from the direct head. The other way around is an error:
-              a non-conservative calculator cannot serve a conservative ensemble.
-
-            Defaults to the regime the calculator was built with.
+        :param non_conservative: whether to use the non-conservative regime of forces
+            ensemble calculation. If ``None``, the regime of the calculator is used.
         :return: Forces ensemble as numpy.ndarray with shape [n_atoms, 3, n_ensemble],
             in eV/Angstrom.
         """
-        atoms = self._resolve_atoms(atoms)
 
-        if self._resolve_forces_regime(non_conservative):
+        # We allow for non_conservative forces ensemble in two cases:
+        # 1. The calculator was built with non_conservative=True, so the forces are
+        #   non-conservative and the ensemble is requested for the same regime.
+        # 2. The calculator was built with non_conservative=False, but the user
+        #   explicitly requests non_conservative=True for faster evaluation.
+        # Otherwise, for a conservaitve forces calculation and
+        # non_conservative=False, we use the gradient ensemble forces UQ.
+
+        calc_nc_requested = self._base_calculator.parameters["non_conservative"] in (
+            True,
+            "forces",
+        )
+        non_conservative = (
+            calc_nc_requested if non_conservative is None else non_conservative
+        )
+        atoms = self._resolve_atoms(atoms)
+        if non_conservative or calc_nc_requested:
             key = self._quantity_keys["non_conservative_forces"]["ensemble"]
             if key not in self._model_outputs:
-                raise NotImplementedError(
-                    UQ_NC_ERROR_MSG.format(key="Non-conservative forces ensemble")
-                )
+                raise NotImplementedError(UQ_NC_ERROR_MSG.format(key="forces"))
             forces_ensemble = run_direct_uq(
                 calculator=self._base_calculator,
                 atoms=atoms,
                 key=key,
                 per_atom=True,
             )
-            # `MetatomicCalculator` removes the net force from the direct forces, so
-            # take it off every member too: it carries most of the head's spread and
-            # none of it reaches the forces anyone uses
+            # Centering the non-conservative forces ensemble so the net force is zero,
+            # similarly to how the `MetatomicCalculator` does it for non-conservative
+            # forces prediction.
             forces_ensemble -= np.mean(forces_ensemble, axis=0, keepdims=True)
-            if not self._non_conservative_forces:
+            if not calc_nc_requested:
+                # Re-center the non-conservative ensemble on the conservative forces
+                # values, while keeping the non-conservative ensemble spread
                 shift = self.get_forces(atoms) - forces_ensemble.mean(axis=-1)
                 forces_ensemble += shift[:, :, np.newaxis]
         else:
@@ -466,43 +446,69 @@ class UPETCalculator(ase.calculators.calculator.Calculator):
         return forces_ensemble
 
     def get_stress_uncertainty(
-        self, atoms: Optional[Atoms] = None, voigt: bool = True
+        self,
+        atoms: Optional[Atoms] = None,
+        voigt: bool = True,
+        non_conservative: Optional[bool] = None,
     ) -> np.ndarray:
         """
-        TODO
+        Calculate the stress uncertainty for a given :py:class:`ase.Atoms` object
+        through a standard deviation of the stress ensemble.
+
+        Can be calculated in two ways: conservative or non-conservative, where the
+        default is controlled by the `non_conservative` parameter of the calculator.
+        Optionnaly, the non-conservative stress uncertainty can be requested explicitly
+        for faster evaluation through the ``non_conservative=True`` flag, even when the
+        calculator itself is initialized in the conservative regime.
+        Calculating the conservative stress uncertainty for a non-conservative stress
+        calculator is not supported.
+
+        :param atoms: ASE atoms object. If ``None``, the last calculated atoms will be
+            used.
+        :param non_conservative: whether to use the non-conservative regime of stress
+            uncertainty calculation. If ``None``, the regime of the calculator is used.
+        :return: Stress uncertainty as numpy.ndarray with shape [6,] if ``voigt=True``
+            or [3, 3] if ``voigt=False``, in eV/Angstrom^3.
         """
-        if self._base_calculator.parameters["non_conservative"] in (True, "stress"):
-            key = self._quantity_keys["non_conservative_stress"]["uncertainty"]
-            if key not in self._model_outputs:
-                raise NotImplementedError(
-                    UQ_NC_ERROR_MSG.format(key="Non-conservative stress uncertainty")
-                )
-            stress_uncertainty = run_direct_uq(
-                calculator=self._base_calculator,
-                atoms=self._resolve_atoms(atoms),
-                key=key,
-                per_atom=False,
-            )
-            if voigt:
-                stress_uncertainty = stress_ensemble_to_voigt(stress_uncertainty)
-        else:
-            stress_uncertainty = self.get_stress_ensemble(atoms, voigt=voigt).std(
-                axis=-1
-            )
-        return stress_uncertainty
+        return self.get_stress_ensemble(
+            atoms, voigt=voigt, non_conservative=non_conservative
+        ).std(axis=-1)
 
     def get_stress_ensemble(
-        self, atoms: Optional[Atoms] = None, voigt: bool = True
+        self,
+        atoms: Optional[Atoms] = None,
+        voigt: bool = True,
+        non_conservative: Optional[bool] = None,
     ) -> np.ndarray:
         """
-        TODO
+        Calculate the stress ensemble for a given :py:class:`ase.Atoms` object.
+
+        Can be calculated in two ways: conservative or non-conservative, where the
+        default is controlled by the `non_conservative` parameter of the calculator.
+        Optionnaly, the non-conservative stress ensemble can be requested explicitly
+        for faster evaluation through the ``non_conservative=True`` flag, even when the
+        calculator itself is initialized in the conservative regime.
+        Calculating the conservative stress uncertainty for a non-conservative stress
+        calculator is not supported.
+
+        :param atoms: ASE atoms object. If ``None``, the last calculated atoms will be
+            used.
+        :param non_conservative: whether to use the non-conservative regime of stress
+            ensemble calculation. If ``None``, the regime of the calculator is used.
+        :return: Stress uncertainty as numpy.ndarray with shape [6, n_ensemble] if
+            ``voigt=True`` or [3, 3, n_ensemble] if ``voigt=False``, in eV/Angstrom^3.
         """
-        if self._base_calculator.parameters["non_conservative"] in (True, "stress"):
+        calc_nc_requested = self._base_calculator.parameters["non_conservative"] in (
+            True,
+            "stress",
+        )
+        non_conservative = (
+            calc_nc_requested if non_conservative is None else non_conservative
+        )
+        if non_conservative or calc_nc_requested:
             key = self._quantity_keys["non_conservative_stress"]["ensemble"]
             if key not in self._model_outputs:
-                raise NotImplementedError(
-                    UQ_NC_ERROR_MSG.format(key="Non-conservative stress ensemble")
-                )
+                raise NotImplementedError(UQ_NC_ERROR_MSG.format(key="stress"))
             stress_ensemble = run_direct_uq(
                 calculator=self._base_calculator,
                 atoms=self._resolve_atoms(atoms),

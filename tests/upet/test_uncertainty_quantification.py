@@ -157,29 +157,29 @@ def test_direct_forces_stress_uncertainty_quantification_raises_errors():
     # no shipped model carries a direct forces ensemble; LLPR checkpoints trained
     # with a non-conservative forces head do
     message = (
-        "Non-conservative {quantity} {type} is not available for the "
+        "Non-conservative {quantity} uncertainty/ensemble is not available for the "
         "selected model. Consider switching-off `non-conservative` mode. "
         "The documentation lists the models providing uncertainty estimates "
         "for non-conservative outputs."
     )
     with pytest.raises(
         NotImplementedError,
-        match=re.escape(message.format(quantity="forces", type="uncertainty")),
+        match=re.escape(message.format(quantity="forces")),
     ):
         calc.get_forces_uncertainty(atoms)
     with pytest.raises(
         NotImplementedError,
-        match=re.escape(message.format(quantity="forces", type="ensemble")),
+        match=re.escape(message.format(quantity="forces")),
     ):
         calc.get_forces_ensemble(atoms)
     with pytest.raises(
         NotImplementedError,
-        match=re.escape(message.format(quantity="stress", type="uncertainty")),
+        match=re.escape(message.format(quantity="stress")),
     ):
         calc.get_stress_uncertainty(atoms)
     with pytest.raises(
         NotImplementedError,
-        match=re.escape(message.format(quantity="stress", type="ensemble")),
+        match=re.escape(message.format(quantity="stress")),
     ):
         calc.get_stress_ensemble(atoms)
 

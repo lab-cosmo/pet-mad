@@ -25,8 +25,8 @@ UQ_GRAD_ERROR_MSG = (
 )
 
 UQ_NC_ERROR_MSG = (
-    "{key} is not available for the selected model. "
-    "Consider switching-off `non-conservative` mode. "
+    "Non-conservative {key} uncertainty/ensemble is not available for the selected "
+    "model. Consider switching-off `non-conservative` mode. "
     "The documentation lists the models providing uncertainty estimates "
     "for non-conservative outputs."
 )
