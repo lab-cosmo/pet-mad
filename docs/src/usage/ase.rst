@@ -181,7 +181,7 @@ Models trained with non-conservative forces / stress heads also
 expose their own forces / stress ensemble, which are much cheaper to evaluate,
 yet can be less accurate. Non-conservative regime can be enabled by passing the
 ``non_conservative=True`` to the corresponding methods:
-``get_forces_uncertainty(atoms, non_conservative=True)``. In that case the
+``get_forces_uncertainty(atoms, non_conservative=True)``. In this case the
 uncertainty is always computed as a standard deviation over the corresponding
 non-conservative ensemble. Non-conservative uncertainties and ensembles are available
 for both conservative and non-conservative calculator regimes, i.e. one can combine
