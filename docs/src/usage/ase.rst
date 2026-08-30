@@ -132,7 +132,7 @@ Uncertainty quantification
 
 UPET models can also estimate the uncertainty of the predictions through
 the last-layer prediction rigidity
-(`LLPR <https://doi.org/10.1088/2632-2153/ad805f>`_) method, and propagating
+(`LLPR <https://doi.org/10.1088/2632-2153/ad805f>`_) method, and propagate
 it to derived observables through `shallow-ensemble
 <https://doi.org/10.1088/2632-2153/ad594a>`_ method.
 This is important when probing the model on data that may be substantially
