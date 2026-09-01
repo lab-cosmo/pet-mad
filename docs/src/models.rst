@@ -173,7 +173,12 @@ Uncertainty quantification
 
 A subset of the checkpoints expose per-structure energy uncertainty
 estimates through :py:meth:`~upet.calculator.UPETCalculator.get_energy_uncertainty`
-and :py:meth:`~upet.calculator.UPETCalculator.get_energy_ensemble`
+and :py:meth:`~upet.calculator.UPETCalculator.get_energy_ensemble`, and the
+corresponding force and stress quantities through
+:py:meth:`~upet.calculator.UPETCalculator.get_forces_uncertainty`,
+:py:meth:`~upet.calculator.UPETCalculator.get_forces_ensemble`,
+:py:meth:`~upet.calculator.UPETCalculator.get_stress_uncertainty`,
+:py:meth:`~upet.calculator.UPETCalculator.get_stress_ensemble` and
 (LLPR + shallow-ensemble heads, see :ref:`ase-uncertainty` for usage):
 
 - ``pet-mad-s`` v1.0.2

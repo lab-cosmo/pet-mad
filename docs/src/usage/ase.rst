@@ -130,7 +130,11 @@ More details on making direct-force MD simulations reliable are in the
 Uncertainty quantification
 --------------------------
 
-UPET models can also estimate the uncertainty of the energy prediction.
+UPET models can also estimate the uncertainty of the predictions through
+the last-layer prediction rigidity
+(`LLPR <https://doi.org/10.1088/2632-2153/ad805f>`_) method, and propagate
+it to derived observables through `shallow-ensemble
+<https://doi.org/10.1088/2632-2153/ad594a>`_ method.
 This is important when probing the model on data that may be substantially
 different from its training distribution, or when propagating uncertainty
 to derived observables (phase transition temperatures, diffusion
@@ -139,10 +143,11 @@ coefficients, and so on).
 .. note::
 
    Uncertainty quantification is only available for a subset of
-   checkpoints (currently ``pet-mad-s`` v1.0.2, ``pet-mad-xs`` v1.5.0
-   and ``pet-mad-s`` v1.5.0). See :ref:`models` for the full list.
+   models. See :ref:`models` for the full list of models with
+   uncertainty quantification enabled.
 
-Use the ``get_energy_uncertainty`` and ``get_energy_ensemble`` methods of
+Energy uncertainty and ensemble can be obtained using the corresponding
+``get_energy_uncertainty`` and ``get_energy_ensemble`` methods of the
 :py:class:`~upet.calculator.UPETCalculator`:
 
 .. code-block:: python
@@ -159,10 +164,29 @@ Use the ``get_energy_uncertainty`` and ``get_energy_ensemble`` methods of
    energy_ensemble = calculator.get_energy_ensemble(atoms, per_atom=False)
 
 Both methods accept a ``per_atom`` flag, which controls whether the
-quantity is reported per atom or for the whole system. For the
-methodology, see the `LLPR <https://doi.org/10.1088/2632-2153/ad594a>`_
-and `shallow ensembles
-<https://doi.org/10.1088/2632-2153/ad805f>`_ papers.
+quantity is reported per atom or for the whole system.
+
+Forces and stresses carry the same estimates, obtained by differentiating
+the energy ensemble (and additionally calculating the standard deviation
+over the ensemble for getting the uncertainty):
+
+.. code-block:: python
+
+   forces_uncertainty = calculator.get_forces_uncertainty(atoms)
+   forces_ensemble = calculator.get_forces_ensemble(atoms)
+   stress_uncertainty = calculator.get_stress_uncertainty(atoms)
+   stress_ensemble = calculator.get_stress_ensemble(atoms)
+
+Models trained with non-conservative forces / stress heads also
+expose their own forces / stress ensemble, which are much cheaper to evaluate,
+yet can be less accurate. Non-conservative regime can be enabled by passing the
+``non_conservative=True`` to the corresponding methods:
+``get_forces_uncertainty(atoms, non_conservative=True)``. In this case the
+uncertainty is always computed as a standard deviation over the corresponding
+non-conservative ensemble. Non-conservative uncertainties and ensembles are available
+for both conservative and non-conservative calculator regimes, i.e. one can combine
+the conservative forces / stress evaluations with the non-conservative forces / stress
+uncertainty quantification, but not vice versa.
 
 
 Rotational averaging
