@@ -1,3 +1,5 @@
+"""Metadata for the checkpoints that do not carry their own."""
+
 from typing import Optional
 
 from metatomic.torch import ModelMetadata
@@ -8,6 +10,12 @@ def get_upet_metadata(
     size: Optional[str] = None,
     version: Optional[str] = None,
 ) -> ModelMetadata:
+    """Describe a model that was published without any metadata of its own.
+
+    Newer checkpoints store their name, description, authors and references,
+    which is where the ones of a new model belong; this only covers the models
+    published before that.
+    """
     description = (
         r"A universal interatomic potential for advanced materials modeling "
         r"based on a Point-Edge Transformer (PET) architecture, and trained on "
@@ -22,7 +30,6 @@ def get_upet_metadata(
     }
 
     if model and size and version:
-        dataset = model.split("-")[1].upper()
         if "mad" in model.lower():
             authors = [
                 "Arslan Mazitov (arslan.mazitov@epfl.ch)",
@@ -44,7 +51,7 @@ def get_upet_metadata(
             ]
         metadata = ModelMetadata(
             name=f"{model.upper()}-{size.upper()} v{version}",
-            description=description.format(dataset, size, version),
+            description=description.format(model.split("-")[1].upper(), size, version),
             authors=authors,
             references=references,
         )

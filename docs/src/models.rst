@@ -39,6 +39,16 @@ The following pre-trained UPET models are available:
      - S, L
      - molecules (17 elements)
      - SPICE
+   * - PET-OMol
+     - ωB97M-V
+     - S, M, L
+     - molecules (83 elements)
+     - OMol25
+   * - PET-MOLS
+     - PBE0+MBD
+     - S
+     - organic molecular crystals (12 elements)
+     - CSD subsample
 
 Recommended usage:
 
@@ -49,6 +59,10 @@ Recommended usage:
   geometry optimization, phonons, etc.).
 - **PET-SPICE** for accurate and fast simulations of molecules and
   biomolecules.
+- **PET-OMol** for simulations of molecules, metal complexes and
+  electrolytes.
+- **PET-MOLS** for organic molecular crystals, in particular NMR
+  crystallography.
 
 Model sizes
 -----------
@@ -160,13 +174,25 @@ Uncertainty quantification
 A subset of PET-MAD checkpoints expose per-structure energy uncertainty
 estimates through :py:meth:`~upet.ase.UPETCalculator.get_energy_uncertainty`
 and :py:meth:`~upet.ase.UPETCalculator.get_energy_ensemble`
+A subset of the checkpoints expose per-structure energy uncertainty
+estimates through :py:meth:`~upet.ase.UPETCalculator.get_energy_uncertainty`
+and :py:meth:`~upet.ase.UPETCalculator.get_energy_ensemble`, and the
+corresponding force and stress quantities through
+:py:meth:`~upet.ase.UPETCalculator.get_forces_uncertainty`,
+:py:meth:`~upet.ase.UPETCalculator.get_forces_ensemble`,
+:py:meth:`~upet.ase.UPETCalculator.get_stress_uncertainty`,
+:py:meth:`~upet.ase.UPETCalculator.get_stress_ensemble` and
 (LLPR + shallow-ensemble heads, see :ref:`ase-uncertainty` for usage):
 
 - ``pet-mad-s`` v1.0.2
 - ``pet-mad-xs`` v1.5.0
 - ``pet-mad-s`` v1.5.0
+- ``pet-mols-s`` v1.0.0
+- ``pet-mols-s`` v1.1.0
 
-Calling these methods on other checkpoints will raise an error.
+Calling these methods on other checkpoints will raise an error;
+:py:attr:`~upet.ase.UPETCalculator.supports_uncertainty` tells whether
+the model at hand provides them.
 
 Non-conservative forces
 -----------------------
@@ -180,6 +206,8 @@ support ``non_conservative=True``:
 - ``pet-mad-s`` v1.0.2
 - ``pet-spice-s`` v0.2.0
 - ``pet-spice-l`` v0.2.0
+- ``pet-mols-s`` v1.0.0
+- ``pet-mols-s`` v1.1.0
 
 PET-MAD-DOS
 -----------

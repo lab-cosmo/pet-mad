@@ -4,6 +4,8 @@ import pytest
 from ase.build import bulk, molecule
 
 from upet._models import (
+    get_available_models,
+    get_sizes_for_model,
     get_upet,
     get_versions_for_model,
     list_upet,
@@ -58,6 +60,22 @@ def test_get_upet(model_name):
         get_upet(model=model, size=size, version=version)
 
 
+def test_available_models_are_published():
+    """Check that every model offered here can be downloaded.
+
+    Models published on the hub but missing from the list are not an error:
+    a model can be uploaded before it is offered here.
+    """
+    published = {
+        f"{model}-{size}"
+        for model in get_available_models()
+        for size in get_sizes_for_model(model)
+    }
+    missing = sorted(set(UPET_AVAILABLE_MODELS) - published)
+
+    assert missing == [], f"not published on the hub: {missing}"
+
+
 def test_list_models():
     result = list_upet(print_summary=False)
     assert len(result) > 0
@@ -84,9 +102,9 @@ def test_basic_usage(model_name):
     if "-xl" in model_name or "-l" in model_name:
         pytest.skip("Skipping XL models and L models due to large size.")
     atoms = (
-        bulk("C", cubic=True, a=5.43, crystalstructure="diamond")
-        if "spice" not in model_name
-        else molecule("H2O")
+        molecule("H2O")
+        if any(name in model_name for name in ("spice", "mols"))
+        else bulk("C", cubic=True, a=5.43, crystalstructure="diamond")
     )
 
     model, size = model_name.rsplit("-", 1)

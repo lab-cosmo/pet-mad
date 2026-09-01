@@ -23,13 +23,9 @@ maintainers = [
 ]
 
 dependencies = [
-    # Temporary: this branch's nvalchemi-toolkit integration needs the
-    # pure-torch `PETBackend`, which isn't in a tagged metatrain release
-    # yet. Pull it from `main` for now, and switch back to a pinned PyPI
-    # release (e.g. "metatrain>=2026.3.1, <2026.4") once available.
-    "metatrain @ git+https://github.com/metatensor/metatrain.git@main",
-    "metatomic-ase",
-    "nvalchemi-toolkit-ops",
+    "metatrain>=2026.4, <2026.5",
+    "metatomic-ase>=0.1.6, <0.2",
+    "nvalchemi-toolkit-ops>=0.4.0,<0.5.0",
     "warp-lang",
     "huggingface_hub",
     "hf_xet",
