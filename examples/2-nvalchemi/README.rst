@@ -1,5 +1,5 @@
-nvalchemi-toolkit integration
-------------------------------
+NVIDIA ALCHEMI Toolkit
+----------------------
 
 Running UPET / PET-MAD models through `nvalchemi-toolkit
 <https://github.com/NVIDIA/nvalchemi-toolkit>`_'s batched data pipeline and

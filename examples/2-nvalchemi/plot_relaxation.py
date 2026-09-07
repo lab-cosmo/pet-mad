@@ -11,51 +11,55 @@ the maximum force norm drops below a threshold.
 .. note::
 
    This example requires the optional ``nvalchemi`` extra:
-   ``pip install "upet[nvalchemi]"``. If it isn't installed, the example
-   prints an install hint and exits without failing.
+   ``pip install "upet[nvalchemi]"``.
 """
 
 import torch
 from ase.build import bulk
+from nvalchemi.data import AtomicData, Batch
+from nvalchemi.dynamics import FIRE, ConvergenceHook, DynamicsStage
+from nvalchemi.hooks import NeighborListHook
+from nvalchemi.neighbors import compute_neighbors
+
+from upet.nvalchemi import UPETWrapper
 
 
-try:
-    from nvalchemi.data import AtomicData, Batch
-    from nvalchemi.dynamics import FIRE, ConvergenceHook
-    from nvalchemi.neighbors import compute_neighbors
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+model = UPETWrapper.from_checkpoint(model="pet-mad-xs", version="1.5.0", device=device)
 
-    from upet.nvalchemi import UPETWrapper
+atoms = bulk("Si", cubic=True, a=5.43, crystalstructure="diamond")
+atoms.rattle(0.1, seed=0)
+data = AtomicData.from_atoms(atoms, device=device)
 
-    NVALCHEMI_AVAILABLE = True
-except ImportError:
-    NVALCHEMI_AVAILABLE = False
+# The integrators write model outputs back into the batch fields that already
+# exist and silently skip the ones that don't, while `AtomicData.from_atoms`
+# only fills the fields the `Atoms` object itself carries -- so the output
+# buffers have to be allocated up front.
+data.energy = torch.zeros(1, 1, device=device)
+data.forces = torch.zeros_like(data.positions)
 
-if NVALCHEMI_AVAILABLE:
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = UPETWrapper.from_checkpoint(
-        model="pet-mad-xs", version="1.5.0", device=device
-    )
+batch = Batch.from_data_list([data], device=device)
+compute_neighbors(batch, config=model.model_config.neighbor_config)
 
-    atoms = bulk("Si", cubic=True, a=5.43, crystalstructure="diamond")
-    atoms.rattle(0.1, seed=0)
-    batch = Batch.from_data_list(
-        [AtomicData.from_atoms(atoms, device=device)], device=device
-    )
-    compute_neighbors(batch, config=model.model_config.neighbor_config)
+fire = FIRE(
+    model=model,
+    dt=0.1,
+    n_steps=300,
+    convergence_hook=ConvergenceHook.from_fmax(0.02),
+    hooks=[
+        NeighborListHook(
+            model.model_config.neighbor_config,
+            skin=0.5,
+            stage=DynamicsStage.BEFORE_COMPUTE,
+        )
+    ],
+)
 
-    fire = FIRE(
-        model=model,
-        dt=0.1,
-        n_steps=300,
-        convergence_hook=ConvergenceHook.from_fmax(0.02),
-    )
-    batch = fire.run(batch)
+# The first integrator step already reads the forces, so the batch needs one
+# model evaluation before the loop starts.
+fire.compute(batch)
+batch = fire.run(batch)
 
-    print(f"Relaxed after {fire.step_count} steps")
-    print(f"Energy : {batch.energy.item():+.4f} eV")
-    print(f"Fmax   : {torch.linalg.vector_norm(batch.forces, dim=-1).max():.4f} eV/Å")
-else:
-    print(
-        "This example requires the optional 'nvalchemi' extra: "
-        "pip install 'upet[nvalchemi]'"
-    )
+print(f"Relaxed after {fire.step_count} steps")
+print(f"Energy : {batch.energy.item():+.4f} eV")
+print(f"Fmax   : {torch.linalg.vector_norm(batch.forces, dim=-1).max():.4f} eV/Å")

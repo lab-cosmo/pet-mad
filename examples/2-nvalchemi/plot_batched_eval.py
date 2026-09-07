@@ -15,65 +15,50 @@ one at a time (e.g. with the ASE calculator, see :ref:`usage_ase`).
 .. note::
 
    This example requires the optional ``nvalchemi`` extra:
-   ``pip install "upet[nvalchemi]"``. If it isn't installed, the example
-   prints an install hint and exits without failing.
+   ``pip install "upet[nvalchemi]"``.
 """
 
 import torch
 from ase.build import bulk
+from nvalchemi.data import AtomicData, Batch
+from nvalchemi.neighbors import compute_neighbors
+
+from upet.nvalchemi import UPETWrapper
 
 
-try:
-    from nvalchemi.data import AtomicData, Batch
-    from nvalchemi.neighbors import compute_neighbors
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    from upet.nvalchemi import UPETWrapper
+model = UPETWrapper.from_checkpoint(model="pet-mad-xs", version="1.5.0", device=device)
 
-    NVALCHEMI_AVAILABLE = True
-except ImportError:
-    NVALCHEMI_AVAILABLE = False
+# %%
+# Building a batch of different structures
+# -------------------------------------------
+# Three diamond-structure crystals with different compositions and cell
+# sizes. ``Batch.from_data_list`` handles the ragged atom counts
+# transparently.
 
-if NVALCHEMI_AVAILABLE:
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+structures = {
+    "Si": bulk("Si", cubic=True, a=5.43, crystalstructure="diamond"),
+    "C": bulk("C", cubic=True, a=3.57, crystalstructure="diamond"),
+    "Ge": bulk("Ge", cubic=True, a=5.66, crystalstructure="diamond"),
+}
+data_list = [
+    AtomicData.from_atoms(atoms, device=device) for atoms in structures.values()
+]
+batch = Batch.from_data_list(data_list, device=device)
+print(f"Batch: {batch.num_graphs} systems, {batch.num_nodes} atoms total")
 
-    model = UPETWrapper.from_checkpoint(
-        model="pet-mad-xs", version="1.5.0", device=device
-    )
+# %%
+# Neighbor list and a single batched forward pass
+# ---------------------------------------------------
+compute_neighbors(batch, config=model.model_config.neighbor_config)
+outputs = model(batch)
 
-    # %%
-    # Building a batch of different structures
-    # -------------------------------------------
-    # Three diamond-structure crystals with different compositions and cell
-    # sizes. ``Batch.from_data_list`` handles the ragged atom counts
-    # transparently.
-
-    structures = {
-        "Si": bulk("Si", cubic=True, a=5.43, crystalstructure="diamond"),
-        "C": bulk("C", cubic=True, a=3.57, crystalstructure="diamond"),
-        "Ge": bulk("Ge", cubic=True, a=5.66, crystalstructure="diamond"),
-    }
-    data_list = [
-        AtomicData.from_atoms(atoms, device=device) for atoms in structures.values()
-    ]
-    batch = Batch.from_data_list(data_list, device=device)
-    print(f"Batch: {batch.num_graphs} systems, {batch.num_nodes} atoms total")
-
-    # %%
-    # Neighbor list and a single batched forward pass
-    # ---------------------------------------------------
-    compute_neighbors(batch, config=model.model_config.neighbor_config)
-    outputs = model(batch)
-
-    # %%
-    # Per-system results
-    # -------------------
-    # ``outputs["energy"]`` has shape ``[num_graphs, 1]``; forces are stacked
-    # over all atoms in the batch, ordered the same way as ``data_list``.
-    energies = outputs["energy"].squeeze(-1).detach().cpu()
-    for name, energy in zip(structures.keys(), energies, strict=True):
-        print(f"  {name:>2s}: E = {energy.item():+.4f} eV")
-else:
-    print(
-        "This example requires the optional 'nvalchemi' extra: "
-        "pip install 'upet[nvalchemi]'"
-    )
+# %%
+# Per-system results
+# -------------------
+# ``outputs["energy"]`` has shape ``[num_graphs, 1]``; forces are stacked
+# over all atoms in the batch, ordered the same way as ``data_list``.
+energies = outputs["energy"].squeeze(-1).detach().cpu()
+for name, energy in zip(structures.keys(), energies, strict=True):
+    print(f"  {name:>2s}: E = {energy.item():+.4f} eV")

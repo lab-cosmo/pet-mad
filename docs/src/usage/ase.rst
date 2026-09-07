@@ -1,7 +1,7 @@
 .. _usage_ase:
 
-ASE interface
-=============
+ASE
+===
 
 UPET ships an ASE-compatible calculator,
 :py:class:`~upet.ase.UPETCalculator`, that wraps any UPET model and

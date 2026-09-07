@@ -1,7 +1,7 @@
 .. _usage_nvalchemi:
 
-nvalchemi-toolkit
-=================
+NVIDIA ALCHEMI Toolkit
+======================
 
 UPET models can be driven through `nvalchemi-toolkit
 <https://github.com/NVIDIA/nvalchemi-toolkit>`_, NVIDIA's GPU-native
