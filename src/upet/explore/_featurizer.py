@@ -53,7 +53,7 @@ class PETMADFeaturizer:
     Usage example:
         >>> import ase.io
         >>> import chemiscope
-        >>> from pet_mad.explore import PETMADFeaturizer
+        >>> from upet.explore import PETMADFeaturizer
 
         >>> # Load structures
         >>> frames = ase.io.read("dataset.xyz", ":")
