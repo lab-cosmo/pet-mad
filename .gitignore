@@ -180,5 +180,7 @@ extensions/
 # sphinx gallery
 docs/src/examples
 docs/src/generated_examples/
+docs/src/cookbook/
+docs/_cookbook_src/
 docs/build/
 *execution_times*

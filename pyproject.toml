@@ -95,6 +95,7 @@ follow_imports = 'skip'
 ignore_missing_imports = true
 exclude = [
     '^docs/src/generated_examples/',
+    '^docs/src/cookbook/',
 ]
 
 [tool.pytest.ini_options]

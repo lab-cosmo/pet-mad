@@ -1,0 +1,4 @@
+[submodule "external/atomistic-cookbook"]
+	path = external/atomistic-cookbook
+	url = git@github.com:lab-cosmo/atomistic-cookbook.git
+	branch = main

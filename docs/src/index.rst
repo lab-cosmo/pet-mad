@@ -97,6 +97,7 @@ them directly if you have not received an answer after a couple of days.
    fine-tuning
    api
    generated_examples/index
+   cookbook/index
    miscellaneous
    faq
    changelog
