@@ -8,17 +8,25 @@ on:
 
 jobs:
   tests:
+    name: ${{ matrix.suite }} (${{ matrix.os }}, py${{ matrix.python-version }})
+
     strategy:
+      # a broken backend should not hide the state of the others
+      fail-fast: false
       matrix:
         include:
-          - os: ubuntu-24.04
-            python-version: "3.11"
-          - os: ubuntu-24.04
-            python-version: "3.13"
-          - os: macos-15
-            python-version: "3.13"
-          - os: windows-2022
-            python-version: "3.13"
+          # the ASE calculator is the main entry point, and is the only suite
+          # covered on every supported OS / Python combination
+          - {suite: ase-tests, os: ubuntu-24.04, python-version: "3.11"}
+          - {suite: ase-tests, os: ubuntu-24.04, python-version: "3.13"}
+          - {suite: ase-tests, os: macos-15, python-version: "3.13"}
+          - {suite: ase-tests, os: windows-2022, python-version: "3.13"}
+          # the remaining suites run once, to keep the number of checkpoints
+          # downloaded from HuggingFace reasonable
+          - {suite: core-tests, os: ubuntu-24.04, python-version: "3.13"}
+          - {suite: ase-dos-tests, os: ubuntu-24.04, python-version: "3.13"}
+          - {suite: ase-explore-tests, os: ubuntu-24.04, python-version: "3.13"}
+          - {suite: nvalchemi-tests, os: ubuntu-24.04, python-version: "3.13"}
 
     runs-on: ${{ matrix.os }}
 
@@ -32,9 +40,7 @@ jobs:
     - run: pip install tox
 
     - name: run Python tests
-      run: |
-        tox -e upet-tests
-        tox -e pet-mad-dos-tests
+      run: tox -e ${{ matrix.suite }}
       env:
         # Use the CPU only version of torch when building/running the code
         PIP_EXTRA_INDEX_URL: https://download.pytorch.org/whl/cpu

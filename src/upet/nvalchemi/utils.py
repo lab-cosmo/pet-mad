@@ -64,7 +64,7 @@ def normalize_hypers(hypers: dict[str, Any]) -> dict[str, Any]:
         ``model_hypers`` (or constructed by hand).
     :return: Normalised copy, with ``num_neighbors_adaptive`` /
         ``adaptive_cutoff_method`` / ``cutoff_width_adaptive`` /
-        ``system_conditioning`` defaulted when absent.
+        ``system_conditioning`` / ``long_range`` defaulted when absent.
     :raises ValueError: When a required key is missing.
     """
     missing = [key for key in REQUIRED_HYPERS if key not in hypers]
@@ -75,6 +75,11 @@ def normalize_hypers(hypers: dict[str, Any]) -> dict[str, Any]:
     normalized.setdefault("adaptive_cutoff_method", "grid")
     normalized.setdefault("cutoff_width_adaptive", 1.0)
     normalized.setdefault("system_conditioning", False)
+    # `PETBackend.__init__` reads `hypers["long_range"]["enable"]` directly.
+    # Checkpoints always carry the key; hand-built hypers may not, and the
+    # wrapper keeps the long-range featurizer outside the backend anyway
+    # (see `filter_state_dict`), so disabled is the right default here.
+    normalized.setdefault("long_range", {"enable": False})
     return normalized
 
 
