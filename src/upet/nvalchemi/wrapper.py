@@ -386,10 +386,17 @@ class UPETWrapper(nn.Module, BaseModelMixin):
         compute_forces = "forces" in active
         compute_stresses = "stress" in active
 
+        # ``adapt_input`` swaps a dtype-cast, gradient-enabled clone into
+        # ``data["positions"]``; keep the caller's tensor so it can be put
+        # back once the backward pass is done. Leaving the clone in place
+        # would hand the caller a ``requires_grad`` tensor, which an MD
+        # integrator then mutates in-place — turning it into a non-leaf and
+        # breaking the *next* step's gradient setup.
+        input_positions = data.positions
+
         # Set up the affine strain BEFORE adapt_input so the scaled
         # positions and cell flow through the full featurisation.
         displacement: torch.Tensor | None = None
-        orig_positions: torch.Tensor | None = None
         orig_cell: torch.Tensor | None = None
         if compute_stresses and getattr(data, "cell", None) is not None:
             scaled_pos, scaled_cell, displacement = prepare_strain(
@@ -397,7 +404,6 @@ class UPETWrapper(nn.Module, BaseModelMixin):
                 data.cell.to(self._model_dtype),
                 data.batch_idx,
             )
-            orig_positions = data.positions
             orig_cell = data.cell
             data["positions"] = scaled_pos
             data["cell"] = scaled_cell
@@ -470,10 +476,10 @@ class UPETWrapper(nn.Module, BaseModelMixin):
                 num_graphs,
             )
 
-        # Restore the batch's original positions/cell if strain was
-        # applied, so the caller sees no mutation from the stress trick.
-        if orig_positions is not None and orig_cell is not None:
-            data["positions"] = orig_positions
+        # Restore the batch's original positions (and cell, if strain was
+        # applied), so the caller sees no mutation from the forward pass.
+        data["positions"] = input_positions
+        if orig_cell is not None:
             data["cell"] = orig_cell
 
         return self.adapt_output(result, data)
