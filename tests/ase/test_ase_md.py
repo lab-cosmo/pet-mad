@@ -13,7 +13,7 @@ from upet.ase import UPETCalculator
 @pytest.mark.filterwarnings(  # see https://github.com/metatensor/metatomic/issues/139
     "ignore:.*invalid value encountered in scalar add.*:RuntimeWarning"
 )
-def test_md(model_name):
+def test_nve(model_name):
     if "-xl" in model_name or "-l" in model_name:
         pytest.skip("Skipping XL models and L models due to large size.")
     atoms = (

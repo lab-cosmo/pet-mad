@@ -23,7 +23,7 @@ from nvalchemi.dynamics import (  # noqa: E402
     initialize_velocities,
 )
 from nvalchemi.hooks import NeighborListHook  # noqa: E402
-from nvalchemi.neighbors import compute_neighbors  # noqa: E402
+from nvalchemi.neighbors import compute_neighbors
 
 
 N_ATOMS = 12
@@ -72,12 +72,20 @@ def _random_system(seed: int = 0) -> AtomicData:
     )
 
 
-def test_nvt_langevin_ten_steps(wrapper):
+def test_nvt_langevin(wrapper):
     """10 steps of NVT Langevin dynamics keep the trajectory finite and moving."""
     wrapper.model_config.active_outputs = {"energy", "forces"}
 
     batch = Batch.from_data_list([_random_system()])
     initial_positions = batch.positions.clone()
+
+    nl_hook = NeighborListHook(
+        wrapper.model_config.neighbor_config,
+        skin=0.5,
+        stage=DynamicsStage.BEFORE_COMPUTE,
+    )
+
+    compute_neighbors(batch, config=wrapper.model_config.neighbor_config)
 
     initialize_velocities(
         batch.velocities,
@@ -86,20 +94,13 @@ def test_nvt_langevin_ten_steps(wrapper):
         batch.batch_idx.int(),
         random_seed=0,
     )
-
-    # Seed the neighbor list and the forces of the first BAOAB half-kick;
-    # from here on the hook rebuilds the list before every model call.
-    neighbor_config = wrapper.model_config.neighbor_config
-    compute_neighbors(batch, config=neighbor_config, format=neighbor_config.format)
     dynamics = NVTLangevin(
         model=wrapper,
         dt=TIMESTEP,
         temperature=TEMPERATURE,
         friction=FRICTION,
         random_seed=0,
-        hooks=[
-            NeighborListHook(config=neighbor_config, stage=DynamicsStage.BEFORE_COMPUTE)
-        ],
+        hooks=[nl_hook],
     )
     dynamics.compute(batch)
 
