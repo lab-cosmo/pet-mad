@@ -25,3 +25,8 @@ python:
     - requirements: docs/requirements.txt
     - method: pip
       path: .
+      # the `nvalchemi` extra is required to run the `examples/2-nvalchemi`
+      # gallery, which imports `nvalchemi` at module level (mirrors the
+      # `extras = nvalchemi` of the `docs` environment in `tox.ini`)
+      extra_requirements:
+        - nvalchemi
