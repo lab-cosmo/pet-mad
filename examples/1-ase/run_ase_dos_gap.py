@@ -1,6 +1,6 @@
 """
-Density of States (DOS) and Bandgap calculations with UPET
-================================================================
+Density of states (DOS) and bandgap calculation
+===============================================
 
 Single-point evaluation of a bulk silicon cell with PET-MAD-DOS. The two silicon atoms
 are displaced off their equilibrium positions and the DOS and bandgap is computed using

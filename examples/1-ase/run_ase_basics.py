@@ -1,6 +1,6 @@
 """
-Energy and forces
-=================
+Basics: single-structure evaluation
+===================================
 
 Single-point evaluation of a bulk silicon cell with the smallest PET-MAD
 model (``pet-mad-xs``). Two atoms are displaced off their equilibrium

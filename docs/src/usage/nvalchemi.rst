@@ -88,17 +88,17 @@ Examples
 Runnable end-to-end workflows built on top of ``UPETWrapper``, driving
 nvalchemi's ``FIRE``, ``NVE``, ``NVTLangevin``, and ``NPT`` integrators:
 
-* :doc:`/generated_examples/2-nvalchemi/plot_basics` —
+* :doc:`/generated_examples/2-nvalchemi/run_nva_basics` —
   single-structure energy / forces / stress evaluation.
-* :doc:`/generated_examples/2-nvalchemi/plot_batched_eval` —
+* :doc:`/generated_examples/2-nvalchemi/run_nva_batched_eval` —
   batched evaluation of several structures in a single forward pass.
-* :doc:`/generated_examples/2-nvalchemi/plot_relaxation` —
+* :doc:`/generated_examples/2-nvalchemi/run_nva_relaxation` —
   geometry optimization with the ``FIRE`` integrator and a force-based
   :py:class:`~nvalchemi.dynamics.ConvergenceHook`.
-* :doc:`/generated_examples/2-nvalchemi/plot_nve` —
+* :doc:`/generated_examples/2-nvalchemi/run_nva_md_nve` —
   microcanonical (NVE) molecular dynamics via velocity Verlet.
-* :doc:`/generated_examples/2-nvalchemi/plot_nvt` —
+* :doc:`/generated_examples/2-nvalchemi/run_nva_md_nvt` —
   canonical (NVT) molecular dynamics with a Langevin thermostat.
-* :doc:`/generated_examples/2-nvalchemi/plot_npt` —
+* :doc:`/generated_examples/2-nvalchemi/run_nva_md_npt` —
   isothermal-isobaric (NPT) molecular dynamics with a Nosé-Hoover
   thermostat and Martyna-Tobias-Klein barostat.

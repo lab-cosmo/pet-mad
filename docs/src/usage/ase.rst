@@ -17,7 +17,7 @@ prediction and dataset visualization.
    For runnable end-to-end ASE workflows — single-point evaluation,
    geometry optimization and MD in the NVE / NVT / NPT ensembles — see
    the :doc:`example gallery
-   </generated_examples/1-ase-simulations/index>`.
+   </generated_examples/1-ase/index>`.
 
 
 Basic usage

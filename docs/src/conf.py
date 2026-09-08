@@ -64,20 +64,20 @@ intersphinx_mapping = {
 # build on each other. Every example must be listed here: an unlisted one fails
 # the build with ``ValueError: '<name>' is not in list``.
 EXAMPLE_ORDER = [
-    # examples/1-ase-simulations
-    "plot_energy_forces.py",
-    "plot_geometry_optimization.py",
-    "plot_md_nve.py",
-    "plot_md_nvt.py",
-    "plot_md_npt.py",
-    "plot_dos_gap.py",
+    # examples/1-ase
+    "run_ase_basics.py",
+    "run_ase_relaxation.py",
+    "run_ase_md_nve.py",
+    "run_ase_md_nvt.py",
+    "run_ase_md_npt.py",
+    "run_ase_dos_gap.py",
     # examples/2-nvalchemi
-    "plot_basics.py",
-    "plot_batched_eval.py",
-    "plot_relaxation.py",
-    "plot_nve.py",
-    "plot_nvt.py",
-    "plot_npt.py",
+    "run_nva_basics.py",
+    "run_nva_batched_eval.py",
+    "run_nva_relaxation.py",
+    "run_nva_md_nve.py",
+    "run_nva_md_nvt.py",
+    "run_nva_md_npt.py",
 ]
 
 sphinx_gallery_conf = {
