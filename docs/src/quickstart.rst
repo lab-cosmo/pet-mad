@@ -10,11 +10,11 @@ Install UPET with ``pip``:
    pip install upet
 
 Then run a single-point energy and force evaluation on a bulk silicon cell
-using the ASE-compatible :py:class:`~upet.calculator.UPETCalculator`:
+using the ASE-compatible :py:class:`~upet.ase.UPETCalculator`:
 
 .. code-block:: python
 
-   from upet.calculator import UPETCalculator
+   from upet.ase import UPETCalculator
    from ase.build import bulk
 
    atoms = bulk("Si", cubic=True, a=5.43, crystalstructure="diamond")
@@ -24,11 +24,11 @@ using the ASE-compatible :py:class:`~upet.calculator.UPETCalculator`:
    energy = atoms.get_potential_energy()
    forces = atoms.get_forces()
 
-For DOS calculations, you can use the :py:class:`~upet.calculator.PETMADDOSCalculator`:
+For DOS calculations, you can use the :py:class:`~upet.ase.dos.PETMADDOSCalculator`:
 
 .. code-block:: python
 
-   from upet.calculator import PETMADDOSCalculator
+   from upet.ase.dos import PETMADDOSCalculator
    from ase.build import bulk
 
    atoms = bulk("Si", cubic=True, a=5.43, crystalstructure="diamond")

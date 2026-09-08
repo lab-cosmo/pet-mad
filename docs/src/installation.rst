@@ -45,3 +45,19 @@ If you use `uv <https://docs.astral.sh/uv/>`_, the equivalent commands are:
 
    uv pip install upet
    uv pip install "upet @ git+https://github.com/lab-cosmo/upet.git"
+
+Optional dependencies
+----------------------
+
+nvalchemi-toolkit
+^^^^^^^^^^^^^^^^^^
+
+:py:class:`~upet.nvalchemi.UPETWrapper` wraps UPET / PET-MAD checkpoints for
+use with `nvalchemi-toolkit
+<https://github.com/NVIDIA/nvalchemi-toolkit>`_'s batched data pipeline and
+MD integrators. It requires the optional ``nvalchemi`` extra, which pulls
+the latest ``nvalchemi-toolkit`` from its ``main`` branch:
+
+.. code-block:: bash
+
+   pip install "upet[nvalchemi]"

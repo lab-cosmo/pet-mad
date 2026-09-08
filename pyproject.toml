@@ -24,8 +24,8 @@ maintainers = [
 
 dependencies = [
     "metatrain>=2026.4, <2026.5",
-    "metatomic-ase>=0.1.2, <0.2",
-    "nvalchemi-toolkit-ops>=0.3.0,<0.4.0",
+    "metatomic-ase>=0.1.4, <0.2",
+    "nvalchemi-toolkit-ops>=0.4.0,<0.5.0",
     "warp-lang",
     "huggingface_hub",
     "hf_xet",
@@ -49,6 +49,11 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Physics",
     "Topic :: Software Development :: Libraries",
     "Topic :: Software Development :: Libraries :: Python Modules",
+]
+
+[project.optional-dependencies]
+nvalchemi = [
+    "nvalchemi-toolkit==0.2.0",
 ]
 
 [project.urls]
@@ -85,7 +90,7 @@ ignore = ["B018", "B904"]
 [tool.ruff.lint.isort]
 lines-after-imports = 2
 known-first-party = ["upet"]
-known-third-party = ["torch"]
+known-third-party = ["torch", "nvalchemi"]
 
 [tool.ruff.format]
 docstring-code-format = true
@@ -129,6 +134,14 @@ filterwarnings = [
     "ignore:From version 0.3.0 onwards, PyTorch is now an optional dependency.*:DeprecationWarning",
     "ignore:`compute_requested_neighbors` is deprecated.*:UserWarning",
     "ignore:`compute_requested_neighbors_from_options` is deprecated.*:UserWarning",
+    "ignore: found nvalchemi-toolkit-ops version 0.4.0, this code was only tested with version >=0.3.0,<=0.4.0.*:UserWarning",
+    # warp, imported by nvalchemi before `upet` gets a chance to filter this
+    # itself (see the same filter in `src/upet/__init__.py`)
+    "ignore:warp.config.quiet is deprecated:DeprecationWarning",
+    # nvalchemi `AtomicData` casts every float field to the dtype of
+    # `positions`; harmless when a test builds float64 data from float32
+    # defaults it never sets itself (`atomic_masses`, `velocities`)
+    "ignore:AtomicData fields .* were cast from their original dtypes:UserWarning",
     # HF Xet deprecation warning
     "ignore:hf_xet.download_files\\(\\) is deprecated. Use XetSession\\(\\):DeprecationWarning",
     # Numpy warning

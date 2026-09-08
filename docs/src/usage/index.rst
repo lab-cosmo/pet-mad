@@ -38,6 +38,20 @@ Click a tile below for the corresponding guide.
         :width: 150px
         :align: center
 
+    .. grid-item-card:: NVIDIA ALCHEMI Toolkit
+      :link: usage_nvalchemi
+      :link-type: ref
+
+      .. image:: /../static/images/logo-nvidia.svg
+        :class: only-light
+        :width: 150px
+        :align: center
+
+      .. image:: /../static/images/logo-nvidia-dark.svg
+        :class: only-dark
+        :width: 150px
+        :align: center
+
     .. grid-item-card:: i-PI
       :link: usage_ipi
       :link-type: ref
@@ -73,3 +87,4 @@ Click a tile below for the corresponding guide.
    ipi
    torchsim
    gromacs
+   nvalchemi

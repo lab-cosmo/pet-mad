@@ -12,3 +12,13 @@
     margin-top: auto;
     margin-bottom: auto;
 }
+
+/* Reserve the same square box for every logo and scale the logo to fit inside
+   it. Cards on a shared grid row are stretched to a common height anyway, but
+   a card alone on the last row (or in a one-column layout on small screens)
+   has no neighbour to stretch against, so a wide wordmark such as the NVIDIA
+   one would otherwise make its tile much shorter than the others. */
+.sd-card .sd-card-body > .image-reference img {
+    height: 150px;
+    object-fit: contain;
+}

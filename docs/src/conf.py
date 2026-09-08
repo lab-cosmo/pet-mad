@@ -2,6 +2,8 @@ import os
 import tomllib
 from datetime import datetime
 
+from sphinx_gallery.sorting import FunctionSortKey
+
 import upet
 
 
@@ -57,11 +59,34 @@ intersphinx_mapping = {
     "metatrain": ("https://docs.metatensor.org/metatrain/latest/", None),
 }
 
+# The order in which the examples are executed and shown inside their gallery
+# section. Sorting them by file name instead would say nothing about how they
+# build on each other. Every example must be listed here: an unlisted one fails
+# the build with ``ValueError: '<name>' is not in list``.
+EXAMPLE_ORDER = [
+    # examples/1-ase
+    "run_ase_basics.py",
+    "run_ase_relaxation.py",
+    "run_ase_md_nve.py",
+    "run_ase_md_nvt.py",
+    "run_ase_md_npt.py",
+    "run_ase_dos_gap.py",
+    # examples/2-nvalchemi
+    "run_nva_basics.py",
+    "run_nva_batched_eval.py",
+    "run_nva_relaxation.py",
+    "run_nva_md_nve.py",
+    "run_nva_md_nvt.py",
+    "run_nva_md_npt.py",
+]
+
 sphinx_gallery_conf = {
     "examples_dirs": os.path.join(ROOT, "examples"),
     "gallery_dirs": "generated_examples",
     "filename_pattern": r"/*\.py",
-    "within_subsection_order": "FileNameSortKey",
+    # `EXAMPLE_ORDER.index` is a bound method of a list, which Sphinx can
+    # pickle with the rest of its config; a function defined here could not be.
+    "within_subsection_order": FunctionSortKey(EXAMPLE_ORDER.index),
     "default_thumb_file": os.path.join(
         ROOT, "docs", "static", "images", "upet-logo-with-text.svg"
     ),

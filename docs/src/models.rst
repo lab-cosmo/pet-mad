@@ -171,14 +171,17 @@ details on the models being compared).
 Uncertainty quantification
 --------------------------
 
+A subset of PET-MAD checkpoints expose per-structure energy uncertainty
+estimates through :py:meth:`~upet.ase.UPETCalculator.get_energy_uncertainty`
+and :py:meth:`~upet.ase.UPETCalculator.get_energy_ensemble`
 A subset of the checkpoints expose per-structure energy uncertainty
-estimates through :py:meth:`~upet.calculator.UPETCalculator.get_energy_uncertainty`
-and :py:meth:`~upet.calculator.UPETCalculator.get_energy_ensemble`, and the
+estimates through :py:meth:`~upet.ase.UPETCalculator.get_energy_uncertainty`
+and :py:meth:`~upet.ase.UPETCalculator.get_energy_ensemble`, and the
 corresponding force and stress quantities through
-:py:meth:`~upet.calculator.UPETCalculator.get_forces_uncertainty`,
-:py:meth:`~upet.calculator.UPETCalculator.get_forces_ensemble`,
-:py:meth:`~upet.calculator.UPETCalculator.get_stress_uncertainty`,
-:py:meth:`~upet.calculator.UPETCalculator.get_stress_ensemble` and
+:py:meth:`~upet.ase.UPETCalculator.get_forces_uncertainty`,
+:py:meth:`~upet.ase.UPETCalculator.get_forces_ensemble`,
+:py:meth:`~upet.ase.UPETCalculator.get_stress_uncertainty`,
+:py:meth:`~upet.ase.UPETCalculator.get_stress_ensemble` and
 (LLPR + shallow-ensemble heads, see :ref:`ase-uncertainty` for usage):
 
 - ``pet-mad-s`` v1.0.2
@@ -188,7 +191,7 @@ corresponding force and stress quantities through
 - ``pet-mols-s`` v1.1.0
 
 Calling these methods on other checkpoints will raise an error;
-:py:attr:`~upet.calculator.UPETCalculator.supports_uncertainty` tells whether
+:py:attr:`~upet.ase.UPETCalculator.supports_uncertainty` tells whether
 the model at hand provides them.
 
 Non-conservative forces
@@ -212,7 +215,7 @@ PET-MAD-DOS
 In addition to the energy/force models above, UPET ships **PET-MAD-DOS**,
 a separate model family for predicting the electronic density of states,
 Fermi levels and bandgaps via
-:py:class:`~upet.calculator.PETMADDOSCalculator` (see
+:py:class:`~upet.ase.dos.PETMADDOSCalculator` (see
 :ref:`ase-pet-mad-dos`).
 
 .. list-table::

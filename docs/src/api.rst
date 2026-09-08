@@ -20,10 +20,16 @@ Top-level functions
 Calculators
 -----------
 
-.. currentmodule:: upet.calculator
+.. currentmodule:: upet.ase
 
 .. autoclass:: UPETCalculator
    :members:
+
+
+PET-MAD-DOS
+-----------
+
+.. currentmodule:: upet.ase.dos
 
 .. autoclass:: PETMADDOSCalculator
    :members:
@@ -32,7 +38,19 @@ Calculators
 Featurizer
 ----------
 
-.. currentmodule:: upet.explore
+.. currentmodule:: upet.ase.explore
 
 .. autoclass:: PETMADFeaturizer
+   :members:
+
+
+nvalchemi-toolkit integration
+------------------------------
+
+Requires the optional ``nvalchemi`` extra (``pip install "upet[nvalchemi]"``);
+see :ref:`installation`.
+
+.. currentmodule:: upet.nvalchemi
+
+.. autoclass:: UPETWrapper
    :members:
