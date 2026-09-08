@@ -1,0 +1,128 @@
+"""
+Geometry optimization (FIRE)
+===============================================
+
+:py:class:`~nvalchemi.dynamics.FIRE` drives atomic positions toward a local
+energy minimum using the Fast Inertial Relaxation Engine algorithm, with
+:py:class:`~upet.nvalchemi.UPETWrapper` supplying forces and
+:py:class:`~nvalchemi.dynamics.ConvergenceHook` stopping the run early once
+the maximum force norm drops below a threshold. The energy and the
+maximum force are recorded at every step and plotted, so the approach to
+the minimum is visible at a glance.
+
+.. note::
+
+   This example requires the optional ``nvalchemi`` extra:
+   ``pip install "upet[nvalchemi]"``.
+"""
+
+from collections import defaultdict
+
+import matplotlib.pyplot as plt
+import torch
+from ase.build import bulk
+from nvalchemi.data import AtomicData, Batch
+from nvalchemi.dynamics import FIRE, ConvergenceHook, DynamicsStage
+from nvalchemi.hooks import NeighborListHook, extract_dynamics_scalars
+from nvalchemi.neighbors import compute_neighbors
+
+from upet.nvalchemi import UPETWrapper
+
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+model = UPETWrapper.from_checkpoint(model="pet-mad-xs", version="1.5.0", device=device)
+
+atoms = bulk("Si", cubic=True, a=5.43, crystalstructure="diamond")
+atoms.rattle(0.1, seed=0)
+data = AtomicData.from_atoms(atoms, device=device)
+
+# The integrators write model outputs back into the batch fields that already
+# exist and silently skip the ones that don't, while `AtomicData.from_atoms`
+# only fills the fields the `Atoms` object itself carries -- so the output
+# buffers have to be allocated up front.
+data.energy = torch.zeros(1, 1, device=device)
+data.forces = torch.zeros_like(data.positions)
+
+batch = Batch.from_data_list([data], device=device)
+compute_neighbors(batch, config=model.model_config.neighbor_config)
+
+# %%
+# Recording the trajectory
+# -------------------------
+# nvalchemi runs the whole loop inside ``run()``, so anything to be
+# plotted afterwards has to be collected while the loop is running. A
+# hook registered at :py:attr:`~nvalchemi.dynamics.DynamicsStage.AFTER_STEP`
+# is the nvalchemi counterpart of ASE's ``dyn.attach(logger, interval=1)``.
+# :py:func:`~nvalchemi.hooks.extract_dynamics_scalars` pulls the standard
+# observables (potential energy, max force norm, temperature) off the
+# batch, so the hook itself only has to accumulate them.
+
+
+class TrajectoryRecorder:
+    """Append the per-step scalar observables to a history dict."""
+
+    def __init__(self):
+        self.frequency = 1  # fire on every step
+        self.stage = DynamicsStage.AFTER_STEP
+        self.history: dict[str, list[float]] = defaultdict(list)
+
+    def __call__(self, ctx, stage):
+        self.history["step"].append(ctx.step_count)
+        for key, value in extract_dynamics_scalars(ctx).items():
+            self.history[key].append(value)
+
+
+FMAX = 0.02  # eV/Å, the convergence threshold
+
+recorder = TrajectoryRecorder()
+fire = FIRE(
+    model=model,
+    dt=0.1,
+    n_steps=300,
+    convergence_hook=ConvergenceHook.from_fmax(FMAX),
+    hooks=[
+        NeighborListHook(
+            model.model_config.neighbor_config,
+            skin=0.5,
+            stage=DynamicsStage.BEFORE_COMPUTE,
+        ),
+        recorder,
+    ],
+)
+
+# The first integrator step already reads the forces, so the batch needs one
+# model evaluation before the loop starts.
+fire.compute(batch)
+batch = fire.run(batch)
+
+print(f"Relaxed after {fire.step_count} steps")
+print(f"Energy : {batch.energy.item():+.4f} eV")
+print(f"Fmax   : {torch.linalg.vector_norm(batch.forces, dim=-1).max():.4f} eV/Å")
+
+# %%
+# Convergence of the relaxation
+# ------------------------------
+# The energy decreases toward the local minimum while the maximum force
+# norm falls by more than two orders of magnitude. FIRE accelerates along
+# the downhill direction and resets its velocity whenever it overshoots,
+# which is what produces the steps and plateaus in the force curve rather
+# than a smooth exponential decay.
+
+steps = recorder.history["step"]
+
+fig, (ax_energy, ax_force) = plt.subplots(1, 2, figsize=(9.5, 3.8))
+
+ax_energy.plot(steps, recorder.history["energy"], "o-", ms=3)
+ax_energy.set_xlabel("FIRE step")
+ax_energy.set_ylabel("potential energy [eV]")
+ax_energy.set_title("Energy vs. step")
+
+ax_force.semilogy(steps, recorder.history["fmax"], "o-", ms=3)
+ax_force.axhline(FMAX, color="k", ls="--", lw=0.8, label=f"threshold ({FMAX} eV/Å)")
+ax_force.set_xlabel("FIRE step")
+ax_force.set_ylabel("max |force| [eV/Å]")
+ax_force.set_title("Force convergence")
+ax_force.legend()
+
+fig.tight_layout()
+plt.show()

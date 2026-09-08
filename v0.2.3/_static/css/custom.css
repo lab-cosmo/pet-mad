@@ -1,0 +1,14 @@
+/* Keep sphinx-design card titles pinned to the top, but vertically center
+   the logo image in the remaining space. Without this, logos with very
+   different aspect ratios (e.g. a wide wordmark vs. a square icon) sit at
+   the top of the card and leave the bottom of the tile empty. */
+.sd-card .sd-card-body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.sd-card .sd-card-body > .image-reference {
+    margin-top: auto;
+    margin-bottom: auto;
+}

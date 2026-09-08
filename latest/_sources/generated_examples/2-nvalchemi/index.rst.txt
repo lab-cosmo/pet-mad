@@ -1,0 +1,145 @@
+
+
+.. _sphx_glr_generated_examples_2-nvalchemi:
+
+NVIDIA ALCHEMI Toolkit
+----------------------
+
+Running UPET / PET-MAD models through `nvalchemi-toolkit
+<https://github.com/NVIDIA/nvalchemi-toolkit>`_'s batched data pipeline and
+MD integrators via :py:class:`~upet.nvalchemi.UPETWrapper`: single-structure
+and batched evaluation, geometry optimization with FIRE, and molecular
+dynamics in the NVE, NVT, and NPT ensembles. These examples require the
+optional ``nvalchemi`` extra: ``pip install "upet[nvalchemi]"``.
+
+
+.. raw:: html
+
+  <div id='sg-tag-list' class='sphx-glr-tag-list'></div>
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbnails">
+
+.. thumbnail-parent-div-open
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip=":py~upet.nvalchemi.UPETWrapper wraps a UPET / PET-MAD checkpoint as an nvalchemi-toolkit BaseModelMixin model, so it can be driven through nvalchemi&#x27;s batched :py~nvalchemi.data.Batch data pipeline instead of ASE Atoms. This is the entry point for large-scale batched inference (see run_nva_batched_eval) and for nvalchemi&#x27;s GPU-accelerated MD integrators (see run_nva_md_nvt).">
+
+.. only:: html
+
+  .. image:: /generated_examples/2-nvalchemi/images/thumb/sphx_glr_run_nva_basics_thumb.png
+    :alt:
+
+  :doc:`/generated_examples/2-nvalchemi/run_nva_basics`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Basics: single-structure evaluation</div>
+    </div>
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="This example evaluates energy, forces, and stress for several structures at once, and plots the per-system results the batched pass returns. Each ASE Atoms object is converted to an :py~nvalchemi.data.AtomicData instance with :py~nvalchemi.data.AtomicData.from_atoms, and the resulting list is collated into a single multi-graph :py~nvalchemi.data.Batch with :py~nvalchemi.data.Batch.from_data_list. A single forward pass through :py~upet.nvalchemi.UPETWrapper then evaluates all structures together, which is substantially more efficient than looping over structures one at a time (e.g. with the ASE calculator, see usage_ase).">
+
+.. only:: html
+
+  .. image:: /generated_examples/2-nvalchemi/images/thumb/sphx_glr_run_nva_batched_eval_thumb.png
+    :alt:
+
+  :doc:`/generated_examples/2-nvalchemi/run_nva_batched_eval`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Batched evaluation</div>
+    </div>
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip=":py~nvalchemi.dynamics.FIRE drives atomic positions toward a local energy minimum using the Fast Inertial Relaxation Engine algorithm, with :py~upet.nvalchemi.UPETWrapper supplying forces and :py~nvalchemi.dynamics.ConvergenceHook stopping the run early once the maximum force norm drops below a threshold. The energy and the maximum force are recorded at every step and plotted, so the approach to the minimum is visible at a glance.">
+
+.. only:: html
+
+  .. image:: /generated_examples/2-nvalchemi/images/thumb/sphx_glr_run_nva_relaxation_thumb.png
+    :alt:
+
+  :doc:`/generated_examples/2-nvalchemi/run_nva_relaxation`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Geometry optimization (FIRE)</div>
+    </div>
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip=":py~nvalchemi.dynamics.NVE integrates Newton&#x27;s equations of motion with the velocity Verlet algorithm, conserving the total energy. This example runs it on a silicon supercell with :py~upet.nvalchemi.UPETWrapper supplying conservative forces. Kinetic and potential energy are recorded at every step: they exchange back and forth as the crystal equilibrates, while their sum stays flat up to integration error.">
+
+.. only:: html
+
+  .. image:: /generated_examples/2-nvalchemi/images/thumb/sphx_glr_run_nva_md_nve_thumb.png
+    :alt:
+
+  :doc:`/generated_examples/2-nvalchemi/run_nva_md_nve`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">NVE molecular dynamics</div>
+    </div>
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip=":py~nvalchemi.dynamics.NVTLangevin samples the canonical ensemble via a Langevin thermostat. This example runs it on a small water cluster with :py~upet.nvalchemi.UPETWrapper supplying conservative forces. Unlike NVE, the total energy is not conserved here -- the thermostat exchanges energy with a heat bath -- so the diagnostic to plot is the instantaneous temperature and its running average against the target.">
+
+.. only:: html
+
+  .. image:: /generated_examples/2-nvalchemi/images/thumb/sphx_glr_run_nva_md_nvt_thumb.png
+    :alt:
+
+  :doc:`/generated_examples/2-nvalchemi/run_nva_md_nvt`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">NVT molecular dynamics</div>
+    </div>
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip=":py~nvalchemi.dynamics.NPT samples the isothermal-isobaric ensemble via a Martyna-Tobias-Klein barostat coupled to a Nosé-Hoover thermostat, so both the atomic positions and the simulation cell evolve. This example runs it on a silicon supercell at 300 K and 1 bar, with :py~upet.nvalchemi.UPETWrapper supplying forces and stress. The three quantities the two barostats and the thermostat control -- temperature, cell volume, and instantaneous pressure -- are recorded at every step and plotted together.">
+
+.. only:: html
+
+  .. image:: /generated_examples/2-nvalchemi/images/thumb/sphx_glr_run_nva_md_npt_thumb.png
+    :alt:
+
+  :doc:`/generated_examples/2-nvalchemi/run_nva_md_npt`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">NPT molecular dynamics</div>
+    </div>
+
+
+.. thumbnail-parent-div-close
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /generated_examples/2-nvalchemi/run_nva_basics
+   /generated_examples/2-nvalchemi/run_nva_batched_eval
+   /generated_examples/2-nvalchemi/run_nva_relaxation
+   /generated_examples/2-nvalchemi/run_nva_md_nve
+   /generated_examples/2-nvalchemi/run_nva_md_nvt
+   /generated_examples/2-nvalchemi/run_nva_md_npt
+

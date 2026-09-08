@@ -1,0 +1,52 @@
+
+:orphan:
+
+.. _sphx_glr_generated_examples_1-ase_sg_execution_times:
+
+
+Computation times
+=================
+**00:28.613** total execution time for 6 files **from generated_examples/1-ase**:
+
+.. container::
+
+  .. raw:: html
+
+    <style scoped>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" rel="stylesheet" />
+    </style>
+    <script src="https://code.jquery.com/jquery-3.7.0.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+    <script type="text/javascript" class="init">
+    $(document).ready( function () {
+        $('table.sg-datatable').DataTable({order: [[1, 'desc']]});
+    } );
+    </script>
+
+  .. list-table::
+   :header-rows: 1
+   :class: table table-striped sg-datatable
+
+   * - Example
+     - Time
+     - Mem (MB)
+   * - :ref:`sphx_glr_generated_examples_1-ase_run_ase_basics.py` (``run_ase_basics.py``)
+     - 00:11.337
+     - 0.0
+   * - :ref:`sphx_glr_generated_examples_1-ase_run_ase_md_npt.py` (``run_ase_md_npt.py``)
+     - 00:04.477
+     - 0.0
+   * - :ref:`sphx_glr_generated_examples_1-ase_run_ase_md_nvt.py` (``run_ase_md_nvt.py``)
+     - 00:04.209
+     - 0.0
+   * - :ref:`sphx_glr_generated_examples_1-ase_run_ase_dos_gap.py` (``run_ase_dos_gap.py``)
+     - 00:03.793
+     - 0.0
+   * - :ref:`sphx_glr_generated_examples_1-ase_run_ase_md_nve.py` (``run_ase_md_nve.py``)
+     - 00:02.406
+     - 0.0
+   * - :ref:`sphx_glr_generated_examples_1-ase_run_ase_relaxation.py` (``run_ase_relaxation.py``)
+     - 00:02.392
+     - 0.0

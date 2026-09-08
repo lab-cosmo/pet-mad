@@ -1,0 +1,179 @@
+:orphan:
+
+Examples
+========
+
+Runnable tutorials covering UPET workflows. Each example can be downloaded as
+a Python script or Jupyter notebook from the link at the bottom of its page.
+
+
+.. raw:: html
+
+  <div id='sg-tag-list' class='sphx-glr-tag-list'></div>
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbnails">
+
+.. thumbnail-parent-div-open
+
+.. thumbnail-parent-div-close
+
+.. raw:: html
+
+    </div>
+
+ASE simulations
+---------------
+
+Runnable end-to-end ASE workflows: single-point evaluation, geometry
+optimization, and molecular dynamics in the NVE / NVT / NPT ensembles.
+
+
+.. raw:: html
+
+  <div id='sg-tag-list' class='sphx-glr-tag-list'></div>
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbnails">
+
+.. thumbnail-parent-div-open
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Single-point evaluation of a bulk silicon cell with PET-MAD-DOS. The two silicon atoms are displaced off their equilibrium positions and the DOS and bandgap is computed using the :py~upet.calculator.PETMADDOSCalculator. Additionally, we showcase the performance of the denoising algorithm. The DOS is plotted with and without denoising, and the predicted bandgap is printed for both cases. The denoised DOS is less oscillatory and non-negative compared to the raw DOS.">
+
+.. only:: html
+
+  .. image:: /generated_examples/1-ase-simulations/images/thumb/sphx_glr_plot_dos_gap_thumb.png
+    :alt:
+
+  :doc:`/generated_examples/1-ase-simulations/plot_dos_gap`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Density of States (DOS) and Bandgap calculations with UPET</div>
+    </div>
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Single-point evaluation of a bulk silicon cell with the smallest PET-MAD model (``pet-mad-xs``). Two atoms are displaced off their equilibrium positions so the predicted forces are non-trivial; we then attach a :py~upet.calculator.UPETCalculator, read energy and forces via the standard ASE API, and render the unit cell with the forces drawn as arrows on top of the atoms.">
+
+.. only:: html
+
+  .. image:: /generated_examples/1-ase-simulations/images/thumb/sphx_glr_plot_energy_forces_thumb.png
+    :alt:
+
+  :doc:`/generated_examples/1-ase-simulations/plot_energy_forces`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Energy and forces</div>
+    </div>
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Two-stage geometry optimization of a slightly perturbed silicon unit cell. First, positions are relaxed at fixed cell with :pyase.optimize.LBFGS. Then the cell itself is relaxed jointly with the atomic positions by wrapping the Atoms in :pyase.filters.FrechetCellFilter.">
+
+.. only:: html
+
+  .. image:: /generated_examples/1-ase-simulations/images/thumb/sphx_glr_plot_geometry_optimization_thumb.png
+    :alt:
+
+  :doc:`/generated_examples/1-ase-simulations/plot_geometry_optimization`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Geometry optimization (LBFGS)</div>
+    </div>
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Isobaric–isothermal (constant pressure, constant temperature) MD of bulk silicon with the :pyase.md.npt.NPT integrator (Parrinello–Rahman barostat coupled to a Nosé–Hoover thermostat) at 300 K and 1 bar. Both the cell and the atomic coordinates evolve; we monitor temperature, cell volume and instantaneous pressure.">
+
+.. only:: html
+
+  .. image:: /generated_examples/1-ase-simulations/images/thumb/sphx_glr_plot_md_npt_thumb.png
+    :alt:
+
+  :doc:`/generated_examples/1-ase-simulations/plot_md_npt`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">NPT molecular dynamics</div>
+    </div>
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Microcanonical (constant energy) molecular dynamics of bulk silicon using :pyase.md.verlet.VelocityVerlet. Velocities are initialized from a Maxwell–Boltzmann distribution at 300 K; total energy should stay flat up to integration noise.">
+
+.. only:: html
+
+  .. image:: /generated_examples/1-ase-simulations/images/thumb/sphx_glr_plot_md_nve_thumb.png
+    :alt:
+
+  :doc:`/generated_examples/1-ase-simulations/plot_md_nve`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">NVE molecular dynamics</div>
+    </div>
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Canonical (constant temperature) molecular dynamics of bulk silicon with the :pyase.md.langevin.Langevin thermostat at 300 K. The instantaneous temperature fluctuates around the target and its running average converges there after a short equilibration.">
+
+.. only:: html
+
+  .. image:: /generated_examples/1-ase-simulations/images/thumb/sphx_glr_plot_md_nvt_thumb.png
+    :alt:
+
+  :doc:`/generated_examples/1-ase-simulations/plot_md_nvt`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">NVT molecular dynamics</div>
+    </div>
+
+
+.. thumbnail-parent-div-close
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+   :includehidden:
+
+
+   /generated_examples/1-ase-simulations/index.rst
+
+
+.. only:: html
+
+  .. container:: sphx-glr-footer sphx-glr-footer-gallery
+
+    .. container:: sphx-glr-download sphx-glr-download-python
+
+      :download:`Download all examples in Python source code: generated_examples_python.zip </generated_examples/generated_examples_python.zip>`
+
+    .. container:: sphx-glr-download sphx-glr-download-jupyter
+
+      :download:`Download all examples in Jupyter notebooks: generated_examples_jupyter.zip </generated_examples/generated_examples_jupyter.zip>`
+
+
+.. only:: html
+
+ .. rst-class:: sphx-glr-signature
+
+    `Gallery generated by Sphinx-Gallery <https://sphinx-gallery.github.io>`_
