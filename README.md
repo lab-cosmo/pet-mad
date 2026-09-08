@@ -129,7 +129,7 @@ The documentation covers the complete feature surface:
 - [LAMMPS](https://lab-cosmo.github.io/upet/latest/usage/lammps.html) (including
   KOKKOS GPU support),
   [NVIDIA ALCHEMI Toolkit](https://lab-cosmo.github.io/upet/latest/usage/nvalchemi.html)
-  (NVIDIA's GPU-native batched inference and MD toolkit) interfaces,
+  (NVIDIA's GPU-native batched inference and MD toolkit),
   [i-PI](https://lab-cosmo.github.io/upet/latest/usage/ipi.html),
   [TorchSim](https://lab-cosmo.github.io/upet/latest/usage/torchsim.html), and
   [GROMACS](https://lab-cosmo.github.io/upet/latest/usage/gromacs.html) interfaces.
