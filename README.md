@@ -132,7 +132,7 @@ The documentation covers the complete feature surface:
   (NVIDIA's GPU-native batched inference and MD toolkit) interfaces,
   [i-PI](https://lab-cosmo.github.io/upet/latest/usage/ipi.html),
   [TorchSim](https://lab-cosmo.github.io/upet/latest/usage/torchsim.html), and
-  [GROMACS](https://lab-cosmo.github.io/upet/latest/usage/gromacs.html)
+  [GROMACS](https://lab-cosmo.github.io/upet/latest/usage/gromacs.html) interfaces.
 - [Fine-tuning](https://lab-cosmo.github.io/upet/latest/fine-tuning.html) and
   [example gallery](https://lab-cosmo.github.io/upet/latest/generated_examples/index.html).
 - [FAQ and known issues](https://lab-cosmo.github.io/upet/latest/faq.html).
