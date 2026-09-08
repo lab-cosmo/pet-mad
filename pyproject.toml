@@ -53,7 +53,7 @@ classifiers = [
 
 [project.optional-dependencies]
 nvalchemi = [
-    "nvalchemi-toolkit @ git+https://github.com/NVIDIA/nvalchemi-toolkit.git@main",
+    "nvalchemi-toolkit==0.2.0",
 ]
 
 [project.urls]

@@ -128,11 +128,11 @@ The documentation covers the complete feature surface:
 - [Batched evaluation with metatrain](https://lab-cosmo.github.io/upet/latest/usage/metatrain.html).
 - [LAMMPS](https://lab-cosmo.github.io/upet/latest/usage/lammps.html) (including
   KOKKOS GPU support),
+  [NVIDIA ALCHEMI Toolkit](https://lab-cosmo.github.io/upet/latest/usage/nvalchemi.html)
+  (NVIDIA's GPU-native batched inference and MD toolkit) interfaces,
   [i-PI](https://lab-cosmo.github.io/upet/latest/usage/ipi.html),
-  [TorchSim](https://lab-cosmo.github.io/upet/latest/usage/torchsim.html),
-  [GROMACS](https://lab-cosmo.github.io/upet/latest/usage/gromacs.html), and
-  [nvalchemi-toolkit](https://lab-cosmo.github.io/upet/latest/usage/nvalchemi.html)
-  (NVIDIA's GPU-native batched inference and MD toolkit) interfaces.
+  [TorchSim](https://lab-cosmo.github.io/upet/latest/usage/torchsim.html), and
+  [GROMACS](https://lab-cosmo.github.io/upet/latest/usage/gromacs.html)
 - [Fine-tuning](https://lab-cosmo.github.io/upet/latest/fine-tuning.html) and
   [example gallery](https://lab-cosmo.github.io/upet/latest/generated_examples/index.html).
 - [FAQ and known issues](https://lab-cosmo.github.io/upet/latest/faq.html).
