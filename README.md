@@ -1,3 +1,13 @@
+
+
+> [!WARNING]
+> This repository is a historical archive of the PET-MAD project. The
+> development of PET-based universal models has been moved to
+> https://github.com/lab-cosmo/upet.
+
+
+--------------------------------------------------------------------------------
+
 <div align="center" width="600">
   <picture>
     <source srcset="https://github.com/lab-cosmo/pet-mad/raw/refs/heads/main/docs/static/pet-mad-logo-with-text-dark.svg" media="(prefers-color-scheme: dark)">
@@ -9,13 +19,13 @@
 
 This repository contains **PET-MAD** - a universal interatomic potential for
 advanced materials modeling across the periodic table. This model is based on
-the **Point Edge Transformer (PET)** model trained on the **Massive Atomic Diversity (MAD) Dataset** 
+the **Point Edge Transformer (PET)** model trained on the **Massive Atomic Diversity (MAD) Dataset**
 and is capable of predicting energies and forces in complex atomistic simulations.
 
 In addition, it contains **PET-MAD-DOS** - a universal model for predicting
 the density of states (DOS) of materials, as well as their Fermi levels and bandgaps.
 **PET-MAD-DOS** is using a slightly modified **PET** architecture, and the same
-**MAD** dataset. 
+**MAD** dataset.
 
 ## Key Features
 
@@ -25,7 +35,7 @@ the density of states (DOS) of materials, as well as their Fermi levels and band
 - **Accuracy**: PET-MAD models achieve high accuracy in various types of atomistic
   simulations of organic and inorganic systems, comparable with system-specific
   models, while being fast and efficient.
-- **Efficiency**: PET-MAD models are highly computationally efficient and have low 
+- **Efficiency**: PET-MAD models are highly computationally efficient and have low
   memory usage, what makes them suitable for large-scale simulations.
 - **Infrastructure**: Various MD engines are available for diverse research and
   application needs.
@@ -162,7 +172,7 @@ forces = atoms.get_forces() # forces now are predicted as a separate target
 stresses = atoms.get_stress() # stresses now are predicted as a separate target
 ```
 
-More details on how to make the direct forces MD simulations reliable are provided 
+More details on how to make the direct forces MD simulations reliable are provided
 in the [Atomistic Cookbook](https://atomistic-cookbook.org/examples/pet-mad-nc/pet-mad-nc.html).
 
 ### Evaluating PET-MAD on a dataset
@@ -239,7 +249,7 @@ Please note that the uncertainty quantification and ensemble prediction accepts 
 `per_atom` flag, which indicates whether the uncertainty/ensemble should be computed
 per atom or for the whole system. More details on the uncertainty quantification and shallow
 ensemble method can be found in [this](https://doi.org/10.1088/2632-2153/ad594a) and
-[this](https://doi.org/10.1088/2632-2153/ad805f) papers. 
+[this](https://doi.org/10.1088/2632-2153/ad805f) papers.
 
 
 ## Running PET-MAD with LAMMPS
@@ -423,7 +433,7 @@ atoms.calc = combined_calc
 
 ## Calculating the DOS, Fermi levels, and bandgaps
 
-PET-MAD packages also allows the use of the **PET-MAD-DOS** model to predict 
+PET-MAD packages also allows the use of the **PET-MAD-DOS** model to predict
 electronic density of states of materials, as well as their Fermi levels and
 bandgaps. Similarly to the  **PET-MAD** model, the **PET-MAD-DOS** model is
 also available in the **ASE** interface.
@@ -475,13 +485,13 @@ fermi_levels = pet_mad_dos_calculator.calculate_efermi([atoms_1, atoms_2], dos=d
 
 
 ## Dataset visualization with the PET-MAD featurizer
- 
-You can use PET-MAD last-layer features together with a pre-trained 
+
+You can use PET-MAD last-layer features together with a pre-trained
 sketch-map dimensionality reduction to obtain 2D and 3D representations
 of a dataset, e.g. to identify structural or chemical motifs.
 This can be used as a stand-alone feature builder, or combined with
-the [chemiscope viewer](https://chemiscope.org) to generate an 
-interactive visualization. 
+the [chemiscope viewer](https://chemiscope.org) to generate an
+interactive visualization.
 
 ```python
 import ase.io
@@ -542,11 +552,11 @@ If you use any of the PET-MAD models in your research, please cite the correspon
       publisher={Nature Publishing Group UK London}
 }
 @misc{PET-MAD-DOS-2025,
-      title={A universal machine learning model for the electronic density of states}, 
+      title={A universal machine learning model for the electronic density of states},
       author={Wei Bin How and Pol Febrer and Sanggyu Chong and Arslan Mazitov and Filippo Bigi and Matthias Kellner and Sergey Pozdnyakov and Michele Ceriotti},
       year={2025},
       eprint={2508.17418},
       archivePrefix={arXiv},
       primaryClass={physics.chem-ph},
-      url={https://arxiv.org/abs/2508.17418}, 
+      url={https://arxiv.org/abs/2508.17418},
 }
